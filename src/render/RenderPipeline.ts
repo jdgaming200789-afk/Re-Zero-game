@@ -30,6 +30,7 @@ import type { GraphicsSettings } from '../settings/Settings';
 import { SHADOW_MAP_SIZE, VIEW_DISTANCE } from '../settings/Settings';
 import { ColorGradeEffect, lerpGrade, NEUTRAL_GRADE, type ColorGrade } from './effects/ColorGradeEffect';
 import { ExposureEffect } from './effects/ExposureEffect';
+import { HeightFogEffect } from './effects/HeightFogEffect';
 import { damp } from '../core/math/MathUtil';
 
 const log = createLogger('Render');
@@ -59,6 +60,7 @@ export class RenderPipeline {
   private readonly bloom: BloomEffect;
   private readonly toneMapping: ToneMappingEffect;
   private readonly exposureFx: ExposureEffect;
+  readonly fog: HeightFogEffect;
   readonly grade: ColorGradeEffect;
   private readonly vignette: VignetteEffect;
   private readonly grain: NoiseEffect;
@@ -116,6 +118,7 @@ export class RenderPipeline {
       radius: 0.72,
     });
     this.exposureFx = new ExposureEffect();
+    this.fog = new HeightFogEffect(this.camera);
     this.toneMapping = new ToneMappingEffect({ mode: ToneMappingMode.AGX });
     this.grade = new ColorGradeEffect();
     this.vignette = new VignetteEffect({ offset: 0.28, darkness: 0.62 });
@@ -126,7 +129,7 @@ export class RenderPipeline {
 
     this.dofPass = new EffectPass(this.camera, this.dof);
     this.dofPass.enabled = false;
-    this.mainPass = new EffectPass(this.camera, this.exposureFx, this.bloom, this.toneMapping, this.grade, this.vignette, this.chromatic, this.grain);
+    this.mainPass = new EffectPass(this.camera, this.fog, this.exposureFx, this.bloom, this.toneMapping, this.grade, this.vignette, this.chromatic, this.grain);
 
     this.rebuildChain();
     this.applySettings(settings);

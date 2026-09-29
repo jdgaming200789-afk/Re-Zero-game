@@ -151,6 +151,42 @@ export class Physics {
     return c;
   }
 
+  /** Oriented cylinder (axis = local Y rotated by `rotation`). */
+  addOrientedCylinder(
+    center: Vector3,
+    halfHeight: number,
+    radius: number,
+    rotation: Quaternion | null,
+    membership: number = Layer.Environment,
+    owner: ColliderOwner = { kind: 'static' },
+  ): RAPIER.Collider {
+    const desc = RAPIER.ColliderDesc.cylinder(halfHeight, radius)
+      .setTranslation(center.x, center.y, center.z)
+      .setCollisionGroups(groups(membership, Layer.All));
+    if (rotation) desc.setRotation({ x: rotation.x, y: rotation.y, z: rotation.z, w: rotation.w });
+    const c = this.world.createCollider(desc);
+    this.setOwner(c, owner);
+    return c;
+  }
+
+  /** Convex hull around world-space points (falls back to null if degenerate). */
+  addConvexHull(points: Float32Array, membership: number = Layer.Environment, owner: ColliderOwner = { kind: 'static' }): RAPIER.Collider | null {
+    const desc = RAPIER.ColliderDesc.convexHull(points);
+    if (!desc) return null;
+    desc.setCollisionGroups(groups(membership, Layer.All));
+    const c = this.world.createCollider(desc);
+    this.setOwner(c, owner);
+    return c;
+  }
+
+  /** Static trimesh from raw world-space arrays. */
+  addTrimesh(vertices: Float32Array, indices: Uint32Array, membership: number = Layer.Environment, owner: ColliderOwner = { kind: 'static' }): RAPIER.Collider {
+    const desc = RAPIER.ColliderDesc.trimesh(vertices, indices).setCollisionGroups(groups(membership, Layer.All));
+    const c = this.world.createCollider(desc);
+    this.setOwner(c, owner);
+    return c;
+  }
+
   /** Static triangle-mesh collider from a Three.js mesh (uses its world transform). */
   addStaticMesh(mesh: Mesh, membership: number = Layer.Environment, owner: ColliderOwner = { kind: 'static' }): RAPIER.Collider | null {
     mesh.updateWorldMatrix(true, false);

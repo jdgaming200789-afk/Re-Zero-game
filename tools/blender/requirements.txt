@@ -1,0 +1,4 @@
+# Headless Blender asset pipeline (Python 3.11)
+bpy==4.2.0
+numpy
+pillow

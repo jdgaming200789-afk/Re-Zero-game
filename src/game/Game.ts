@@ -17,6 +17,8 @@ import { InteractionManager } from '../interaction/InteractionManager';
 import { UIManager } from '../ui/UIManager';
 import { WorldStateManager } from '../world/WorldStateManager';
 import { AssetManager } from '../assets/AssetManager';
+import { EnvironmentLibrary } from '../scene/EnvironmentLibrary';
+import { VfxSystem } from '../vfx/VfxSystem';
 import { CharacterMotor } from '../characters/CharacterMotor';
 import type { PlayerController } from '../player/PlayerController';
 import type { GameContext, GameSystem } from './GameContext';
@@ -59,6 +61,8 @@ export class Game implements GameContext {
   readonly ui: UIManager;
   readonly state: WorldStateManager;
   readonly assets: AssetManager;
+  readonly environment: EnvironmentLibrary;
+  readonly vfx: VfxSystem;
   readonly devMode: boolean;
   dev: DevConsole | null = null;
   player: PlayerController | null = null;
@@ -84,6 +88,7 @@ export class Game implements GameContext {
     this.world = new World(this.render.scene);
     this.assets = new AssetManager();
     this.assets.maxAnisotropy = this.render.maxAnisotropy;
+    this.environment = new EnvironmentLibrary(this.render.maxAnisotropy);
     this.state = new WorldStateManager(this.events);
     this.ui = new UIManager(this.events, this.input, this.scheduler);
 
@@ -97,12 +102,14 @@ export class Game implements GameContext {
     this.interaction = new InteractionManager(this);
     this.addSystem(this.scenes);
     this.addSystem(this.interaction);
+    this.vfx = new VfxSystem(this);
 
     this.events.on('settings:changed', ({ key }) => {
       if (key.startsWith('graphics') || key === '*') {
         this.render.applySettings(this.settings.graphics);
         this.camera.follow.baseFov = this.settings.graphics.fieldOfView;
         this.assets.maxAnisotropy = this.render.maxAnisotropy;
+        this.environment.materials.setAnisotropy(this.render.maxAnisotropy);
       }
       if (key.startsWith('gameplay') || key.startsWith('bindings') || key === '*') this.applyInputSettings();
     });
@@ -243,6 +250,8 @@ export class Game implements GameContext {
 
     const player = this.player;
     this.camera.update(t.dt, t.unscaledDt, player ? player.followTarget : null, this.input.look);
+    // Effects update after the camera so billboards face this frame's view.
+    this.vfx.update(t.dt);
     this.ui.updatePrompt(
       this.interaction.focused,
       this.render.camera,

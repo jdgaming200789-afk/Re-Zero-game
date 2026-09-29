@@ -1,0 +1,64 @@
+{
+  "bronze": {
+    "tileMeters": 1.5,
+    "normalScale": 1.0,
+    "name": "bronze"
+  },
+  "fabric": {
+    "tileMeters": 1.0,
+    "normalScale": 0.8,
+    "tintable": true,
+    "name": "fabric"
+  },
+  "flagstone": {
+    "tileMeters": 5.0,
+    "normalScale": 1.0,
+    "name": "flagstone"
+  },
+  "leather": {
+    "tileMeters": 0.5,
+    "normalScale": 0.8,
+    "tintable": true,
+    "name": "leather"
+  },
+  "limestone_smooth": {
+    "tileMeters": 3.0,
+    "normalScale": 1.0,
+    "name": "limestone_smooth"
+  },
+  "marble_tiles": {
+    "tileMeters": 2.0,
+    "normalScale": 1.0,
+    "name": "marble_tiles"
+  },
+  "plaster_worn": {
+    "tileMeters": 3.0,
+    "normalScale": 1.0,
+    "name": "plaster_worn"
+  },
+  "rock": {
+    "tileMeters": 4.0,
+    "normalScale": 1.0,
+    "name": "rock"
+  },
+  "sand": {
+    "tileMeters": 6.0,
+    "normalScale": 1.0,
+    "name": "sand"
+  },
+  "sandglass": {
+    "tileMeters": 6.0,
+    "normalScale": 1.0,
+    "name": "sandglass"
+  },
+  "sandstone_ashlar": {
+    "tileMeters": 4.0,
+    "normalScale": 1.0,
+    "name": "sandstone_ashlar"
+  },
+  "wood_dark": {
+    "tileMeters": 2.0,
+    "normalScale": 1.0,
+    "name": "wood_dark"
+  }
+}

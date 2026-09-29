@@ -1,7 +1,6 @@
 import {
   Color,
   DirectionalLight,
-  FogExp2,
   HemisphereLight,
   MeshStandardMaterial,
   PMREMGenerator,
@@ -230,7 +229,7 @@ class DevGymArea extends Area {
       background: new Color(0x8f9bb0),
       environment: this.envMap,
       environmentIntensity: 0.35,
-      fog: new FogExp2(0x8f9bb0, 0.012),
+      fog: { color: new Color(0x8f9bb0), density: 0.012, heightFalloff: 0.002, skyHaze: 0.6 },
       grade: NEUTRAL_GRADE,
       exposure: 1,
       tension: 0,

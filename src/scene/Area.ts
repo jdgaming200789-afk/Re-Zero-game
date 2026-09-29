@@ -1,5 +1,6 @@
 import type RAPIER from '@dimforge/rapier3d-compat';
-import { Group, Vector3, type Color, type Fog, type FogExp2, type Texture } from 'three';
+import { Group, Vector3, type Color, type Texture } from 'three';
+import type { HeightFogParams } from '../render/effects/HeightFogEffect';
 import type { GameContext } from '../game/GameContext';
 import type { ColorGrade } from '../render/effects/ColorGradeEffect';
 import { disposeObject } from '../assets/AssetManager';
@@ -15,7 +16,8 @@ export interface AtmosphereProfile {
   background: Color | Texture | null;
   environment: Texture | null;
   environmentIntensity: number;
-  fog: Fog | FogExp2 | null;
+  /** Atmospheric height fog (density 0 disables). */
+  fog: Partial<HeightFogParams>;
   grade: ColorGrade;
   exposure: number;
   music?: MusicState;
@@ -68,6 +70,7 @@ export abstract class Area {
   dispose(): void {
     this.onExit?.();
     this.game.world.destroyScope(this.scope);
+    this.game.vfx.clearScope(this.scope);
     for (const c of this.colliders) this.game.physics.removeCollider(c);
     for (const b of this.bodies) this.game.physics.removeBody(b);
     this.colliders.length = 0;

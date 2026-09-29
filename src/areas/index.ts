@@ -6,4 +6,7 @@ import type { SceneManager } from '../scene/SceneManager';
  */
 export function registerAreas(scenes: SceneManager): void {
   scenes.register('dev_gym', () => import('./dev/DevGymArea'));
+  scenes.register('kit_gallery', () => import('./dev/KitGalleryArea'));
+  scenes.register('tower_foot', () => import('./towerfoot/TowerFootArea'));
+  scenes.register('celaeno', () => import('./celaeno/CelaenoArea'));
 }

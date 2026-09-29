@@ -130,11 +130,18 @@ export class AssetManager {
   }
 }
 
+/**
+ * Dispose GPU resources under `root`. Geometries/materials flagged with
+ * `userData.shared` (kit pieces, library materials) are left alone.
+ */
 export function disposeObject(root: Object3D): void {
   root.traverse((o) => {
-    const mesh = o as unknown as { geometry?: { dispose(): void }; material?: { dispose(): void } | Array<{ dispose(): void }> };
-    mesh.geometry?.dispose();
-    if (Array.isArray(mesh.material)) mesh.material.forEach((m) => m.dispose());
-    else mesh.material?.dispose();
+    const mesh = o as unknown as {
+      geometry?: { dispose(): void; userData?: Record<string, unknown> };
+      material?: { dispose(): void; userData?: Record<string, unknown> } | Array<{ dispose(): void; userData?: Record<string, unknown> }>;
+    };
+    if (mesh.geometry && !mesh.geometry.userData?.shared) mesh.geometry.dispose();
+    const mats = Array.isArray(mesh.material) ? mesh.material : mesh.material ? [mesh.material] : [];
+    for (const m of mats) if (!m.userData?.shared) m.dispose();
   });
 }

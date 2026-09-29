@@ -14,6 +14,8 @@ import type { PlayerController } from '../player/PlayerController';
 import type { WorldStateManager } from '../world/WorldStateManager';
 import type { AssetManager } from '../assets/AssetManager';
 import type { Scheduler } from '../core/Scheduler';
+import type { EnvironmentLibrary } from '../scene/EnvironmentLibrary';
+import type { VfxSystem } from '../vfx/VfxSystem';
 
 /**
  * The composition root's public surface. Systems receive this instead of
@@ -35,6 +37,8 @@ export interface GameContext {
   readonly state: WorldStateManager;
   readonly assets: AssetManager;
   readonly scheduler: Scheduler;
+  readonly environment: EnvironmentLibrary;
+  readonly vfx: VfxSystem;
 
   readonly mode: GameMode;
   setMode(mode: GameMode): void;

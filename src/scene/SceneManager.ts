@@ -121,7 +121,8 @@ export class SceneManager implements GameSystem {
     r.scene.background = a.background;
     r.scene.environment = a.environment;
     r.scene.environmentIntensity = a.environmentIntensity;
-    r.scene.fog = a.fog;
+    r.scene.fog = null;
+    r.fog.apply({ density: 0, skyHaze: 0, maxOpacity: 1, glowPower: 8, heightFalloff: 0.05, baseHeight: 0, ...a.fog });
     r.setGrade(a.grade, seconds);
     r.exposureTarget = a.exposure;
     if (this.game.player && a.tension !== undefined) this.game.player.tension = a.tension;

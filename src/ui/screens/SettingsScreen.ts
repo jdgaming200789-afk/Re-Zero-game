@@ -1,7 +1,7 @@
 import type { GameContext } from '../../game/GameContext';
 import { BUTTON_ACTIONS, type ButtonAction } from '../../input/Actions';
 import { bindingLabel } from '../../input/InputManager';
-import type { AntiAliasing, Difficulty, PostQuality, QualityPreset, ShadowQuality, TextSpeed, TierQuality, ViewDistance } from '../../settings/Settings';
+import type { AntiAliasing, ButtonPromptStyle, Difficulty, PostQuality, QualityPreset, ShadowQuality, TextSpeed, TierQuality, ViewDistance } from '../../settings/Settings';
 import { el } from '../dom';
 import { MenuList, cycle, stepNum, type MenuRow } from './MenuList';
 import { Screen } from './Screen';
@@ -22,6 +22,8 @@ const VIEW: ViewDistance[] = ['near', 'medium', 'far'];
 const AA: AntiAliasing[] = ['off', 'fxaa', 'smaa'];
 const TEXT: TextSpeed[] = ['slow', 'normal', 'fast', 'instant'];
 const DIFF: Difficulty[] = ['story', 'normal', 'hard'];
+const PROMPTS: ButtonPromptStyle[] = ['auto', 'keyboard', 'xbox', 'playstation'];
+const PROMPT_NAMES: Record<ButtonPromptStyle, string> = { auto: 'Auto', keyboard: 'Keyboard', xbox: 'Xbox', playstation: 'PlayStation' };
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const pct = (v: number) => `${Math.round(v * 100)}%`;
@@ -47,15 +49,14 @@ export class SettingsScreen extends Screen {
     this.root.classList.add('rz-settings');
     this.tabBar = el('div', { class: 'tabs' });
     this.note = el('div', { class: 'hint-line' });
-    const g = (a: 'tabPrev' | 'tabNext' | 'cancel' | 'navLeft' | 'navRight') => game.ui.actionGlyph(a);
     this.root.append(
       el('div', { class: 'rz-panel rz-sframe' }, [
         el('h2', { class: 'rz-heading', text: 'Settings' }),
-        el('div', { class: 'tabs-wrap' }, [el('span', { class: 'rz-key', text: g('tabPrev') }), this.tabBar, el('span', { class: 'rz-key', text: g('tabNext') })]),
+        el('div', { class: 'tabs-wrap' }, [game.ui.key('tabPrev'), this.tabBar, game.ui.key('tabNext')]),
         el('div', { class: 'rz-rule' }),
         el('div', { class: 'scroll' }, [this.list.root]),
         this.note,
-        el('div', { class: 'foot' }, [el('span', { class: 'rz-key', text: `${g('navLeft')}/${g('navRight')}` }), 'Change', el('span', { class: 'gap' }), el('span', { class: 'rz-key', text: g('cancel') }), 'Back']),
+        el('div', { class: 'foot' }, [game.ui.key('navLeft', 'navRight'), 'Change', el('span', { class: 'gap' }), game.ui.key('cancel'), 'Back']),
       ]),
     );
   }
@@ -175,6 +176,14 @@ export class SettingsScreen extends Screen {
       { id: 'h3', label: 'Controls', kind: 'header' },
       tog('toggleSprint', 'Toggle sprint', 'Press once instead of holding'),
       tog('showHints', 'Button hints'),
+      {
+        id: 'prompts',
+        label: 'Button prompts',
+        hint: 'Auto follows whatever you last touched',
+        kind: 'option',
+        value: () => PROMPT_NAMES[gp().buttonPrompts],
+        adjust: (d) => s.set('gameplay', 'buttonPrompts', cycle(PROMPTS, gp().buttonPrompts, d)),
+      },
     ];
   }
 

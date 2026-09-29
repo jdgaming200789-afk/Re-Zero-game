@@ -149,6 +149,41 @@ try {
   check('Controls can be rebound (Interact → G)', capturing === 'Press a key…' && binds.includes('Key:KeyG'), binds.join(', '));
   await page.evaluate(() => window.__game.settings.resetBindings());
 
+  // Button prompts follow the device in hand (and the style setting).
+  const foot = () =>
+    page.evaluate(() =>
+      Array.from(document.querySelectorAll('.rz-settings .foot .rz-key')).map((k) => ({ cls: k.className, text: k.textContent })),
+    );
+  const kb = await foot();
+  await page.evaluate(() => window.__game.input.simulateDevice('gamepad', 'xbox'));
+  await step(page, 0.1, false);
+  const xb = await foot();
+  await shot(page, 'menu_glyphs_xbox');
+  await page.evaluate(() => window.__game.input.simulateDevice('gamepad', 'playstation'));
+  await step(page, 0.1, false);
+  const ps = await foot();
+  const psInteract = await page.evaluate(() => window.__game.ui.actionGlyph('interact'));
+  await page.evaluate(() => window.__game.settings.set('gameplay', 'buttonPrompts', 'keyboard'));
+  await step(page, 0.1, false);
+  const forced = await foot();
+  await page.evaluate(() => {
+    window.__game.settings.set('gameplay', 'buttonPrompts', 'auto');
+    window.__game.input.simulateDevice('kbm');
+  });
+  await step(page, 0.1, false);
+  const back = await foot();
+  check(
+    'Button prompts switch live: keycaps, Xbox buttons, PlayStation symbols, and the style setting wins',
+    kb.every((k) => k.cls.includes('kbm')) &&
+      xb.every((k) => k.cls.includes('pad xbox')) &&
+      ps.every((k) => k.cls.includes('pad playstation')) &&
+      psInteract === '✕' &&
+      forced.every((k) => k.cls.includes('kbm')) &&
+      back.every((k) => k.cls.includes('kbm')) &&
+      kb.length > 0,
+    `${kb.map((k) => k.text).join(' ')} | ${xb.map((k) => k.text).join(' ')} | ${ps.map((k) => k.text).join(' ')} | ${psInteract}`,
+  );
+
   // Close everything.
   await tap('Key:Escape', 0.2);
   await tap('Key:Escape', 0.2);

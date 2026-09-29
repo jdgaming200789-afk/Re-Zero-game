@@ -36,7 +36,7 @@ export class SaveScreen extends Screen {
         el('div', { class: 'rz-rule' }),
         el('div', { class: 'scroll' }, [this.list.root]),
         this.msg,
-        el('div', { class: 'foot' }, [el('span', { class: 'rz-key', text: game.ui.actionGlyph('confirm') }), 'Select', el('span', { class: 'gap' }), el('span', { class: 'rz-key', text: game.ui.actionGlyph('cancel') }), 'Back']),
+        el('div', { class: 'foot' }, [game.ui.key('confirm'), 'Select', el('span', { class: 'gap' }), game.ui.key('cancel'), 'Back']),
       ]),
     );
   }

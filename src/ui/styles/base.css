@@ -199,6 +199,108 @@ body {
   font-size: 0.8em;
   color: var(--gold-bright);
 }
+/* On a pad the prompt's diamond holds the pad's own button. */
+.rz-prompt .glyph .key.pad.face {
+  width: 1.55em;
+  height: 1.55em;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 0.78em;
+}
+.rz-prompt .glyph .key.pad.xbox.face {
+  color: #0c0f16;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.55), transparent 58%), var(--c);
+}
+.rz-prompt .glyph .key.pad.playstation.face {
+  color: var(--c);
+  font-size: 0.95em;
+}
+
+/* ---- Button glyphs (keyboard keycaps, Xbox and PlayStation buttons) ---- */
+.rz-key .g {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: inherit;
+}
+.rz-key .sep {
+  font-style: normal;
+  opacity: 0.55;
+  margin: 0 0.12em;
+}
+.rz-key.pad {
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  gap: 0.05em;
+}
+.rz-key.pad .g {
+  height: 1.75em;
+  min-width: 1.75em;
+  font-weight: 700;
+  color: var(--gold-bright);
+  background: rgba(10, 12, 20, 0.88);
+  border: 1px solid var(--gold);
+}
+.rz-key.pad .g.face {
+  width: 1.75em;
+  border-radius: 50%;
+  border: none;
+}
+.xbox .g.a, .key.xbox.a { --c: #5ebd4b; }
+.xbox .g.b, .key.xbox.b { --c: #e2483c; }
+.xbox .g.x, .key.xbox.x { --c: #3d82dc; }
+.xbox .g.y, .key.xbox.y { --c: #e8bb36; }
+.playstation .g.cross, .key.playstation.cross { --c: #8fb2ff; }
+.playstation .g.circle, .key.playstation.circle { --c: #ff6f6f; }
+.playstation .g.square, .key.playstation.square { --c: #ff93da; }
+.playstation .g.triangle, .key.playstation.triangle { --c: #3fd8a8; }
+.rz-key.xbox .g.face {
+  color: #0c0f16;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.55), transparent 58%), var(--c);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 10px color-mix(in srgb, var(--c) 45%, transparent);
+}
+.rz-key.playstation .g.face {
+  color: var(--c);
+  font-size: 1.1em;
+  background: rgba(12, 14, 22, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 0 10px color-mix(in srgb, var(--c) 35%, transparent);
+}
+.rz-key.pad .g.shoulder {
+  padding: 0 0.55em;
+  height: 1.45em;
+  border-radius: 0.75em;
+  font-size: 0.85em;
+}
+.rz-key.pad .g.trigger {
+  padding: 0 0.5em;
+  height: 1.55em;
+  border-radius: 0.35em 0.35em 0.9em 0.9em;
+  font-size: 0.85em;
+}
+.rz-key.pad .g.dpad {
+  width: 1.6em;
+  height: 1.6em;
+  min-width: 0;
+  border-radius: 0.3em;
+  font-size: 0.75em;
+}
+.rz-key.pad .g.small {
+  padding: 0 0.45em;
+  height: 1.35em;
+  border-radius: 0.7em;
+  font-size: 0.8em;
+}
+.rz-key.pad .g.stick {
+  border-radius: 50%;
+  width: 1.75em;
+  font-size: 0.75em;
+  box-shadow: inset 0 0 0 2px rgba(217, 196, 143, 0.35);
+}
 .rz-prompt .glyph svg.hold {
   position: absolute;
   inset: -0.25em;

@@ -2,8 +2,10 @@ import { Vector3, type PerspectiveCamera } from 'three';
 import type { EventBus } from '../core/events/EventBus';
 import type { GameEvents } from '../core/events/GameEvents';
 import type { Scheduler } from '../core/Scheduler';
-import { bindingLabel, type InputManager } from '../input/InputManager';
+import type { InputManager } from '../input/InputManager';
 import type { ButtonAction } from '../input/Actions';
+import type { ButtonPromptStyle } from '../settings/Settings';
+import { glyphFor, pickBinding, renderGlyph, type GlyphStyle } from './Glyphs';
 import type { Interactable } from '../interaction/Interactable';
 import { el, ICONS } from './dom';
 import './styles/base.css';
@@ -145,7 +147,7 @@ export class UIManager {
     const x = (p.x * 0.5 + 0.5) * window.innerWidth;
     const y = (-p.y * 0.5 + 0.5) * window.innerHeight;
     this.prompt.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-1.2em, -50%)`;
-    this.promptKey.textContent = this.actionGlyph('interact');
+    this.drawPromptKey();
     this.promptVerb.textContent = lockedText ? 'Locked' : focused.hold > 0 ? `Hold · ${focused.verb}` : focused.verb;
     this.promptLabel.textContent = focused.label;
     this.promptIcon.innerHTML = ICONS[focused.kind] ?? ICONS.use!;
@@ -154,12 +156,53 @@ export class UIManager {
     this.prompt.classList.add('visible');
   }
 
-  /** Short label for the first binding of an action on the active device. */
+  /** Prompt symbols chosen in the settings ('auto' follows the last device used). */
+  promptStyle: ButtonPromptStyle = 'auto';
+
+  /** The symbol set prompts are drawn with right now. */
+  get glyphStyle(): GlyphStyle {
+    if (this.promptStyle !== 'auto') return this.promptStyle;
+    return this.input.device === 'gamepad' ? this.input.padFamily : 'keyboard';
+  }
+
+  /** Short label for the binding of an action in the current style. */
   actionGlyph(action: ButtonAction): string {
-    const codes = this.input.bindingsFor(action);
-    const wantPad = this.input.device === 'gamepad';
-    const code = codes.find((c) => c.startsWith('Pad:') === wantPad) ?? codes[0];
-    return code ? bindingLabel(code) : '?';
+    const style = this.glyphStyle;
+    return glyphFor(pickBinding(this.input.bindingsFor(action), style), style).text;
+  }
+
+  /**
+   * A button glyph element for one or more actions (joined by "/"). It keeps
+   * itself current: `refreshGlyphs` redraws every one when the device, the
+   * prompt style or a binding changes.
+   */
+  key(...actions: ButtonAction[]): HTMLElement {
+    const span = el('span', { class: 'rz-key' });
+    span.dataset.actions = actions.join(',');
+    renderGlyph(span, actions.map((a) => this.input.bindingsFor(a)), this.glyphStyle);
+    return span;
+  }
+
+  /** Redraw every live glyph (device switched, style or bindings changed). */
+  refreshGlyphs(): void {
+    const style = this.glyphStyle;
+    for (const node of Array.from(this.root.querySelectorAll<HTMLElement>('[data-actions]'))) {
+      const actions = (node.dataset.actions ?? '').split(',').filter(Boolean) as ButtonAction[];
+      renderGlyph(node, actions.map((a) => this.input.bindingsFor(a)), style);
+    }
+    this.lastPromptGlyph = '';
+  }
+
+  private lastPromptGlyph = '';
+
+  private drawPromptKey(): void {
+    const style = this.glyphStyle;
+    const g = glyphFor(pickBinding(this.input.bindingsFor('interact'), style), style);
+    const id = `${style}|${g.cls}|${g.text}`;
+    if (id === this.lastPromptGlyph) return;
+    this.lastPromptGlyph = id;
+    this.promptKey.textContent = g.text;
+    this.promptKey.className = g.pad ? `key pad ${style} ${g.cls}` : 'key';
   }
 
   // ---------------------------------------------------------------- notifications
@@ -207,7 +250,7 @@ export class UIManager {
     this.inspect.append(
       el('h3', { class: 'rz-heading', text: title }),
       el('p', { text: body }),
-      el('div', { class: 'continue' }, [el('span', { class: 'rz-key', text: this.actionGlyph('interact') }), 'Continue']),
+      el('div', { class: 'continue' }, [this.key('interact'), 'Continue']),
     );
     this.inspect.classList.add('visible');
     return new Promise((resolve) => {

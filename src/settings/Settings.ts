@@ -10,6 +10,8 @@ export type ViewDistance = 'near' | 'medium' | 'far';
 export type AntiAliasing = 'off' | 'fxaa' | 'smaa';
 export type TextSpeed = 'slow' | 'normal' | 'fast' | 'instant';
 export type Difficulty = 'story' | 'normal' | 'hard';
+/** Which symbols button prompts use ('auto' follows the last device used). */
+export type ButtonPromptStyle = 'auto' | 'keyboard' | 'xbox' | 'playstation';
 
 export interface GraphicsSettings {
   preset: QualityPreset | 'custom';
@@ -48,6 +50,7 @@ export interface GameplaySettings {
   difficulty: Difficulty;
   toggleSprint: boolean;
   showHints: boolean;
+  buttonPrompts: ButtonPromptStyle;
 }
 
 export interface GameSettings {
@@ -128,6 +131,7 @@ export function defaultSettings(): GameSettings {
       difficulty: 'normal',
       toggleSprint: false,
       showHints: true,
+      buttonPrompts: 'auto',
     },
     bindings: {},
   };

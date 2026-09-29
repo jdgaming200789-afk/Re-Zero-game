@@ -33,13 +33,12 @@ export class JournalScreen extends Screen {
     this.root.classList.add('rz-journal');
     this.tabBar = el('div', { class: 'tabs' });
     this.body = el('div', { class: 'body' });
-    const glyph = (a: 'tabPrev' | 'tabNext' | 'cancel' | 'navUp' | 'navDown') => game.ui.actionGlyph(a);
     this.root.append(
       el('div', { class: 'rz-panel frame' }, [
-        el('div', { class: 'head' }, [el('span', { class: 'rz-key', text: glyph('tabPrev') }), this.tabBar, el('span', { class: 'rz-key', text: glyph('tabNext') })]),
+        el('div', { class: 'head' }, [game.ui.key('tabPrev'), this.tabBar, game.ui.key('tabNext')]),
         el('div', { class: 'rz-rule' }),
         this.body,
-        el('div', { class: 'foot' }, [el('span', { class: 'rz-key', text: `${glyph('navUp')}/${glyph('navDown')}` }), 'Select', el('span', { class: 'rz-key', text: glyph('cancel') }), 'Close']),
+        el('div', { class: 'foot' }, [game.ui.key('navUp', 'navDown'), 'Select', game.ui.key('cancel'), 'Close']),
       ]),
     );
   }
@@ -133,7 +132,7 @@ export class JournalScreen extends Screen {
       );
     }
     detail.appendChild(objs);
-    if (status === 'active' && q.tracked !== def.id) detail.appendChild(el('div', { class: 'track', text: `${this.game.ui.actionGlyph('confirm')} — Track this quest` }));
+    if (status === 'active' && q.tracked !== def.id) detail.appendChild(el('div', { class: 'track' }, [this.game.ui.key('confirm'), ' Track this quest']));
     this.body.append(el('div', { class: 'quests' }, [list, detail]));
   }
 

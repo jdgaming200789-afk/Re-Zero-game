@@ -53,6 +53,9 @@ export class InputManager {
   padLookSpeed = 2.6;
   invertY = false;
   onDeviceChanged?: (device: InputDevice) => void;
+  /** The connected pad's id and which button symbols it wears. */
+  padId = '';
+  padFamily: 'xbox' | 'playstation' = 'xbox';
 
   constructor(private readonly element: HTMLElement) {
     for (const def of BUTTON_ACTIONS) {
@@ -254,6 +257,10 @@ export class InputManager {
       this.padAxes = [0, 0, 0, 0];
       return;
     }
+    if (pad.id !== this.padId) {
+      this.padId = pad.id;
+      this.padFamily = padFamily(pad.id);
+    }
     const axes = pad.axes;
     this.padAxes = [axes[0] ?? 0, axes[1] ?? 0, axes[2] ?? 0, axes[3] ?? 0];
     let anyActivity = Math.hypot(this.padAxes[0]!, this.padAxes[1]!) > 0.3 || Math.hypot(this.padAxes[2]!, this.padAxes[3]!) > 0.3;
@@ -379,6 +386,14 @@ export class InputManager {
     }
   }
 
+  /** Test/automation hook: pretend the last input came from a device. */
+  simulateDevice(device: InputDevice, family: 'xbox' | 'playstation' = this.padFamily): void {
+    this.padFamily = family;
+    const changed = this._device !== device;
+    this.setDevice(device);
+    if (!changed) this.onDeviceChanged?.(device);
+  }
+
   /** Test/automation hook: inject mouse look deltas. */
   simulateLook(dx: number, dy: number): void {
     this.mouseDX += dx;
@@ -396,6 +411,13 @@ function applyDeadzone(x: number, y: number): Vector2 {
 }
 
 /** Human-readable glyph text for a binding code, used by prompts and settings. */
+/** Which button symbols a connected pad wears, from its id string (Sony's vendor id is 054c). */
+export function padFamily(id: string): 'xbox' | 'playstation' {
+  // Microsoft's pads also call themselves "Wireless Controller" (vendor 045e).
+  if (/xbox|045e/i.test(id)) return 'xbox';
+  return /054c|dualshock|dualsense|playstation|wireless controller/i.test(id) ? 'playstation' : 'xbox';
+}
+
 export function bindingLabel(code: string): string {
   const [kind, value = ''] = code.split(':');
   if (kind === 'Key') {

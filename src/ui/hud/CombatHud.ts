@@ -114,7 +114,7 @@ export class CombatHud {
     for (const [id, action, name] of defs) {
       const sweep = el('i', { class: 'sweep' });
       const count = id === 'tonic' ? el('b', { class: 'count' }) : undefined;
-      const root = el('div', { class: `ab ab-${id}` }, [el('span', { class: 'rz-key', text: ui.actionGlyph(action) }), el('span', { class: 'nm', text: name }), sweep, count ?? null]);
+      const root = el('div', { class: `ab ab-${id}` }, [ui.key(action), el('span', { class: 'nm', text: name }), sweep, count ?? null]);
       this.abilityBar.append(root);
       this.abilities.push({ id, action, name, root, sweep, count });
     }

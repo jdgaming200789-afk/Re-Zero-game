@@ -36,7 +36,7 @@ export class MapScreen extends Screen {
         this.canvas,
         this.empty,
         legend,
-        el('div', { class: 'foot' }, [el('span', { class: 'rz-key', text: game.ui.actionGlyph('cancel') }), 'Back']),
+        el('div', { class: 'foot' }, [game.ui.key('cancel'), 'Back']),
       ]),
     );
   }

@@ -141,6 +141,7 @@ export class Game implements GameContext {
     this.environment = new EnvironmentLibrary(this.render.maxAnisotropy);
     this.state = new WorldStateManager(this.events);
     this.ui = new UIManager(this.events, this.input, this.scheduler);
+    this.applyInputSettings();
 
     const follow = new ThirdPersonCamera(this.physics);
     follow.baseFov = this.settings.graphics.fieldOfView;
@@ -231,6 +232,12 @@ export class Game implements GameContext {
     this.input.invertY = gp.invertY;
     this.input.applyBindingOverrides(this.settings.bindings);
     if (this.camera) this.camera.shake.scale = gp.cameraShake;
+    if (this.ui) {
+      // Button prompts follow the style setting, bindings and the device in hand.
+      this.ui.promptStyle = gp.buttonPrompts;
+      this.ui.refreshGlyphs();
+      this.input.onDeviceChanged = () => this.ui.refreshGlyphs();
+    }
   }
 
   // ---------------------------------------------------------------- mode

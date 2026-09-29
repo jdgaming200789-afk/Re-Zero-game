@@ -79,9 +79,9 @@ export class DialogueSystem implements GameSystem {
   private readonly conditions: ConditionContext;
 
   constructor(private readonly game: GameContext) {
-    const glyph = (a: 'advance' | 'autoAdvance' | 'skip' | 'history' | 'cancel') => game.ui.actionGlyph(a);
-    this.box = new DialogueBox(game.ui.layers.dialogue, glyph);
-    this.logView = new DialogueLog(game.ui.layers.screens, glyph);
+    const key = (a: 'advance' | 'autoAdvance' | 'skip' | 'history' | 'cancel') => game.ui.key(a);
+    this.box = new DialogueBox(game.ui.layers.dialogue, key);
+    this.logView = new DialogueLog(game.ui.layers.screens, key);
     this.conv = new ConversationCamera(game.physics);
     this.auto = game.settings.gameplay.autoAdvance;
     // Thoughts are silent; everyone else speaks in their own voice.

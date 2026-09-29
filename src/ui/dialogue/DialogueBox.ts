@@ -57,7 +57,7 @@ export class DialogueBox {
   private options: BoxChoice[] = [];
   private selected = 0;
 
-  constructor(parent: HTMLElement, glyph: (action: 'advance' | 'autoAdvance' | 'skip' | 'history') => string) {
+  constructor(parent: HTMLElement, key: (action: 'advance' | 'autoAdvance' | 'skip' | 'history') => HTMLElement) {
     this.plateName = el('span', { class: 'nm' });
     this.plate = el('div', { class: 'plate' }, [el('i', { class: 'gem' }), this.plateName]);
     this.text = el('div', { class: 'text' });
@@ -65,7 +65,7 @@ export class DialogueBox {
     this.box = el('div', { class: 'rz-dlg-box' }, [this.plate, this.text, this.next]);
     this.choicesEl = el('div', { class: 'rz-dlg-choices' });
     const ctl = (id: 'auto' | 'skip' | 'log', label: string, action: 'autoAdvance' | 'skip' | 'history') => {
-      const node = el('button', { class: `ctl ${id}`, type: 'button' }, [el('span', { class: 'rz-key', text: glyph(action) }), label]);
+      const node = el('button', { class: `ctl ${id}`, type: 'button' }, [key(action), label]);
       node.addEventListener('click', (e) => {
         e.stopPropagation();
         this.onControl?.(id);
@@ -229,7 +229,7 @@ export class DialogueLog {
   readonly root: HTMLElement;
   private readonly list: HTMLElement;
 
-  constructor(parent: HTMLElement, glyph: (action: 'history' | 'cancel') => string) {
+  constructor(parent: HTMLElement, key: (action: 'history' | 'cancel') => HTMLElement) {
     this.list = el('div', { class: 'list interactive' });
     this.root = parent.appendChild(
       el('div', { class: 'rz-dlg-log' }, [
@@ -237,7 +237,7 @@ export class DialogueLog {
           el('h2', { class: 'rz-heading', text: 'Conversation Log' }),
           el('div', { class: 'rz-rule' }),
           this.list,
-          el('div', { class: 'foot' }, [el('span', { class: 'rz-key', text: glyph('history') }), 'Close']),
+          el('div', { class: 'foot' }, [key('history'), 'Close']),
         ]),
       ]),
     );

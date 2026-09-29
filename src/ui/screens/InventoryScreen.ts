@@ -26,7 +26,7 @@ export class InventoryScreen extends Screen {
         el('h2', { class: 'rz-heading', text: 'Inventory' }),
         el('div', { class: 'rz-rule' }),
         el('div', { class: 'body scroll' }, [this.list.root, this.detail]),
-        el('div', { class: 'foot' }, [el('span', { class: 'rz-key', text: game.ui.actionGlyph('confirm') }), 'Use', el('span', { class: 'gap' }), el('span', { class: 'rz-key', text: game.ui.actionGlyph('cancel') }), 'Back']),
+        el('div', { class: 'foot' }, [game.ui.key('confirm'), 'Use', el('span', { class: 'gap' }), game.ui.key('cancel'), 'Back']),
       ]),
     );
   }
@@ -78,7 +78,7 @@ export class InventoryScreen extends Screen {
       el('h3', { text: i.name }),
       el('p', { text: i.description }),
       i.text ? el('div', { class: 'doc', text: i.text }) : null,
-      i.use ? el('div', { class: 'use', text: `${this.game.ui.actionGlyph('confirm')} — ${i.verb ?? 'Use'}` }) : null,
+      i.use ? el('div', { class: 'use' }, [this.game.ui.key('confirm'), ` ${i.verb ?? 'Use'}`]) : null,
     ];
     for (const p of parts) if (p) this.detail.append(p);
   }

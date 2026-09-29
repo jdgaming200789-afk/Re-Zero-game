@@ -102,6 +102,24 @@ export function registerCoreDevCommands(dev: DevConsole, game: Game): void {
     },
   });
   dev.register({
+    name: 'expr',
+    usage: 'expr <expression> [intensity]',
+    help: 'Set the player character\'s facial expression',
+    run: (args) => {
+      game.player?.visual.setExpression(args[0] ?? 'neutral', Number(args[1] ?? 1));
+      return `expression ${args[0] ?? 'neutral'}`;
+    },
+  });
+  dev.register({
+    name: 'anim',
+    usage: 'anim <clip>',
+    help: 'Play an action clip on the player character',
+    run: (args) => {
+      void game.player?.visual.play(args[0] ?? 'reachMid');
+      return `playing ${args[0] ?? 'reachMid'}`;
+    },
+  });
+  dev.register({
     name: 'pos',
     usage: 'pos',
     help: 'Print player position and facing',

@@ -13,19 +13,21 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..');
 const target = process.argv[2] ?? 'all';
+const extra = process.argv.slice(3);
 
 const scripts = {
   textures: join(root, 'tools', 'textures', 'gen_textures.py'),
   kit: join(here, 'build_kit.py'),
   tower: join(here, 'build_tower.py'),
+  characters: join(here, 'build_characters.py'),
 };
-const order = target === 'all' ? ['textures', 'kit', 'tower'] : [target];
+const order = target === 'all' ? ['textures', 'kit', 'tower', 'characters'] : [target];
 
 function runner(script) {
   const py = process.env.BLENDER_PYTHON;
-  if (py) return [py, [script]];
+  if (py) return [py, [script, ...extra]];
   const blender = process.env.BLENDER ?? 'blender';
-  return [blender, ['--background', '--factory-startup', '--python-exit-code', '1', '--python', script]];
+  return [blender, ['--background', '--factory-startup', '--python-exit-code', '1', '--python', script, '--', ...extra]];
 }
 
 for (const name of order) {

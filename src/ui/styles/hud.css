@@ -438,6 +438,106 @@
   }
 }
 
+/* The flats: the view narrows as the summit's attention settles on you. */
+.rz-helio-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 48%, rgba(40, 34, 30, 0.35) 72%, rgba(12, 10, 10, 0.78) 100%);
+  transition: opacity 0.25s linear;
+}
+.rz-helio-vignette.alarm {
+  background: radial-gradient(ellipse at center, transparent 42%, rgba(255, 238, 200, 0.28) 70%, rgba(255, 246, 225, 0.62) 100%);
+  animation: rz-helio-throb 0.38s ease-in-out infinite alternate;
+}
+@keyframes rz-helio-throb {
+  to {
+    filter: brightness(1.35);
+  }
+}
+.rz-helio-arrow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2.6em;
+  height: 1.4em;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.rz-helio-arrow.visible {
+  opacity: 0.9;
+}
+.rz-helio-arrow b {
+  width: 0;
+  height: 0;
+  margin-left: 0.2em;
+  border-top: 0.45em solid transparent;
+  border-bottom: 0.45em solid transparent;
+  border-left: 0.75em solid rgba(255, 242, 207, 0.9);
+  filter: drop-shadow(0 0 4px rgba(255, 240, 200, 0.8));
+}
+.rz-helio-arrow .star {
+  width: 0.8em;
+  height: 0.8em;
+  transform: rotate(45deg);
+  background: radial-gradient(circle, #fff 0%, rgba(255, 244, 214, 0.6) 45%, transparent 70%);
+  box-shadow: 0 0 10px rgba(255, 244, 214, 0.9);
+}
+.rz-helio-arrow.alarm b {
+  border-left-color: #ff7b6b;
+  filter: drop-shadow(0 0 6px rgba(255, 110, 90, 0.9));
+}
+.rz-helio-arrow.alarm .star {
+  animation: rz-helio-alarm 0.25s ease-in-out infinite alternate;
+}
+.rz-cover-mark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1em;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s;
+  font-family: var(--font-display);
+  text-shadow: 0 1px 3px #000;
+}
+.rz-cover-mark.visible {
+  opacity: 1;
+}
+.rz-cover-mark .shield {
+  width: 1.1em;
+  height: 1.3em;
+  background: linear-gradient(180deg, rgba(120, 214, 170, 0.95), rgba(60, 150, 115, 0.9));
+  clip-path: polygon(50% 0, 100% 18%, 92% 62%, 50% 100%, 8% 62%, 0 18%);
+  filter: drop-shadow(0 0 6px rgba(90, 220, 160, 0.8));
+}
+.rz-cover-mark .lbl {
+  font-size: 0.62em;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--emerald);
+}
+.rz-cover-mark .dist {
+  font-size: 0.6em;
+  color: var(--gold-bright);
+  opacity: 0.85;
+}
+.rz-cover-mark.alarm .shield {
+  animation: rz-cover-pulse 0.3s ease-in-out infinite alternate;
+}
+@keyframes rz-cover-pulse {
+  to {
+    transform: scale(1.25);
+  }
+}
+
 /* Elite / boss bar */
 .rz-boss {
   position: absolute;

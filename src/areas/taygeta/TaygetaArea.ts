@@ -455,6 +455,11 @@ class TaygetaArea extends Area {
     void damp;
   }
 
+  override surfaceAt(): 'soft' | 'glass' | 'wood' {
+    // The white room swallows sound; the night sky's floor is a mirror.
+    return this.look === 'white' ? 'soft' : this.look === 'sky' ? 'glass' : 'wood';
+  }
+
   override map(): AreaMap {
     return {
       bounds: { minX: -24, maxX: 24, minZ: -24, maxZ: 24 },

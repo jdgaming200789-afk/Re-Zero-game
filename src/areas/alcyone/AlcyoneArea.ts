@@ -729,6 +729,11 @@ class AlcyoneArea extends Area {
     this.sky.update(t, this.game.render.camera.position);
   }
 
+  override surfaceAt(x: number, z: number): 'wood' | 'stone' {
+    // Plank floors inside; the balcony is stone.
+    return Math.hypot(x, z) > R + 0.5 ? 'stone' : 'wood';
+  }
+
   override map(): AreaMap {
     return {
       bounds: { minX: -27, maxX: 27, minZ: -27, maxZ: 27 },

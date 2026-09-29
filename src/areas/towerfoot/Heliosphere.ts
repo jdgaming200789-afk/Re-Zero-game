@@ -22,7 +22,7 @@ import type { GameContext } from '../../game/GameContext';
 import { learn } from '../../story/Effects';
 import { el } from '../../ui/dom';
 import { ParticleEmitter, ParticlePresets } from '../../vfx/ParticleEmitter';
-import { LANTERN, flatsMask, inFlatsCover } from './TowerFootLayout';
+import { FLATS_COVER, LANTERN, flatsMask, heightAt, inFlatsCover } from './TowerFootLayout';
 
 const log = createLogger('Heliosphere');
 
@@ -66,6 +66,14 @@ export class Heliosphere {
   private readonly hud: HTMLElement;
   private readonly hudFill: SVGCircleElement;
   private readonly edgeFlash: HTMLElement;
+  /** Tightens around the view as exposure builds; burns white on the glint. */
+  private readonly vignette: HTMLElement;
+  /** Points at the summit from the screen edge while it is watching. */
+  private readonly summitArrow: HTMLElement;
+  /** Marks the nearest ruin once Subaru knows stone hides him. */
+  private readonly coverMark: HTMLElement;
+  private baseTension: number | null = null;
+  private lastBeat = -1;
   /** Strikes survived by hiding (the lesson of cover). */
   dodged = 0;
 
@@ -123,6 +131,9 @@ export class Heliosphere {
       el('div', { class: 'rz-helio' }, [el('div', { class: 'eye' }, [svgEl as unknown as HTMLElement, el('i', { class: 'star' })]), el('div', { class: 'lbl' })]),
     );
     this.edgeFlash = game.ui.layers.hud.appendChild(el('div', { class: 'rz-helio-flash' }));
+    this.vignette = game.ui.layers.hud.appendChild(el('div', { class: 'rz-helio-vignette' }));
+    this.summitArrow = game.ui.layers.hud.appendChild(el('div', { class: 'rz-helio-arrow' }, [el('i', { class: 'star' }), el('b')]));
+    this.coverMark = game.ui.layers.world.appendChild(el('div', { class: 'rz-cover-mark' }, [el('i', { class: 'shield' }), el('span', { class: 'lbl', text: 'Cover' }), el('span', { class: 'dist' })]));
   }
 
   dispose(): void {
@@ -139,6 +150,10 @@ export class Heliosphere {
     sm.dispose();
     this.hud.remove();
     this.edgeFlash.remove();
+    this.vignette.remove();
+    this.summitArrow.remove();
+    this.coverMark.remove();
+    this.game.events.emit('audio:heartbeat', { level: 0 });
   }
 
   private get knowsMovement(): boolean {
@@ -155,6 +170,7 @@ export class Heliosphere {
     const active = !!player && (g.mode === 'exploration' || g.mode === 'combat') && !g.rbd.dying;
     if (!active) {
       this.hud.classList.remove('visible');
+      this.hideFeedback();
       return;
     }
     const p = player.entity.object3D.position;
@@ -198,6 +214,95 @@ export class Heliosphere {
         break;
     }
     this.updateHud(onFlats, hidden);
+    this.updateFeedback(onFlats, hidden);
+  }
+
+  private hideFeedback(): void {
+    this.vignette.style.opacity = '0';
+    this.summitArrow.classList.remove('visible');
+    this.coverMark.classList.remove('visible');
+    this.beat(0);
+  }
+
+  /** Pulse for the audio (only re-sent when it changes enough to hear). */
+  private beat(level: number): void {
+    const q = Math.round(level * 10) / 10;
+    if (q === this.lastBeat) return;
+    this.lastBeat = q;
+    this.game.events.emit('audio:heartbeat', { level: q });
+  }
+
+  /**
+   * Everything that tells the player how watched they are, gated on what
+   * Subaru has learned: nothing before the first death (the glint is the
+   * only warning), then a tightening vignette, his pulse, a pointer to the
+   * summit, and — once he knows stone hides him — the nearest cover.
+   */
+  private updateFeedback(onFlats: boolean, hidden: boolean): void {
+    const g = this.game;
+    const player = g.player!;
+    const knows = this.knowsMovement;
+    const glinting = this.state === 'glint' && this.targetKind === 'player';
+    // His body knows before he does: shoulders rise as it notices him.
+    this.baseTension ??= player.tension;
+    const want = onFlats ? Math.max(this.baseTension, this.exposure * 0.9, glinting ? 1 : 0) : this.baseTension;
+    player.tension += (want - player.tension) * 0.08;
+    if (!knows || !onFlats) {
+      this.hideFeedback();
+      return;
+    }
+    const threat = glinting ? 1 : this.exposure;
+    this.vignette.style.opacity = (Math.min(1, threat * 1.1) * (hidden ? 0.35 : 1)).toFixed(3);
+    this.vignette.classList.toggle('alarm', glinting && this.knowsGlint);
+    this.beat(hidden && !glinting ? threat * 0.4 : threat);
+
+    // The summit, from the edge of the screen when it isn't in view.
+    const cam = g.render.camera;
+    const local = _v2.copy(LANTERN).applyMatrix4(cam.matrixWorldInverse);
+    const behind = local.z > 0;
+    const p = _v.copy(LANTERN).project(cam);
+    const onScreen = !behind && Math.abs(p.x) < 0.92 && Math.abs(p.y) < 0.9;
+    // In front: towards where it projects. Behind: the bottom edge, leaning
+    // to the side he should turn to.
+    const a = behind ? -Math.PI / 2 + Math.max(-1, Math.min(1, local.x / Math.max(1, -local.z + 20))) * 0.9 : Math.atan2(p.y, p.x);
+    // Straight up is where the meter already sits (and points).
+    const aboveMeter = Math.abs(a - Math.PI / 2) < 0.5;
+    const showArrow = (threat > 0.15 || glinting) && !onScreen && !aboveMeter;
+    this.summitArrow.classList.toggle('visible', showArrow);
+    this.summitArrow.classList.toggle('alarm', glinting && this.knowsGlint);
+    if (showArrow) {
+      const r = 0.86;
+      const ex = Math.cos(a) * r;
+      const ey = Math.sin(a) * r * 0.9;
+      this.summitArrow.style.transform = `translate(${((ex * 0.5 + 0.5) * window.innerWidth).toFixed(1)}px, ${((-ey * 0.5 + 0.5) * window.innerHeight).toFixed(1)}px) translate(-50%, -50%) rotate(${(-a).toFixed(3)}rad)`;
+    }
+
+    // The nearest cover, once he has learned that stone hides him.
+    const knowsCover = g.state.bool('know.heliosphere.cover');
+    const pos = player.entity.object3D.position;
+    let best: [number, number, number] | null = null;
+    let bestD = Infinity;
+    for (const [, cx, cz, , , r] of FLATS_COVER) {
+      const d = Math.hypot(pos.x - cx, pos.z - cz) - r;
+      if (d < bestD) {
+        bestD = d;
+        best = [cx, cz, r];
+      }
+    }
+    const showCover = knowsCover && !hidden && best !== null && (threat > 0.25 || glinting) && bestD < 45;
+    this.coverMark.classList.toggle('visible', showCover);
+    this.coverMark.classList.toggle('alarm', glinting);
+    if (showCover && best) {
+      // Terrain height (a ray would land on top of the ruin itself).
+      const sp = _v.set(best[0], heightAt(best[0], best[1]) + 2.4, best[1]).project(cam);
+      if (sp.z > 1) this.coverMark.classList.remove('visible');
+      else {
+        const x = (sp.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-sp.y * 0.5 + 0.5) * window.innerHeight;
+        this.coverMark.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
+        this.coverMark.querySelector('.dist')!.textContent = `${Math.max(0, Math.round(bestD))} m`;
+      }
+    }
   }
 
   private beginGlint(kind: 'player' | 'worm', at: Vector3, seconds: number): void {
@@ -322,6 +427,7 @@ export class Heliosphere {
 
 const _d = new Vector3();
 const _v = new Vector3();
+const _v2 = new Vector3();
 const _up = new Vector3(0, 1, 0);
 const _q = new Quaternion();
 

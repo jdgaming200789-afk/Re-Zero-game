@@ -80,6 +80,8 @@ export interface GameEvents {
   // ---- Audio ---------------------------------------------------------------
   'audio:musicState': { state: MusicState };
   'audio:stinger': { id: string };
+  /** Subaru's pulse under threat: 0 silent, 1 pounding (stealth exposure, dread). */
+  'audio:heartbeat': { level: number };
 
   // ---- UI ------------------------------------------------------------------
   'ui:notify': { text: string; kind?: 'info' | 'item' | 'quest' | 'knowledge' | 'warning' };

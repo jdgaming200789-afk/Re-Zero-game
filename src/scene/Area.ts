@@ -66,6 +66,8 @@ export abstract class Area {
   onEnter?(spawnId: string): void;
   /** Top-down map for the map screen, if the area has one. */
   map?(): AreaMap;
+  /** What the ground is made of here, for footsteps (default stone). */
+  surfaceAt?(x: number, z: number): 'sand' | 'glass' | 'stone' | 'wood' | 'soft';
   onExit?(): void;
   update?(dt: number): void;
 

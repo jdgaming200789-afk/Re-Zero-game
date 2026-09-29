@@ -1,10 +1,10 @@
 # Re:Zero - Pleiades — Development Status
 
-_Last updated: end of Phase 8._
+_Last updated: end of Phase 9 (part 2)._
 
 ## Current phase
 
-**Phase 8 complete** (Shaula in Celaeno, Alcyone and the Green Room, Taygeta's trial and the library) **→ next: Phase 9 part 2, then Phase 10** (assemble and polish the vertical slice).
+**Phases 1–9 complete** (Phase 9 part 2: device-matched button prompts, stealth feedback on the flats, the audio pass) **→ next: Phase 10** (assemble and polish the vertical slice end to end).
 
 Vertical-slice design: [docs/VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) — "The Watchtower in the Sand".
 
@@ -285,9 +285,27 @@ built for the **browser**, with every original requirement kept:
 - **Rigel** ends the trial: a white flash, and the room becomes the **library** — three tiers of shelves all the way round, radial stacks rising out of the floor, warm reading lights, book spines from a generated texture merged into one mesh, and a black book on the lectern where the monolith stood. The quest completes ("Only someone from my world could have known").
 - Environmental harm can name its cause (`cause:<id>` damage tag), so each kind of death teaches its own lesson.
 
+### Phase 9 (part 2) — Button prompts, stealth feedback, audio pass
+
+**Button prompts that match the device (`src/ui/Glyphs.ts`)**
+- Keyboard keycaps, **Xbox** buttons (coloured A/B/X/Y, LB/RB pills, LT/RT, D-pad) or **PlayStation** symbols (✕ ○ □ △, L1/R2...). The pad family comes from the connected gamepad's id (Sony vendor 054c, DualShock/DualSense); anything else wears Xbox symbols.
+- `ui.key(...actions)` makes glyph elements that redraw themselves whenever the device in hand changes, the style setting changes or a binding is rebound. The interaction prompt shows the pad's own coloured button inside its diamond. Journal, settings, inventory, map, saves, dialogue controls, the log and the combat HUD all use them.
+- New setting **Gameplay → Button prompts**: Auto (follows whatever you last touched) / Keyboard / Xbox / PlayStation.
+
+**Being watched on the Glass Flats (`Heliosphere`)** — all gated on what Subaru knows, so the first crossing stays a surprise:
+- A vignette that tightens as exposure builds and burns white on the glint; his **heartbeat** quickens with it (`audio:heartbeat`); his shoulders rise (posture tension follows exposure even before he knows why).
+- An edge pointer to the summit when it's out of view — towards where it projects, or along the bottom edge towards the side to turn to when it's behind him (never under the meter, which already points up).
+- Once he has learned that stone hides him, the **nearest ruin is marked** with its distance whenever he's exposed.
+
+**Audio pass (`AudioManager`)**
+- A synthesized **room reverb** per floor (the desert almost dry, Celaeno a long stone hall, Alcyone a close wooden room, Taygeta a bright, eerie space) fed from sound effects and voices.
+- The score **ducks under dialogue** and comes back after.
+- **Footsteps by surface** through a new `Area.surfaceAt(x, z)`: sand, the ringing click of fused glass on the flats, stone on the plaza and in Celaeno, wood in Alcyone (stone on the balcony), muffled in Taygeta's white room, glassy under the stars, wood in the library.
+- Ambience for the new floors (a warm room tone with the hearth crackling louder as you near it; a thin, sourceless tone in the white room) and cues for the story's moments: the white room opening into night, touching Rigel, the library rising, a wrong star's burn, Rem laid down.
+
 ## Testing
 - `npm run typecheck` — strict TypeScript.
-- `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data, dialogue runner (lines, conditions, effects, hidden/locked/once/insight choices, branching), quest evaluation, validation of every dialogue, quest, cinematic, story trigger and talk entry, the Return-by-Death rewind semantics, death/return-point data, save validation (corrupt/tampered/future saves rejected), the flats cover, and Taygeta's constellations (the answer exists and is Orion's brightest star, lines are valid, every figure within reach and clear of the stair, the sky's Orion matches the trial's). **68/68 passing.**
+- `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data, dialogue runner (lines, conditions, effects, hidden/locked/once/insight choices, branching), quest evaluation, validation of every dialogue, quest, cinematic, story trigger and talk entry, the Return-by-Death rewind semantics, death/return-point data, save validation (corrupt/tampered/future saves rejected), the flats cover, Taygeta's constellations (the answer exists and is Orion's brightest star, lines are valid, every figure within reach and clear of the stair, the sky's Orion matches the trial's), and the button glyph mapping and pad detection. **72/72 passing.**
 - `npm run smoke` — Playwright drives the real game in Chromium and asserts on state:
   - `tools/browser/smoke.mjs` (dev gym): **13/13** — walk, sprint/stamina, stairs, jump/land, slope limit, corridor camera, focus + read, hold lever → gate, door → walk through.
   - `tools/browser/areas.mjs`: **7/7** — tower_foot loads grounded, dune walking, gate prompt, gate → Celaeno, Celaeno gate → back outside, no VFX leaks across unloads (emitter count back to its first-load value). 0 console errors.
@@ -296,8 +314,8 @@ built for the **browser**, with every original requirement kept:
   - `tools/browser/enemies.mjs`: **10/10** — jackals start unaware, the pack notices Subaru and alerts together, attacks are telegraphed on the ground, never more than two attack at once, Shamak blinds them, they press their attacks, the party wins and the encounter ends, the fallen are cleaned up, 0 console errors.
   - `tools/browser/earthworm.mjs`: **8/8** — invulnerable underground, standing still hides Subaru, running draws it in and it telegraphs an eruption, surfacing starts an elite encounter with the boss bar, it can be hurt (resistant) while surfaced, the Heliosphere kills it, it sinks away and the encounter ends, 0 console errors.
   - `tools/browser/dialogue.mjs`: **25/25** — a conversation takes over (mode, window, camera), letter-by-letter reveal, advance completes then continues, the log, auto mode to the choice, hidden/locked options, a choice's effect, skip to the end with control and camera returned, a quest starting itself and showing on the tracker, objectives from zones and a won fight, the completion banner, an Insight option unlocked by knowledge and picked with the mouse, thought styling, the journal (quests, Subaru Remembers, pause/resume), a new game's camp opening (letterbox, party staged), reading through the conversation choosing the Insight option, quest/knowledge/control after the scene, talking to Emilia and her follow-up line, hold-to-skip reaching the same end state, 0 console errors.
-  - `tools/browser/rbd.mjs`: **13/13** — the story starts with a return point and an autosave; no HUD before Subaru knows the rules; running on the open glass draws the glint and the light kills him; Return by Death to the camp in loop 2; the world rewound (ruins visited and objectives undone) while knowledge and the loop count survive; the party back whole; trying to tell brings the Witch and time resumes after; in loop 2 the detection meter appears, the glint warning shows, hiding behind the ruins makes the strike miss and teaches cover; the worm breaching on the glass is struck down; save/load restores flags, knowledge, return point and position; 0 console errors.
-  - `tools/browser/menus.mjs`: **13/13** — the game opens on the title (time held, Continue disabled without saves); Settings from the title changes a volume live and returns; New Game hides the title and starts the story; Esc pauses with location/objective/return point; the inventory lists tonics and the Carriage Bell; ringing the bell closes the menus and makes the noise; the map opens drawn; saving to a slot from the pause menu; back returns to pause; rebinding Interact to G; Esc closes everything and play resumes; 0 console errors.
+  - `tools/browser/rbd.mjs`: **16/16** — the story starts with a return point and an autosave; no HUD before Subaru knows the rules; running on the open glass draws the glint and the light kills him; Return by Death to the camp in loop 2; the world rewound (ruins visited and objectives undone) while knowledge and the loop count survive; the party back whole; trying to tell brings the Witch and time resumes after; in loop 2 the detection meter appears, the glint warning shows, hiding behind the ruins makes the strike miss and teaches cover; the worm breaching on the glass is struck down; save/load restores flags, knowledge, return point and position; being watched is felt (vignette, pulse, posture) and the summit is pointed out; knowing cover, the nearest ruin is marked; glass footsteps, heartbeats and the desert's dry room in the audio; 0 console errors.
+  - `tools/browser/menus.mjs`: **14/14** — the game opens on the title (time held, Continue disabled without saves); Settings from the title changes a volume live and returns; New Game hides the title and starts the story; Esc pauses with location/objective/return point; the inventory lists tonics and the Carriage Bell; ringing the bell closes the menus and makes the noise; the map opens drawn; saving to a slot from the pause menu; back returns to pause; rebinding Interact to G; button prompts switching live between keycaps, Xbox and PlayStation (and the style setting overriding the device); Esc closes everything and play resumes; 0 console errors.
   - `tools/browser/tower.mjs`: **20/20** — Shaula's arrival (rules, quest, Celaeno return point); leaving through the gate is a Return by Death, and in the next loop the fatal answer is gone; the gallery stair to Alcyone; the Green Room scene (Rem lying in bed, return point at her side); up to Taygeta; the monolith turns the room to night; aiming at Betelgeuse by looking and touching it burns; two more wrong stars and Subaru remembers; the fourth kills him and he wakes beside Rem knowing; the next climb answers the riddle at once; Rigel raises the library and completes the quest; the gate then opens; the balcony scene with Emilia; 0 console errors.
 - `node tools/browser/sheet.mjs <prefix> <out.png> [cols]` — contact sheet of test screenshots for review.
 - `npm run cast` — lineup review: every character spawned side by side plus face close-ups (`test-results/cast_*.png`).
@@ -323,8 +341,8 @@ built for the **browser**, with every original requirement kept:
 - Rem's apron can press into the quilt from below at some angles.
 
 ## Next tasks
-1. Phase 9 (part 2) — gamepad glyphs on prompts, stealth feedback polish on the flats, audio mix pass on real hardware.
-2. Phase 10 — assemble the vertical slice end to end (camp → ruins → flats loop → gate plaza jackals → the worm lured into the light → Celaeno and Shaula → Alcyone and Rem → Taygeta's trial → the library), then polish: pacing, a carrying scene up the stair, music cues per scene, performance on real hardware.
+1. Phase 10 — assemble the vertical slice end to end (camp → ruins → flats loop → gate plaza jackals → the worm lured into the light → Celaeno and Shaula → Alcyone and Rem → Taygeta's trial → the library), then polish: pacing, a carrying scene up the stair, music cues per scene.
+2. On real hardware: an audio mix pass with speakers (levels, reverb amounts, the heartbeat), and frame-rate measurements per area and preset.
 
 ## Technical decisions
 - **Textures generated in Python (numpy) rather than baked from Blender nodes** — periodic noise guarantees seamless tiling and is fully deterministic; Blender is used where it is strongest (modelling with modifiers, booleans, decimation, UVs, glTF export).

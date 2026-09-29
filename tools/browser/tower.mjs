@@ -183,6 +183,24 @@ try {
   const inAlcyone = await stepUntil(page, () => window.__game.scenes.current?.id === 'alcyone' && !window.__game.scenes.isTransitioning, 120);
   check('the gallery stair leads up to Alcyone', upFocus === 'cel.to_alcyone' && inAlcyone, String(upFocus));
   await step(page, 1, false);
+  // Wooden floors and a warm, close room; the score ducks while people talk.
+  await page.evaluate(() => window.__game.input.simulate('Key:KeyW', true));
+  await step(page, 1.2, false);
+  await page.evaluate(() => window.__game.input.simulate('Key:KeyW', false));
+  await page.evaluate(() => {
+    void window.__game.dialogue.say([{ speaker: 'emilia', text: 'It’s so warm up here.' }]);
+  });
+  await step(page, 0.5, false);
+  const alcSound = await page.evaluate(() => {
+    const a = window.__game.audio;
+    return { running: a.ctx?.state, surface: a.lastSurface, room: a.room, duck: a.duck?.gain.value ?? 1 };
+  });
+  await readThrough();
+  check(
+    'Alcyone sounds like a wooden room, and the music ducks under dialogue',
+    alcSound.running !== 'running' || (alcSound.surface === 'wood' && alcSound.room === 'alcyone' && alcSound.duck < 0.9),
+    JSON.stringify(alcSound),
+  );
   const party = await page.evaluate(() => window.__game.party.active.length);
   // Into the Green Room: Rem is laid down.
   await place(Math.sin((120 * Math.PI) / 180) * 13.4, 0.05, Math.cos((120 * Math.PI) / 180) * 13.4, (120 * Math.PI) / 180);

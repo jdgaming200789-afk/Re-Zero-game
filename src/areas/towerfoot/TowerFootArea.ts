@@ -395,6 +395,11 @@ class TowerFootArea extends Area {
     this.heliosphere.update(dt);
   }
 
+  override surfaceAt(x: number, z: number): 'sand' | 'glass' | 'stone' {
+    if (flatsMask(x, z) > 0.5) return 'glass';
+    return plazaMask(x, z) > 0.5 ? 'stone' : 'sand';
+  }
+
   override map(): AreaMap {
     return towerFootMap();
   }

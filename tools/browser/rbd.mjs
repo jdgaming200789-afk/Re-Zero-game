@@ -64,7 +64,9 @@ try {
   await waitReady(page);
   await page.evaluate(() => {
     window.__events = [];
+    window.__beats = [];
     window.__game.events.on('story:event', ({ id }) => window.__events.push(id));
+    window.__game.events.on('audio:heartbeat', ({ level }) => window.__beats.push(level));
   });
   await devCommand(page, 'newgame skip');
   await stepUntil(page, () => window.__game.scenes.current?.id === 'tower_foot' && window.__game.mode === 'exploration', 120);
@@ -123,9 +125,19 @@ try {
   await down(page, 'Key:ShiftLeft');
   await down(page, 'Key:KeyW');
   let alarm = false;
+  const felt = { vignette: 0, arrow: false, tension: 0 };
   for (let i = 0; i < 20; i++) {
     await step(page, 0.1, false);
     alarm = alarm || (await page.evaluate(() => document.querySelector('.rz-helio')?.classList.contains('alarm')));
+    const f = await page.evaluate(() => ({
+      vignette: Number(document.querySelector('.rz-helio-vignette')?.style.opacity || 0),
+      arrow: !!document.querySelector('.rz-helio-arrow')?.classList.contains('visible'),
+      tension: window.__game.player.tension,
+    }));
+    felt.vignette = Math.max(felt.vignette, f.vignette);
+    felt.arrow ||= f.arrow;
+    felt.tension = Math.max(felt.tension, f.tension);
+    if (felt.vignette > 0.5 && i % 5 === 0) await shot(page, 'helio_feedback');
     if (await page.evaluate(() => window.__game.player.entity.object3D.position.z < -42.5)) break;
   }
   await up(page, 'Key:KeyW');
@@ -135,6 +147,47 @@ try {
   s = await S();
   const cover = await page.evaluate(() => window.__game.state.bool('know.heliosphere.cover'));
   check('the glint is readable now, and hiding behind the ruins makes the light miss', alarm && s.helio.dodged === 1 && !s.dying && s.loop === 2 && cover, JSON.stringify(s.helio));
+  const beats = await page.evaluate(() => window.__beats);
+  check(
+    'being watched is felt: the view narrows, his pulse quickens, he tenses',
+    felt.vignette > 0.5 && felt.tension > 0.6 && beats.some((b) => b >= 0.5),
+    `${JSON.stringify(felt)} beats ${beats.slice(-6).join(',')}`,
+  );
+  // Once he knows stone hides him, the nearest ruin is marked when he's exposed.
+  // Facing away from the tower, the summit is pointed out from the screen edge.
+  await placeOnFlats(-10, -52);
+  await setYaw(page, 0);
+  await step(page, 0.1, false);
+  await setYaw(page, 0); // the camera snaps behind the follow target, which updates a frame later
+  await step(page, 3, false);
+  await down(page, 'Key:ShiftLeft');
+  await down(page, 'Key:KeyW');
+  let coverShown = false;
+  let arrowShown = false;
+  for (let i = 0; i < 6 && !(coverShown && arrowShown); i++) {
+    await step(page, 0.1, false);
+    coverShown ||= await page.evaluate(() => !!document.querySelector('.rz-cover-mark')?.classList.contains('visible'));
+    arrowShown ||= await page.evaluate(() => !!document.querySelector('.rz-helio-arrow')?.classList.contains('visible'));
+  }
+  await up(page, 'Key:KeyW');
+  await up(page, 'Key:ShiftLeft');
+  if (coverShown) {
+    await page.waitForTimeout(400); // let the marker's fade-in finish
+    await shot(page, 'helio_cover_mark');
+  }
+  const coverText = await page.evaluate(() => document.querySelector('.rz-cover-mark .dist')?.textContent);
+  check('knowing cover, the nearest ruin is marked while exposed; the summit is pointed out when out of view', coverShown && arrowShown, `${coverText} arrow ${arrowShown}`);
+  const sound = await page.evaluate(() => {
+    const a = window.__game.audio;
+    return { running: a.ctx?.state, beats: a.heartbeats, steps: a.steps, surface: a.lastSurface, room: a.room };
+  });
+  check(
+    'the flats sound like glass underfoot, his heart pounds, and the desert has almost no echo',
+    sound.running !== 'running' || (sound.beats > 0 && sound.steps > 0 && sound.surface === 'glass' && sound.room === 'tower_foot'),
+    JSON.stringify(sound),
+  );
+  // Stand still until its attention drifts away (no strike).
+  await stepUntil(page, () => window.__game.scenes.current.heliosphere.state === 'idle' && window.__game.scenes.current.heliosphere.exposure < 0.05, 20);
 
   // ---------------------------------------------------------------- the worm in the light
   await page.evaluate(async () => {

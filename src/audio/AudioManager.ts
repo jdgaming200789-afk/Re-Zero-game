@@ -13,6 +13,28 @@ type Bus = 'music' | 'sfx' | 'ambient' | 'voice' | 'ui';
 const VOWEL_PITCH: Record<string, number> = { a: 1, e: 1.12, i: 1.25, o: 0.9, u: 0.84 };
 
 /**
+ * A synthetic room impulse: decaying stereo noise, darker as `bright` falls
+ * (a one-pole low-pass that closes over the tail, as real rooms do).
+ */
+function impulseResponse(ctx: BaseAudioContext, seconds: number, bright: number): AudioBuffer {
+  const rate = ctx.sampleRate;
+  const len = Math.max(1, Math.floor(seconds * rate));
+  const buf = ctx.createBuffer(2, len, rate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = buf.getChannelData(ch);
+    let lp = 0;
+    for (let i = 0; i < len; i++) {
+      const u = i / len;
+      const env = Math.pow(1 - u, 2.4) * Math.exp(-u * 3);
+      const k = Math.max(0.03, bright * (1 - u * 0.8));
+      lp += (Math.random() * 2 - 1 - lp) * k;
+      data[i] = lp * env * (i < rate * 0.004 ? i / (rate * 0.004) : 1);
+    }
+  }
+  return buf;
+}
+
+/**
  * All sound. Mixer buses follow the audio settings; the music director
  * scores the current mood; sound effects answer game events (stingers,
  * hits, notifications, story moments, footsteps); ambience follows the
@@ -26,6 +48,13 @@ export class AudioManager implements GameSystem, VoiceProvider {
   readonly ctx: AudioContext | null;
   private readonly synth: Synth | null = null;
   private readonly master: GainNode | null = null;
+  private readonly duck: GainNode | null = null;
+  private readonly reverbIn: GainNode | null = null;
+  private readonly reverb: ConvolverNode | null = null;
+  private readonly reverbWet: GainNode | null = null;
+  /** Which room the reverb is shaped like (tests and debugging). */
+  room = 'none';
+  private crackleT = 0;
   private readonly buses = new Map<Bus, GainNode>();
   readonly music: MusicDirector | null = null;
   private ambient: { stop(): void } | null = null;
@@ -33,6 +62,10 @@ export class AudioManager implements GameSystem, VoiceProvider {
   private stepDistance = 0;
   private readonly lastPos = new Vector3();
   private blipCount = 0;
+  /** Subaru's pulse (0 off .. 1 pounding) and when the next beat falls. */
+  private heartLevel = 0;
+  private nextBeat = 0;
+  private beats = 0;
 
   constructor(private readonly game: GameContext) {
     const Ctor = (window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext) as typeof AudioContext | undefined;
@@ -51,9 +84,21 @@ export class AudioManager implements GameSystem, VoiceProvider {
     comp.ratio.value = 3;
     this.master.connect(comp);
     comp.connect(ctx.destination);
+    // Music runs through a ducker (dialogue lowers it); sound effects and
+    // voices also feed the room's reverb.
+    this.duck = ctx.createGain();
+    this.duck.connect(this.master);
+    this.reverbIn = ctx.createGain();
+    this.reverb = ctx.createConvolver();
+    this.reverbWet = ctx.createGain();
+    this.reverbWet.gain.value = 0;
+    this.reverbIn.connect(this.reverb);
+    this.reverb.connect(this.reverbWet);
+    this.reverbWet.connect(this.master);
     for (const b of ['music', 'sfx', 'ambient', 'voice', 'ui'] as Bus[]) {
       const g = ctx.createGain();
-      g.connect(this.master);
+      g.connect(b === 'music' ? this.duck : this.master);
+      if (b === 'sfx' || b === 'voice') g.connect(this.reverbIn);
       this.buses.set(b, g);
     }
     this.music = new MusicDirector(this.synth, this.bus('music'));
@@ -99,7 +144,17 @@ export class AudioManager implements GameSystem, VoiceProvider {
     });
     ev.on('audio:musicState', ({ state }) => this.music?.set(state));
     ev.on('audio:stinger', ({ id }) => this.stinger(id));
-    ev.on('area:entered', ({ areaId }) => this.setAmbience(areaId));
+    ev.on('audio:heartbeat', ({ level }) => {
+      this.heartLevel = Math.max(0, Math.min(1, level));
+    });
+    ev.on('area:entered', ({ areaId }) => {
+      this.setAmbience(areaId);
+      this.setRoom(areaId);
+    });
+    // Dialogue sits on top of the score: duck it while people talk.
+    ev.on('dialogue:started', () => this.setDuck(0.5, 0.35));
+    ev.on('dialogue:ended', () => this.setDuck(1, 1.2));
+    ev.on('story:event', ({ id }) => this.storyCue(id));
     ev.on('combat:hit', ({ critical, damageType }) => this.hit(damageType, critical));
     ev.on('ui:notify', ({ kind }) => this.chime(kind ?? 'info'));
     ev.on('quest:completed', () => this.fanfare());
@@ -195,9 +250,71 @@ export class AudioManager implements GameSystem, VoiceProvider {
         s.bell(this.bus('ui'), 81, t, 0.05, 2.4);
         s.bell(this.bus('ui'), 88, t + 0.18, 0.035, 2.4);
         break;
+      case 'star_burn':
+        // A wrong star: white-hot sizzle and a falling whine.
+        s.noiseHit(sfx, t, { type: 'highpass', freq: 5200, level: 0.3, decay: 0.7, sweepTo: 1400 });
+        s.glide(sfx, t, [2200, 1400, 520], 0.8, 0.05, 'sawtooth', 14);
+        s.thump(sfx, t, 110, 45, 0.35, 0.4);
+        break;
       default:
         break;
     }
+  }
+
+  /** Musical punctuation for story moments that have no stinger of their own. */
+  private storyCue(id: string): void {
+    if (!this.ready) return;
+    const s = this.synth!;
+    const t = this.now;
+    const sfx = this.bus('sfx');
+    switch (id) {
+      case 'tay.sky':
+        // The white room opens into the night: a rising shimmer.
+        [72, 76, 79, 84, 88, 91].forEach((n, i) => s.bell(sfx, n, t + i * 0.22, 0.035, 3.2));
+        s.noiseHit(sfx, t, { type: 'highpass', freq: 6000, level: 0.08, attack: 1.2, decay: 2.4 });
+        break;
+      case 'tay.touch.orion.rigel':
+        s.bell(sfx, 93, t, 0.07, 3.6);
+        s.bell(sfx, 100, t + 0.05, 0.04, 3.6);
+        break;
+      case 'tay.library':
+        // Shelves rising from the floor, then a warm chord.
+        s.noiseHit(sfx, t, { type: 'lowpass', freq: 140, level: 0.45, attack: 0.6, decay: 3.6 });
+        s.thump(sfx, t + 0.2, 50, 32, 2.5, 0.35);
+        [62, 66, 69, 74, 78].forEach((n, i) => s.pluck(sfx, n, t + 2.4 + i * 0.12, 0.07, 2.2));
+        s.bell(sfx, 86, t + 3.1, 0.05, 3.2);
+        break;
+      case 'alc.rem_laid':
+        [79, 83, 86].forEach((n, i) => s.bell(sfx, n, t + i * 0.35, 0.03, 3.4));
+        break;
+      default:
+        break;
+    }
+  }
+
+  /** Lower (or restore) the score under dialogue. */
+  private setDuck(level: number, seconds: number): void {
+    if (!this.ctx || !this.duck) return;
+    const t = this.ctx.currentTime;
+    this.duck.gain.cancelScheduledValues(t);
+    this.duck.gain.setTargetAtTime(level, t, seconds / 3);
+  }
+
+  /** Shape the reverb like the room Subaru is in. */
+  private setRoom(areaId: string): void {
+    if (!this.ctx || !this.reverb || !this.reverbWet) return;
+    const rooms: Record<string, { wet: number; seconds: number; bright: number }> = {
+      tower_foot: { wet: 0.05, seconds: 1.4, bright: 0.55 },
+      celaeno: { wet: 0.4, seconds: 3.8, bright: 0.45 },
+      alcyone: { wet: 0.14, seconds: 0.9, bright: 0.3 },
+      taygeta: { wet: 0.32, seconds: 2.8, bright: 0.85 },
+    };
+    const r = rooms[areaId] ?? { wet: 0.1, seconds: 1.2, bright: 0.5 };
+    this.reverb.buffer = impulseResponse(this.ctx, r.seconds, r.bright);
+    const t = this.ctx.currentTime;
+    this.reverbWet.gain.cancelScheduledValues(t);
+    this.reverbWet.gain.setTargetAtTime(r.wet, t, 0.4);
+    this.room = areaId in rooms ? areaId : 'default';
   }
 
   private hit(type: string, critical: boolean): void {
@@ -270,6 +387,25 @@ export class AudioManager implements GameSystem, VoiceProvider {
       lfo.connect(lg);
       lg.connect(f.frequency);
       g.gain.value = 0.14;
+    } else if (areaId === 'alcyone') {
+      // A lived-in room: soft, warm air (the hearth crackles on top, per frame).
+      f.type = 'lowpass';
+      f.frequency.value = 240;
+      lfo.frequency.value = 0.07;
+      lg.gain.value = 40;
+      lfo.connect(lg);
+      lg.connect(f.frequency);
+      g.gain.value = 0.09;
+    } else if (areaId === 'taygeta') {
+      // The white room: a thin, high, sourceless tone.
+      f.type = 'bandpass';
+      f.frequency.value = 3200;
+      f.Q.value = 6;
+      lfo.frequency.value = 0.11;
+      lg.gain.value = 500;
+      lfo.connect(lg);
+      lg.connect(f.frequency);
+      g.gain.value = 0.05;
     } else {
       g.gain.value = 0.04;
       f.type = 'lowpass';
@@ -298,7 +434,9 @@ export class AudioManager implements GameSystem, VoiceProvider {
   }
 
   // ------------------------------------------------------------------ frame
-  update(): void {
+  update(dt = 1 / 60): void {
+    this.heartbeat();
+    this.hearth(dt);
     // Footsteps from how far Subaru actually travelled.
     const p = this.game.player;
     if (!p || !this.ready) return;
@@ -310,10 +448,74 @@ export class AudioManager implements GameSystem, VoiceProvider {
     const stride = p.followTarget.speed > 5 ? 1.35 : p.followTarget.speed > 2.5 ? 1.05 : 0.72;
     if (this.stepDistance < stride) return;
     this.stepDistance = 0;
-    const area = this.game.scenes.current?.id;
-    const sand = area === 'tower_foot';
-    const loud = Math.min(1, p.followTarget.speed / 6);
-    this.synth!.noiseHit(this.bus('sfx'), this.now, sand ? { type: 'lowpass', freq: 900 + loud * 500, level: 0.05 + loud * 0.06, decay: 0.09 } : { type: 'bandpass', freq: 1600, q: 1.4, level: 0.04 + loud * 0.05, decay: 0.05 });
+    const surface = this.game.scenes.current?.surfaceAt?.(pos.x, pos.z) ?? 'stone';
+    this.footstep(surface, Math.min(1, p.followTarget.speed / 6));
+  }
+
+  /** One footfall on a surface; `loud` 0..1 with speed. */
+  private footstep(surface: string, loud: number): void {
+    const s = this.synth!;
+    const t = this.now;
+    const sfx = this.bus('sfx');
+    this.steps++;
+    this.lastSurface = surface;
+    switch (surface) {
+      case 'sand':
+        s.noiseHit(sfx, t, { type: 'lowpass', freq: 900 + loud * 500, level: 0.05 + loud * 0.06, decay: 0.09 });
+        break;
+      case 'glass':
+        // Fused sand: a hard, faintly ringing click that carries.
+        s.noiseHit(sfx, t, { type: 'bandpass', freq: 3400, q: 3, level: 0.05 + loud * 0.07, decay: 0.05 });
+        s.glide(sfx, t, [2600 + loud * 400, 2550], 0.18, 0.006 + loud * 0.01, 'sine');
+        break;
+      case 'wood':
+        s.noiseHit(sfx, t, { type: 'bandpass', freq: 520, q: 1.3, level: 0.06 + loud * 0.06, decay: 0.07 });
+        s.thump(sfx, t, 130, 90, 0.07, 0.05 + loud * 0.05);
+        break;
+      case 'soft':
+        s.noiseHit(sfx, t, { type: 'lowpass', freq: 600, level: 0.03 + loud * 0.03, decay: 0.07 });
+        break;
+      default:
+        s.noiseHit(sfx, t, { type: 'bandpass', freq: 1600, q: 1.4, level: 0.04 + loud * 0.05, decay: 0.05 });
+        break;
+    }
+  }
+
+  /** The hearth in Alcyone: pops and crackles, louder near the fire. */
+  private hearth(dt: number): void {
+    if (!this.ready || this.game.scenes.current?.id !== 'alcyone') return;
+    this.crackleT -= dt;
+    if (this.crackleT > 0) return;
+    this.crackleT = 0.08 + Math.random() * 0.45;
+    const p = this.game.player?.entity.object3D.position;
+    // The hearth sits against the outer wall, 60° round from the stair.
+    const d = p ? Math.hypot(p.x - 16.5, p.z - 9.5) : 20;
+    const near = Math.max(0, 1 - d / 16);
+    if (near <= 0.02) return;
+    this.synth!.noiseHit(this.bus('ambient'), this.now, { type: 'highpass', freq: 1800 + Math.random() * 2400, level: (0.02 + Math.random() * 0.05) * near, decay: 0.02 + Math.random() * 0.05 });
+  }
+
+  /** Footsteps played so far and on what (tests). */
+  steps = 0;
+  lastSurface = '';
+
+  /** A low lub-dub that quickens with the threat; silent below a whisper of it. */
+  private heartbeat(): void {
+    if (!this.ready || this.heartLevel < 0.1 || this.game.mode === 'death') return;
+    const t = this.ctx!.currentTime;
+    if (t < this.nextBeat) return;
+    const lvl = this.heartLevel;
+    const s = this.synth!;
+    const sfx = this.bus('sfx');
+    s.thump(sfx, t + 0.01, 62, 38, 0.16, 0.12 + lvl * 0.3);
+    s.thump(sfx, t + 0.17, 54, 34, 0.18, 0.08 + lvl * 0.22);
+    this.nextBeat = t + 60 / (64 + lvl * 86);
+    this.beats++;
+  }
+
+  /** Heartbeats played so far (tests). */
+  get heartbeats(): number {
+    return this.beats;
   }
 
   /** Blips spoken so far (tests). */

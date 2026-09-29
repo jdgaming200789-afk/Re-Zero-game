@@ -11,4 +11,5 @@ export const TALK: TalkEntry[] = [
   { who: 'anastasia', dialogue: 'camp.talk.anastasia', if: CAMP },
   { who: 'meili', dialogue: 'camp.talk.meili', if: CAMP },
   { who: 'patrasche', dialogue: 'camp.talk.patrasche', if: CAMP },
+  { who: 'shaula', dialogue: 'cel.talk.shaula', if: { all: ["$area == 'celaeno'", 'cel.met_shaula'] } },
 ];

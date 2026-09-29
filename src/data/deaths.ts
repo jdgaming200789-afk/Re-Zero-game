@@ -12,6 +12,8 @@ export interface DeathDef {
 
 export const DEATHS: Record<string, DeathDef> = {
   heliosphere: { style: 'light', learn: ['heliosphere.movement', 'heliosphere.glint'] },
+  /** Broke the tower's rules: the Star Guardian keeps her word. */
+  shaula: { style: 'light', learn: ['people.shaula_rules'] },
   'combat.sand_earthworm': { style: 'wound', learn: ['earthworm.vibration'] },
   combat: { style: 'wound', learn: [] },
   fall: { style: 'wound', learn: [] },

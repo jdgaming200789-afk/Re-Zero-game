@@ -231,6 +231,16 @@ export class CinematicPlayer implements GameSystem {
       case 'party':
         await g.party.settled();
         return;
+      case 'spawn': {
+        const at = this.point(s.at, 'feet');
+        this.ground(at);
+        const yaw = s.face === undefined ? 0 : typeof s.face === 'number' ? (s.face * Math.PI) / 180 : yawTowards(at, this.point(s.face, 'feet'));
+        await g.actors.spawn(s.who, { position: at, yaw, scope: g.scenes.current?.scope });
+        return;
+      }
+      case 'despawn':
+        g.actors.despawn(s.who);
+        return;
       case 'music':
         g.events.emit('audio:musicState', { state: s.state });
         return;

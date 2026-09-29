@@ -7,7 +7,56 @@ const JOIN_ALL: Effect[] = ['emilia', 'beatrice', 'julius', 'ram', 'anastasia', 
  * Authored scenes. Positions refer to area markers ('@camp.fire') so the
  * data stays independent of level geometry.
  */
+const PARTY = ['emilia', 'beatrice', 'julius', 'ram', 'anastasia', 'meili', 'patrasche'];
+
 export const CINEMATICS: CinematicDef[] = [
+  {
+    // Into the tower: a voice from above, and the Star Guardian drops in.
+    id: 'cel.shaula',
+    letterbox: true,
+    steps: [
+      { do: 'place', who: 'subaru', at: '@cel.subaru', face: '@cel.center' },
+      ...PARTY.map((id) => ({ do: 'place' as const, who: id, at: `@cel.${id}`, face: '@cel.center' })),
+      { do: 'music', state: 'mystery' },
+      { do: 'shot', shot: { from: '@cel.cam_wide', at: '@cel.cam_hall_look', fov: 50, drift: [0, 0.02, -0.08] } },
+      { do: 'wait', seconds: 1.2 },
+      { do: 'say', lines: [{ speaker: 'subaru', text: 'So this is the inside of the Watchtower. ...It’s quiet. Way too quiet.', thought: true }] },
+      { do: 'spawn', who: 'shaula', at: '@cel.shaula_gallery', face: '@cel.center' },
+      { do: 'say', lines: [{ speaker: 'shaula', text: 'Maaaaaster!!', expression: 'joy' }] },
+      ...(['subaru', ...PARTY] as const).map((id) => ({ do: 'look' as const, who: id, at: { of: 'shaula', socket: 'head' as const } })),
+      { do: 'face', who: 'subaru', to: 'shaula' },
+      { do: 'shot', shot: { from: '@cel.cam_up', at: { of: 'shaula', socket: 'chest' }, fov: 17, drift: [0, 0.03, 0] }, blend: 0.8, ease: 'outCubic' },
+      { do: 'anim', who: 'shaula', clip: 'wave' },
+      { do: 'say', lines: [{ speaker: 'shaula', text: 'Master! Master, Master, *Master*!', expression: 'joy' }] },
+      { do: 'shot', shot: { from: { of: 'subaru', offset: [0.35, 0.05, 1.3], socket: 'head' }, at: { of: 'subaru', socket: 'head' }, fov: 32 } },
+      { do: 'expr', who: 'subaru', expression: 'surprised' },
+      { do: 'say', lines: [{ speaker: 'subaru', text: 'Wait. Is she going to — she’s going to jump. She’s jumping!', expression: 'fear' }] },
+      { do: 'place', who: 'shaula', at: '@cel.shaula_land', face: 'subaru' },
+      { do: 'face', who: 'subaru', to: 'shaula' },
+      { do: 'shot', shot: { from: '@cel.cam_side', at: { of: 'shaula', socket: 'chest' }, fov: 40 } },
+      { do: 'shake', strength: 0.7, seconds: 0.5 },
+      { do: 'anim', who: 'shaula', clip: 'landHard', wait: true },
+      { do: 'dialogue', id: 'cel.shaula', camera: 'auto' },
+      { do: 'music', state: 'safe' },
+      { do: 'follow', blend: 1.4 },
+    ],
+    onEnd: [{ set: 'cel.met_shaula' }, { quest: 'the_trials' }, { checkpoint: 'celaeno' }],
+  },
+  {
+    // Walking out before the trials are cleared: Shaula is suddenly there.
+    id: 'cel.gate_rule',
+    letterbox: true,
+    steps: [
+      { do: 'place', who: 'subaru', at: '@cel.gate_subaru', face: '@cel.gate_look' },
+      { do: 'place', who: 'shaula', at: '@cel.gate_shaula', face: 'subaru' },
+      { do: 'music', state: 'tension' },
+      { do: 'shot', shot: { from: { of: 'subaru', offset: [0.5, 0.1, 1.2], socket: 'head' }, at: { of: 'subaru', socket: 'head' }, fov: 34 } },
+      { do: 'wait', seconds: 0.5 },
+      { do: 'face', who: 'subaru', to: 'shaula', wait: true },
+      { do: 'dialogue', id: 'cel.gate_rule', camera: 'auto' },
+      { do: 'if', cond: '!cel.leave_anyway', then: [{ do: 'music', state: 'safe' }, { do: 'follow', blend: 1 }] },
+    ],
+  },
   {
     id: 'tf.opening',
     letterbox: true,

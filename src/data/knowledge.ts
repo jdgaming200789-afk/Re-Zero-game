@@ -41,6 +41,21 @@ export const KNOWLEDGE: Record<string, KnowledgeDef> = {
     text: 'The stories say a Sage has watched these dunes from the Pleiades Watchtower for four hundred years, and that the Sage knows everything. Even how to undo what Gluttony did.',
     category: 'lore',
   },
+  'people.shaula': {
+    title: 'Shaula, the Star Guardian',
+    text: 'She calls me “Master” and says she waited four hundred years for me. She keeps the tower’s rules — and says she’ll kill anyone who breaks them. Even me. With a smile.',
+    category: 'people',
+  },
+  'tower.rules': {
+    title: 'The rules of the tower',
+    text: 'Don’t leave before the trials are cleared. Clear the trials. Don’t damage the books in the library. Don’t damage the tower. Break one, and Shaula comes for you.',
+    category: 'lore',
+  },
+  'people.shaula_rules': {
+    title: 'She keeps her word',
+    text: 'I took one step toward the gate before the trials were cleared. Shaula said sorry, smiled, and the world went white. “Master” or not, the rules come first.',
+    category: 'people',
+  },
   'people.julius_name': {
     title: 'Julius’s name',
     text: 'Gluttony ate Julius’s name. The whole world forgot him. He walks with us anyway, and he never complains about it — which is somehow worse.',

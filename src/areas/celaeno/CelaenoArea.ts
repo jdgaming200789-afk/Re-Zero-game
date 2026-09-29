@@ -134,7 +134,49 @@ class CelaenoArea extends Area {
     this.addSpawn('gate', 0, 0, 16.5, 180);
     this.addSpawn('gallery', polar(18, 0).x, GALLERY_Y, polar(18, 0).z - 0.5, 180);
     this.addSpawn('dais', 0, 0.45, 5, 180);
+    // Arriving back down the stair from Alcyone, on the gallery.
+    const top = polar(17.6, 8 * DEG, GALLERY_Y);
+    this.addSpawn('from_alcyone', top.x, top.y, top.z, 180);
+    this.addStageMarkers();
     onProgress(1);
+  }
+
+  /**
+   * Where people stand when Shaula drops in, and the camera's places. The
+   * party gathers inside the colonnade, facing the dais (no columns between
+   * them and Shaula); she calls down from the gallery through the arch gap
+   * just east of the gate axis.
+   */
+  private addStageMarkers(): void {
+    const mark = (id: string, x: number, z: number, yawDeg = 180, y = 0) => this.addSpawn(id, x, y, z, yawDeg);
+    mark('cel.subaru', 0, 7.4);
+    mark('cel.emilia', -1.4, 8.3);
+    mark('cel.beatrice', 1.2, 8.1);
+    mark('cel.julius', -2.7, 9.0);
+    mark('cel.ram', 2.6, 9.0);
+    mark('cel.anastasia', -1.1, 9.8);
+    mark('cel.meili', 1.0, 9.7);
+    mark('cel.patrasche', -4.6, 7.9);
+    mark('cel.shaula_land', 0, 3.7, 0, 0.45);
+    // Standing on the balustrade itself (the cinematic grounds her onto it).
+    const gal = polar(16.55, 33.75 * DEG, GALLERY_Y + 0.4);
+    mark('cel.shaula_gallery', gal.x, gal.z, 213.75, gal.y);
+    mark('cel.center', 0, 0, 0, 1.5);
+    mark('cel.cam_wide', 1.9, 10.3, 0, 2.1);
+    mark('cel.cam_hall_look', -0.4, 0, 0, 1.6);
+    mark('cel.cam_up', 3.4, 6.6, 0, 1.5);
+    mark('cel.cam_side', 3.6, 5.2, 0, 1.5);
+    mark('cel.gate_subaru', 0, 17.2, 0);
+    mark('cel.gate_look', 0, 20, 0, 1.5);
+    mark('cel.gate_shaula', 0.7, 14.6, 0);
+  }
+
+  override onEnter(): void {
+    // After their first meeting, Shaula waits by the dais.
+    const g = this.game;
+    if (g.state.bool('cel.met_shaula') && !g.actors.has('shaula')) {
+      void g.actors.spawn('shaula', { position: new Vector3(1.8, 0.45, 3.2), yaw: Math.PI * 0.9, scope: this.scope });
+    }
   }
 
   private placeDais(b: KitBatch, limestone: import('three').Material): void {
@@ -291,6 +333,21 @@ class CelaenoArea extends Area {
       e.object3D.position.copy(pos);
       e.add(new Interactable(opts));
     };
+    const door = polar(R - 0.4, 0, GALLERY_Y + 1.6);
+    add(door, {
+      id: 'cel.to_alcyone',
+      kind: 'door',
+      verb: 'Climb',
+      label: 'Stairs up — Alcyone',
+      range: 3.2,
+      angle: 80,
+      condition: (game) => game.state.bool('cel.met_shaula'),
+      lockedText: () => 'Not yet. Something about this hall says: wait.',
+      handler: async (ctx) => {
+        await ctx.contact;
+        await ctx.game.scenes.goto('alcyone', 'stairs', { loadingScreen: true, fadeSeconds: 0.8 });
+      },
+    });
     add(new Vector3(0, 2.2, -15.6), {
       id: 'cel.statue',
       kind: 'lore',
@@ -351,20 +408,14 @@ class CelaenoArea extends Area {
       range: 2.6,
       handler: async (ctx) => {
         await ctx.contact;
-        await ctx.game.scenes.goto('tower_foot', 'gate_out', { fadeSeconds: 0.7, loadingScreen: true });
-      },
-    });
-    const gd = polar(R - 1.0, ((0 + 0.5) / SEG) * Math.PI * 2, GALLERY_Y + 1.6);
-    add(gd, {
-      id: 'cel.to_alcyone',
-      kind: 'door',
-      verb: 'Climb',
-      label: 'Stair to Alcyone',
-      range: 2.6,
-      handler: async (ctx) => {
-        await ctx.contact;
-        if (ctx.game.scenes.knownAreas().includes('alcyone')) await ctx.game.scenes.goto('alcyone', 'default', { loadingScreen: true });
-        else ctx.game.ui.notify('The way to Alcyone is not open yet.', 'info');
+        const g = ctx.game;
+        // The first rule of the tower: nobody leaves before the trials are cleared.
+        if (g.state.bool('cel.met_shaula') && !g.state.bool('tay.trial_cleared')) {
+          await g.cinematics.play('cel.gate_rule');
+          if (g.state.bool('cel.leave_anyway')) g.rbd.die('shaula');
+          return;
+        }
+        await g.scenes.goto('tower_foot', 'gate_out', { fadeSeconds: 0.7, loadingScreen: true });
       },
     });
   }

@@ -45,6 +45,9 @@ export type CineStep =
   | { do: 'effects'; effects: Effect[] }
   /** Wait until party membership changes have spawned everyone. */
   | { do: 'party' }
+  /** Bring a character into the scene (kept by the area) / take them out. */
+  | { do: 'spawn'; who: string; at: PlaceRef; face?: PlaceRef | number }
+  | { do: 'despawn'; who: string }
   | { do: 'music'; state: MusicState }
   | { do: 'shake'; strength: number; seconds: number }
   | { do: 'if'; cond: Condition; then: CineStep[]; else?: CineStep[] }
@@ -101,7 +104,13 @@ export function validateCinematic(def: CinematicDef, known: { dialogues: Set<str
           break;
         case 'anim':
         case 'expr':
+        case 'despawn':
           who(s.who, i);
+          break;
+        case 'spawn':
+          who(s.who, i);
+          place(s.at, i);
+          place(s.face, i);
           break;
         case 'say':
           for (const l of s.lines) if (l.speaker) who(l.speaker, i);

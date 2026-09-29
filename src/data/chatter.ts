@@ -97,6 +97,7 @@ export const CHATTER: ChatterDef[] = [
   {
     id: 'cel.arrival',
     trigger: { on: 'areaEnter', area: 'celaeno', delay: 2.5 },
+    condition: 'cel.met_shaula',
     lines: [
       { speaker: 'emilia', text: "It's so quiet in here...", expression: 'thinking' },
       { speaker: 'ram', text: 'Quiet is good. Quiet means nothing is chewing on Barusu yet.' },

@@ -5,6 +5,7 @@ import {
   HemisphereLight,
   LatheGeometry,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   PMREMGenerator,
   Quaternion,
@@ -18,7 +19,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { Area, type AreaMap, type AtmosphereProfile } from '../../scene/Area';
 import type { GameContext } from '../../game/GameContext';
 import { KitBatch } from '../../scene/kit/KitBatch';
-import { colonnade, dome, galleryRing, helicalStair, polar, ringWalls, tiledFloor } from '../../scene/procedural/RoundHall';
+import { colonnade, dome, doorRecess, galleryRing, helicalStair, polar, ringWalls, tiledFloor } from '../../scene/procedural/RoundHall';
 import { FollowShadowLight } from '../../render/lighting/FollowShadowLight';
 import { Fire } from '../../vfx/Fire';
 import { LightShaft } from '../../vfx/LightShaft';
@@ -115,6 +116,16 @@ class CelaenoArea extends Area {
       const q = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), a);
       this.trackCollider(g.physics.addBox(p, new Vector3(1.9, 1.2, 0.2), q, Layer.CharacterOnly, { kind: 'static' }));
     }
+
+    // Behind every doorway: the stair up to Alcyone, the stair down, the
+    // blocked passage, and the night outside the gate.
+    const outer = R / Math.cos(Math.PI / SEG) + 0.8;
+    const glowOut = new MeshBasicMaterial({ color: new Color(0.16, 0.2, 0.32) });
+    const glowUp = new MeshBasicMaterial({ color: new Color(0.55, 0.42, 0.26) });
+    this.trackCollider(doorRecess(this.root, g.physics, { angle: 0, radius: outer, baseY: GALLERY_Y, dir: 'up', mat: stone, glow: glowUp }));
+    this.trackCollider(doorRecess(this.root, g.physics, { angle: 0, radius: outer, baseY: 0, dir: 'flat', mat: stone, floor: sandMat, glow: glowOut }));
+    this.trackCollider(doorRecess(this.root, g.physics, { angle: (5 / SEG) * Math.PI * 2, radius: outer, baseY: 0, dir: 'down', mat: stone }));
+    this.trackCollider(doorRecess(this.root, g.physics, { angle: (24 / SEG) * Math.PI * 2, radius: outer, baseY: 0, dir: 'flat', mat: stone }));
 
     // Dome with an oculus, above the third tier.
     dome(this.root, R + 0.6, 18, 11, 2.4, stone);

@@ -181,7 +181,29 @@ export class ActorController extends Component {
   }
 
   lookAt(target: Vector3 | null, weight = 1): void {
+    if (this.lying) return;
     this.visual.lookAt(target, weight);
+  }
+
+  /** Lying on the back (asleep in bed, unconscious), head towards local -Z. */
+  lying = false;
+
+  /**
+   * Lay the character down (or stand them back up). The body pivots about
+   * the feet, so place the actor where the soles should rest; `lift` raises
+   * the back off the surface. Foot IK and gaze are off while lying.
+   */
+  setLying(lying: boolean, lift = 0.12): void {
+    this.lying = lying;
+    const r = this.visual.root;
+    r.rotation.x = lying ? -Math.PI / 2 : 0;
+    r.position.y = lying ? lift : 0;
+    const v = this.visual as Partial<{ groundQuery: unknown }>;
+    if (lying && 'groundQuery' in v) v.groundQuery = null;
+    if (lying) {
+      this.visual.lookAt(null);
+      this.hold();
+    }
   }
 
   override update(dt: number): void {

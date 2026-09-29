@@ -46,6 +46,49 @@ const readThrough = async (pick = () => 0, shots = null, done = () => !window.__
 };
 const cinematicOver = () => !window.__game.cinematics.playing && !window.__game.dialogue.state;
 const optionIndex = (text) => (options) => Math.max(0, options.findIndex((o) => o.includes(text)));
+const place = (x, y, z, yaw) =>
+  page.evaluate(
+    ([x, y, z, yaw]) => {
+      const g = window.__game;
+      const V = g.player.entity.object3D.position.constructor;
+      g.player.placeAt(new V(x, y, z), yaw);
+      g.camera.follow.snapBehind(g.player.followTarget);
+    },
+    [x, y, z, yaw],
+  );
+const interact = async () => {
+  await page.evaluate(() => window.__game.input.simulate('Key:KeyE', true));
+  await step(page, 1 / 60, false);
+  await page.evaluate(() => window.__game.input.simulate('Key:KeyE', false));
+};
+/** The harness renders one frame per step; settle grade and eye adaptation for screenshots. */
+const settleLook = () =>
+  page.evaluate(() => {
+    const g = window.__game;
+    g.scenes.applyAtmosphere(g.scenes.current, 0);
+    g.render.exposure = g.render.exposureTarget;
+  });
+/** Stand at a Taygeta constellation and look straight at one of its stars. */
+const aimAt = async (key) => {
+  const at = await page.evaluate((key) => {
+    const s = window.__game.scenes.current.trial.star(key);
+    return [s.home.x, s.home.y, s.home.z];
+  }, key);
+  const len = Math.hypot(at[0], at[2]);
+  const dir = [at[0] / len, at[2] / len];
+  await place(at[0] - dir[0] * 1.4, 0.05, at[2] - dir[1] * 1.4, Math.atan2(dir[0], dir[1]));
+  await page.evaluate(
+    ([at, dir]) => {
+      const g = window.__game;
+      const V = g.render.camera.position.constructor;
+      g.camera.cut({ position: new V(at[0] - dir[0] * 3.2, 1.9, at[2] - dir[1] * 3.2), lookAt: new V(...at), fov: 50 });
+    },
+    [at, dir],
+  );
+  await step(page, 0.3, false);
+  return page.evaluate(() => ({ aimed: window.__game.scenes.current.trial.aimed?.key ?? null, focused: window.__game.interaction.focused?.id ?? null }));
+};
+const hp = () => page.evaluate(() => window.__game.combat.get(window.__game.player.entity.id)?.hp ?? -1);
 
 try {
   await waitReady(page);
@@ -130,6 +173,183 @@ try {
   await readThrough(() => 0, null, () => !window.__game.cinematics.playing && !window.__game.dialogue.state);
   await stepUntil(page, () => window.__game.mode === 'exploration', 20);
   check('staying inside keeps Subaru alive', !(await page.evaluate(() => window.__game.rbd.dying)) && (await flag('meta.loop')) === 2);
+
+  // ---------------------------------------------------------------- Alcyone: the Green Room
+  // Up the stair on Celaeno's gallery.
+  await place(0, 12.05, 18.9, 0);
+  await step(page, 0.4, false);
+  const upFocus = await page.evaluate(() => window.__game.interaction.focused?.id);
+  await interact();
+  const inAlcyone = await stepUntil(page, () => window.__game.scenes.current?.id === 'alcyone' && !window.__game.scenes.isTransitioning, 120);
+  check('the gallery stair leads up to Alcyone', upFocus === 'cel.to_alcyone' && inAlcyone, String(upFocus));
+  await step(page, 1, false);
+  const party = await page.evaluate(() => window.__game.party.active.length);
+  // Into the Green Room: Rem is laid down.
+  await place(Math.sin((120 * Math.PI) / 180) * 13.4, 0.05, Math.cos((120 * Math.PI) / 180) * 13.4, (120 * Math.PI) / 180);
+  const remScene = await stepUntil(page, () => window.__game.cinematics.playing === 'alc.rem', 10);
+  check('stepping into the Green Room starts Rem’s scene', remScene && party >= 6, `party ${party}`);
+  await readThrough(optionIndex('important'), null, () => window.__game.dialogue.state?.id === 'alc.rem_alone');
+  await settleLook();
+  await step(page, 0.4, true);
+  await shot(page, 'tower-05-vigil');
+  await readThrough(() => 0, null, cinematicOver);
+  await stepUntil(page, () => window.__game.mode === 'exploration', 20);
+  const settled = await page.evaluate(() => {
+    const g = window.__game;
+    const rem = g.actors.get('rem');
+    return {
+      settled: g.state.bool('alc.rem_settled'),
+      rp: g.checkpoints.current?.id,
+      lying: rem?.lying ?? false,
+      promised: g.state.bool('alc.promised'),
+      ramTold: g.state.bool('alc.ram_told'),
+      objective: g.quests.status('the_trials'),
+      pose: g.player.visual.root.position.y,
+    };
+  });
+  check(
+    'Rem sleeps in the Green Room; the return point moves to her side',
+    settled.settled && settled.rp === 'alcyone' && settled.lying && settled.promised && settled.ramTold && settled.objective === 'active',
+    JSON.stringify(settled),
+  );
+  await settleLook();
+  await page.evaluate(() => {
+    const g = window.__game;
+    const V = g.render.camera.position.constructor;
+    const s = g.scenes.current.spawns.get('alc.cam_bed').position;
+    const h = g.scenes.current.spawns.get('alc.rem_head').position;
+    g.camera.cut({ position: new V(s.x, s.y, s.z), lookAt: new V(h.x, h.y, h.z), fov: 40 });
+  });
+  await step(page, 0.3, true);
+  await shot(page, 'tower-06-rem');
+  await page.evaluate(() => window.__game.camera.release(0, window.__game.player.followTarget));
+
+  // ---------------------------------------------------------------- Taygeta: the trial
+  const up = await page.evaluate(() => {
+    const a = (18 / 32) * Math.PI * 2;
+    return [Math.sin(a) * 19.2, Math.cos(a) * 19.2, a];
+  });
+  await place(up[0], 0.05, up[1], up[2]);
+  await step(page, 0.4, false);
+  await interact();
+  const inTaygeta = await stepUntil(page, () => window.__game.scenes.current?.id === 'taygeta' && !window.__game.scenes.isTransitioning, 120);
+  check('the way up from Alcyone reaches Taygeta once Rem is settled', inTaygeta);
+  await stepUntil(page, () => window.__game.cinematics.playing === 'tay.arrive', 10);
+  await readThrough(() => 0, null, cinematicOver);
+  await settleLook();
+  await step(page, 0.3, true);
+  await shot(page, 'tower-07-white-room');
+  // Read the question.
+  await place(0, 0.05, 1.7, Math.PI);
+  await step(page, 0.4, false);
+  const monoFocus = await page.evaluate(() => window.__game.interaction.focused?.id);
+  await interact();
+  await stepUntil(page, () => window.__game.cinematics.playing === 'tay.monolith', 10);
+  await readThrough(() => 0, null, cinematicOver);
+  await stepUntil(page, () => window.__game.mode === 'exploration', 20);
+  await step(page, 3, false);
+  const live = await page.evaluate(() => ({ started: window.__game.state.bool('tay.trial_started'), live: window.__game.scenes.current.trial.live, insight: window.__game.state.bool('know.sky.shaula_star') }));
+  check('reading the monolith turns Taygeta into the sky and starts the trial', monoFocus === 'tay.monolith' && live.started && live.live && !live.insight, JSON.stringify(live));
+  // A wrong star: Betelgeuse, the red giant at Orion's shoulder.
+  const aimB = await aimAt('orion.betelgeuse');
+  await settleLook();
+  await shot(page, 'tower-08-orion');
+  const hp0 = await hp();
+  await interact();
+  await stepUntil(page, () => window.__game.dialogue.state?.id === 'tay.fail', 10);
+  const hp1 = await hp();
+  check('looking at a star aims at it; a wrong one burns', aimB.aimed === 'orion.betelgeuse' && aimB.focused === 'tay.star' && hp1 < hp0 && (await flag('tay.fails')) === 1, `${JSON.stringify(aimB)} hp ${hp0}→${hp1}`);
+  await readThrough(() => 0, null, cinematicOver);
+  await page.evaluate(() => window.__game.camera.release(0, window.__game.player.followTarget));
+  // Two more wrong guesses: the hints sharpen until Subaru remembers on his own.
+  for (const key of ['scorpius.shaula', 'dipper.dubhe']) {
+    await page.evaluate((key) => {
+      const a = window.__game.scenes.current;
+      void a.touch(a.trial.star(key));
+    }, key);
+    await stepUntil(page, () => window.__game.dialogue.state?.id === 'tay.fail', 10);
+    await readThrough(() => 0, null, cinematicOver);
+  }
+  const knows = await page.evaluate(() => window.__game.state.bool('know.sky.shaula_star') && window.__game.state.bool('know.sky.orion_myth'));
+  check('after the third burn Subaru remembers what Shaula is', knows && (await flag('tay.fails')) === 3 && (await hp()) > 0);
+  // The fourth guess kills him: Return by Death to the Green Room.
+  await page.evaluate(() => {
+    const a = window.__game.scenes.current;
+    void a.touch(a.trial.star('cassiopeia.navi'));
+  });
+  const burnDeath = await stepUntil(page, () => window.__game.rbd.dying, 10);
+  await stepUntil(page, () => !window.__game.rbd.dying && window.__game.dialogue.state?.id === 'rbd.return', 60);
+  await readThrough(optionIndex('fine'));
+  const woke = await page.evaluate(() => {
+    const g = window.__game;
+    return {
+      area: g.scenes.current?.id,
+      burns: g.state.bool('know.tower.taygeta_burns'),
+      star: g.state.bool('know.sky.shaula_star'),
+      started: g.state.bool('tay.trial_started'),
+      fails: g.state.num('tay.fails'),
+      rem: g.actors.has('rem'),
+      loop: g.state.num('meta.loop'),
+    };
+  });
+  check(
+    'the fourth wrong star is death; he wakes beside Rem, remembering',
+    burnDeath && woke.area === 'alcyone' && woke.burns && woke.star && !woke.started && !woke.fails && woke.rem && woke.loop === 3,
+    JSON.stringify(woke),
+  );
+
+  // ---------------------------------------------------------------- the second climb: Rigel
+  await goto('taygeta', 'arrive');
+  await step(page, 1, false);
+  await readThrough(() => 0, null, cinematicOver);
+  await place(0, 0.05, 1.7, Math.PI);
+  await step(page, 0.4, false);
+  await interact();
+  await stepUntil(page, () => window.__game.cinematics.playing === 'tay.monolith', 10);
+  await readThrough(() => 0, null, cinematicOver);
+  await stepUntil(page, () => window.__game.mode === 'exploration', 20);
+  const insight = await page.evaluate(() => ({ insight: window.__game.state.bool('dlg.tay.monolith.insight'), puzzled: window.__game.state.bool('dlg.tay.monolith.puzzled') }));
+  check('what he learned by dying answers the riddle at once', insight.insight && !insight.puzzled, JSON.stringify(insight));
+  await step(page, 3, false);
+  const aimR = await aimAt('orion.rigel');
+  await interact();
+  const solving = await stepUntil(page, () => window.__game.cinematics.playing === 'tay.solved', 10);
+  await readThrough(() => 0, null, () => window.__game.dialogue.state?.id === 'tay.solved');
+  await settleLook();
+  await step(page, 0.3, true);
+  await shot(page, 'tower-09-library');
+  await readThrough(() => 0, null, cinematicOver);
+  await stepUntil(page, () => window.__game.mode === 'exploration', 20);
+  const solved = await page.evaluate(() => {
+    const g = window.__game;
+    const a = g.scenes.current;
+    return { cleared: g.state.bool('tay.trial_cleared'), quest: g.quests.status('the_trials'), library: !!a.library, look: a.look, live: a.trial.live };
+  });
+  check(
+    'touching Rigel clears the trial: the library rises and the quest completes',
+    aimR.aimed === 'orion.rigel' && solving && solved.cleared && solved.quest === 'done' && solved.library && solved.look === 'library' && !solved.live,
+    JSON.stringify({ aimR, ...solved }),
+  );
+  // Leaving is allowed now.
+  await goto('celaeno', 'gate');
+  await step(page, 0.5, false);
+  await place(0, 0.05, 17.6, 0);
+  await step(page, 0.4, false);
+  await interact();
+  const outside = await stepUntil(page, () => window.__game.scenes.current?.id === 'tower_foot' && !window.__game.scenes.isTransitioning, 60);
+  check('with the trial cleared, the gate opens without Shaula stopping him', outside && !(await page.evaluate(() => window.__game.rbd.dying)));
+
+  // ---------------------------------------------------------------- the balcony
+  await goto('alcyone', 'default');
+  await step(page, 1, false);
+  await place(0, 0.05, -23.6, Math.PI);
+  const balcony = await stepUntil(page, () => window.__game.cinematics.playing === 'alc.balcony', 10);
+  await readThrough(optionIndex('What do you see'), null, () => window.__game.dialogue.state?.phase === 'choice');
+  await settleLook();
+  await step(page, 0.3, true);
+  await shot(page, 'tower-10-balcony');
+  await readThrough(optionIndex('What do you see'), null, cinematicOver);
+  check('the balcony: Emilia, the stars, and a promise', balcony && (await flag('bond.emilia')) === 1);
 } catch (err) {
   console.error(err);
   results.push({ name: 'no exception', ok: false });

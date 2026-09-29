@@ -116,4 +116,52 @@ export const CHATTER: ChatterDef[] = [
     trigger: { on: 'interact', id: 'cel.statue' },
     lines: [{ speaker: 'julius', text: 'Whoever this was, they were revered. The stone is worn smooth where hands have touched it.' }],
   },
+
+  // ------------------------------------------------------------ Alcyone
+  {
+    id: 'alc.arrival',
+    trigger: { on: 'areaEnter', area: 'alcyone', delay: 2 },
+    lines: [
+      { speaker: 'meili', text: 'It’s warm up here! And it smells like wood and old blankets!', expression: 'joy' },
+      { speaker: 'beatrice', text: 'Someone lived here. For a very long time, I suppose.', expression: 'thinking' },
+    ],
+  },
+  {
+    id: 'alc.table',
+    trigger: { on: 'interact', id: 'alc.table' },
+    lines: [
+      { speaker: 'emilia', text: 'When all this is over, let’s have dinner here. All of us. Rem too.', expression: 'happy' },
+      { speaker: 'subaru', text: 'It’s a date. A big, crowded, twelve-chair date.' },
+    ],
+  },
+  {
+    id: 'alc.tallies',
+    trigger: { on: 'interact', id: 'alc.tallies' },
+    lines: [
+      { speaker: 'ram', text: 'Four hundred years of counting. Whoever did this was very patient, or very stubborn.', expression: 'thinking' },
+      { speaker: 'subaru', text: 'Or waiting for somebody who said he’d come back.', expression: 'sad' },
+    ],
+  },
+  {
+    id: 'alc.journal',
+    trigger: { on: 'interact', id: 'alc.journal' },
+    lines: [{ speaker: 'anastasia', text: '“What a true visitor could know.” A lock that only opens for the right stranger. I do like this tower more and more, Natsuki-kun.', expression: 'smug' }],
+  },
+
+  // ------------------------------------------------------------ Taygeta
+  {
+    id: 'tay.idle',
+    trigger: { on: 'idle', area: 'taygeta', after: 40 },
+    condition: { all: ['tay.trial_started', '!tay.trial_cleared'] },
+    lines: [
+      { speaker: 'emilia', text: 'So many stars... Do any of them look familiar to you, Subaru?', expression: 'thinking' },
+      { speaker: 'beatrice', text: 'Staring at them won’t make them answer, I suppose.', expression: 'annoyed' },
+    ],
+  },
+  {
+    id: 'tay.idle2',
+    trigger: { on: 'idle', area: 'taygeta', after: 100 },
+    condition: { all: ['tay.trial_started', '!tay.trial_cleared', 'tay.fails >= 1'] },
+    lines: [{ speaker: 'julius', text: 'Every one of these could be the answer, or a trap. I confess, Subaru, I am of little use to you here.', expression: 'sad' }],
+  },
 ];

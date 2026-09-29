@@ -23,7 +23,31 @@ export interface NightSkyParams {
   milkyWay: number;
   /** Direction of the hand-placed Pleiades cluster. */
   clusterDir: Vector3;
+  /** Direction of Orion's belt (Alnilam) — Subaru's own sky. */
+  orionDir: Vector3;
+  /** Brightness of Orion's stars (0 hides the constellation). */
+  orion: number;
 }
+
+/**
+ * Orion's main stars: offsets from Alnilam in degrees (east to the left, as
+ * seen facing the constellation), relative brightness, and colour.
+ */
+export const ORION_STARS: ReadonlyArray<{ name: string; x: number; y: number; mag: number; color: [number, number, number] }> = [
+  { name: 'Rigel', x: 5.42, y: -7.0, mag: 1.0, color: [0.78, 0.86, 1.0] },
+  { name: 'Betelgeuse', x: -4.75, y: 8.6, mag: 0.85, color: [1.0, 0.62, 0.38] },
+  { name: 'Bellatrix', x: 2.75, y: 7.55, mag: 0.55, color: [0.8, 0.87, 1.0] },
+  { name: 'Alnitak', x: -1.15, y: -0.74, mag: 0.5, color: [0.82, 0.88, 1.0] },
+  { name: 'Alnilam', x: 0, y: 0, mag: 0.52, color: [0.82, 0.88, 1.0] },
+  { name: 'Mintaka', x: 1.05, y: 0.9, mag: 0.42, color: [0.84, 0.9, 1.0] },
+  { name: 'Saiph', x: -2.89, y: -8.47, mag: 0.45, color: [0.8, 0.86, 1.0] },
+  { name: 'Meissa', x: 0.27, y: 11.1, mag: 0.22, color: [0.84, 0.88, 1.0] },
+];
+
+const orionGlsl = ORION_STARS.map(
+  (st) =>
+    `    stars += vec3(${st.color.map((c) => c.toFixed(3)).join(', ')}) * orionStar(q, vec2(${((st.x * Math.PI) / 180).toFixed(5)}, ${((st.y * Math.PI) / 180).toFixed(5)}), ${st.mag.toFixed(2)});`,
+).join('\n');
 
 const vertex = /* glsl */ `
 varying vec3 vDir;
@@ -34,7 +58,7 @@ void main() {
 }
 `;
 
-const fragment = /* glsl */ `
+const fragmentTemplate = /* glsl */ `
 uniform vec3 uZenith;
 uniform vec3 uHorizon;
 uniform vec3 uGroundGlow;
@@ -44,6 +68,8 @@ uniform float uMoonSize;
 uniform float uStars;
 uniform float uMilky;
 uniform vec3 uClusterDir;
+uniform vec3 uOrionDir;
+uniform float uOrion;
 uniform float uTime;
 uniform float uEnvOnly;
 varying vec3 vDir;
@@ -86,6 +112,12 @@ vec3 starLayer(vec3 dir, float scale, float density, float sharp) {
   return col * b * (0.35 + 1.4 * r.z * r.z) * tw;
 }
 
+// A hand-placed star at tangent-plane position p (radians) around a direction.
+float orionStar(vec2 q, vec2 p, float mag) {
+  float d = length(q - p);
+  return (exp(-d * d / 0.0000045) * 3.2 + exp(-d * d / 0.00006) * 0.18) * mag * uOrion;
+}
+
 void main() {
   vec3 dir = normalize(vDir);
   float h = dir.y;
@@ -123,12 +155,23 @@ void main() {
       }
       stars += vec3(0.4, 0.5, 0.9) * pow(max(0.0, (cd - 0.995) / 0.005), 2.0) * 0.015;
     }
+    // Orion: placed by hand so that Subaru can recognise it.
+    vec3 of = normalize(uOrionDir);
+    float oc = dot(dir, of);
+    if (oc > 0.93 && uOrion > 0.0) {
+      vec3 orr = normalize(cross(of, vec3(0.0, 1.0, 0.0)));
+      vec3 oru = cross(orr, of);
+      vec2 q = vec2(dot(dir, orr), dot(dir, oru)) / oc;
+ORION_GLSL
+    }
     col += stars * uStars * fade * (1.0 - disc);
     col = mix(col, uMoonColor * 1.6, disc);
   }
   gl_FragColor = vec4(col, 1.0);
 }
 `;
+
+const fragment = fragmentTemplate.replace('ORION_GLSL', orionGlsl);
 
 /**
  * Procedural desert night sky. Also renders a star-less copy into a PMREM
@@ -149,6 +192,8 @@ export class NightSky {
       starBrightness: 2.4,
       milkyWay: 1,
       clusterDir: new Vector3(0.15, 0.85, -0.5),
+      orionDir: new Vector3(0.62, 0.5, -0.6),
+      orion: 1,
       ...params,
     };
     this.material = new ShaderMaterial({
@@ -167,6 +212,8 @@ export class NightSky {
         uStars: new Uniform(p.starBrightness),
         uMilky: new Uniform(p.milkyWay),
         uClusterDir: new Uniform(p.clusterDir.clone().normalize()),
+        uOrionDir: new Uniform(p.orionDir.clone().normalize()),
+        uOrion: new Uniform(p.orion),
         uTime: new Uniform(0),
         uEnvOnly: new Uniform(0),
       },

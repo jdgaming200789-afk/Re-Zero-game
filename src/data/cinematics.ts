@@ -9,7 +9,149 @@ const JOIN_ALL: Effect[] = ['emilia', 'beatrice', 'julius', 'ram', 'anastasia', 
  */
 const PARTY = ['emilia', 'beatrice', 'julius', 'ram', 'anastasia', 'meili', 'patrasche'];
 
+/** Subaru sits down at Rem's bedside (behind a fade) — the shared start of her scenes. */
+const SIT_WITH_REM: CinematicDef['steps'] = [
+  { do: 'place', who: 'subaru', at: '@alc.subaru_seat' },
+  { do: 'anim', who: 'subaru', clip: 'sitVigil', hold: true },
+  // The others give them the room.
+  ...['emilia', 'beatrice', 'julius', 'ram', 'anastasia', 'meili', 'patrasche'].map((id, i) => ({ do: 'place' as const, who: id, at: i % 2 ? '@alc.leave_1' : '@alc.leave_2' })),
+  { do: 'shot', shot: { from: '@alc.cam_vigil', at: '@alc.vigil_look', fov: 42, drift: [0.02, 0, -0.02] } },
+];
+/** ...and gets up again, behind a fade. */
+const STAND_FROM_REM: CinematicDef['steps'] = [
+  { do: 'fade', to: 1, seconds: 0.6 },
+  { do: 'anim', who: 'subaru', clip: 'none' },
+  { do: 'place', who: 'subaru', at: '@alc.subaru', face: '@alc.door' },
+  { do: 'follow', blend: 0 },
+  { do: 'fade', to: 0, seconds: 0.8 },
+];
+
 export const CINEMATICS: CinematicDef[] = [
+  {
+    // Taygeta: a white room and one black stone.
+    id: 'tay.arrive',
+    letterbox: true,
+    steps: [
+      { do: 'shot', shot: { from: '@tay.cam_high', at: '@tay.center', fov: 50, drift: [0.05, 0, -0.05] } },
+      { do: 'wait', seconds: 2.2 },
+      { do: 'dialogue', id: 'tay.arrive', camera: 'auto' },
+      { do: 'follow', blend: 1.2 },
+    ],
+  },
+  {
+    // Reading the question; the white room becomes the night sky.
+    id: 'tay.monolith',
+    letterbox: true,
+    steps: [
+      { do: 'place', who: 'subaru', at: '@tay.read' },
+      ...PARTY.map((id) => ({ do: 'place' as const, who: id, at: `@tay.${id}`, face: '@tay.center' })),
+      { do: 'shot', shot: { from: '@tay.cam_monolith', at: '@tay.monolith_face', fov: 36, drift: [0, 0.02, -0.04] } },
+      { do: 'wait', seconds: 1 },
+      { do: 'dialogue', id: 'tay.monolith', camera: 'auto' },
+      { do: 'music', state: 'mystery' },
+      { do: 'shot', shot: { from: '@tay.cam_sky', at: '@tay.sky_look', fov: 62, drift: [0, 0.05, 0] }, blend: 2.5, ease: 'inOutSine' },
+      { do: 'wait', seconds: 3.4 },
+      {
+        do: 'say',
+        lines: [{ speaker: 'subaru', text: 'The walls are gone. It’s the night sky — all of it — and the stars are coming down. Close enough to touch.', thought: true }],
+      },
+      { do: 'follow', blend: 1.5 },
+    ],
+  },
+  {
+    // Rigel. The trial ends and the library rises.
+    id: 'tay.solved',
+    letterbox: true,
+    steps: [
+      { do: 'shot', shot: { from: { of: 'subaru', offset: [0.7, 0.25, -1.3], socket: 'head' }, at: '@tay.rigel', fov: 40 } },
+      { do: 'say', lines: [{ speaker: 'subaru', text: 'Rigel.', expression: 'determined' }] },
+      { do: 'wait', seconds: 0.5 },
+      { do: 'fade', to: 1, seconds: 1.4, color: '#ffffff' },
+      { do: 'effects', effects: [{ event: 'tay.library' }] },
+      { do: 'place', who: 'subaru', at: '@tay.read', face: '@tay.center' },
+      ...PARTY.map((id) => ({ do: 'place' as const, who: id, at: `@tay.${id}`, face: '@tay.center' })),
+      { do: 'music', state: 'safe' },
+      { do: 'shot', shot: { from: '@tay.cam_high', at: '@tay.center', fov: 56, drift: [0.06, -0.02, -0.05] } },
+      { do: 'fade', to: 0, seconds: 2.2, color: '#ffffff', wait: false },
+      { do: 'wait', seconds: 5 },
+      { do: 'dialogue', id: 'tay.solved', camera: 'auto' },
+      { do: 'follow', blend: 1.5 },
+    ],
+    onEnd: [{ set: 'tay.trial_cleared' }, { event: 'tay.library' }],
+  },
+  {
+    // Alcyone: Rem is laid down in the Green Room.
+    id: 'alc.rem',
+    letterbox: true,
+    steps: [
+      { do: 'fade', to: 1, seconds: 0.6 },
+      { do: 'spawn', who: 'rem', at: '@alc.rem_bed', lying: true },
+      { do: 'effects', effects: [{ event: 'alc.rem_laid' }] },
+      { do: 'place', who: 'subaru', at: '@alc.subaru', face: '@alc.rem_head' },
+      ...PARTY.map((id) => ({ do: 'place' as const, who: id, at: `@alc.${id}`, face: '@alc.rem_head' })),
+      { do: 'music', state: 'safe' },
+      { do: 'shot', shot: { from: '@alc.cam_door', at: '@alc.rem_head', fov: 46, drift: [0.03, 0, -0.05] } },
+      { do: 'fade', to: 0, seconds: 1.6, wait: false },
+      { do: 'wait', seconds: 1.2 },
+      {
+        do: 'say',
+        lines: [{ speaker: 'subaru', text: 'Green. Everywhere. Leaves on the walls, flowers in the cracks, light like a forest morning — in a tower in the middle of a desert.', thought: true }],
+      },
+      { do: 'shot', shot: { from: '@alc.cam_bed', at: '@alc.rem_head', fov: 34, drift: [0, 0, -0.03] }, blend: 1.6, ease: 'inOutSine' },
+      { do: 'wait', seconds: 1.2 },
+      { do: 'dialogue', id: 'alc.rem', camera: 'auto' },
+      // Everyone else steps out and leaves him with her.
+      ...PARTY.map((id, i) => ({ do: 'move' as const, who: id, to: i % 2 ? '@alc.leave_1' : '@alc.leave_2', speed: 'walk' as const, wait: false })),
+      { do: 'shot', shot: { from: '@alc.cam_door', at: '@alc.rem_head', fov: 40, drift: [0.02, 0, -0.03] }, blend: 1.2 },
+      { do: 'wait', seconds: 2.4 },
+      { do: 'fade', to: 1, seconds: 0.6 },
+      ...SIT_WITH_REM,
+      { do: 'wait', seconds: 1.3 },
+      { do: 'fade', to: 0, seconds: 1.0 },
+      { do: 'dialogue', id: 'alc.rem_alone', camera: 'keep' },
+      { do: 'wait', seconds: 0.8 },
+      ...STAND_FROM_REM,
+    ],
+    // Every return from here on starts beside her.
+    onEnd: [{ set: 'alc.rem_settled' }, { event: 'alc.rem_laid' }, { checkpoint: 'alcyone' }],
+  },
+  {
+    // "Sit with Rem" at her bedside.
+    id: 'alc.vigil',
+    letterbox: true,
+    steps: [
+      { do: 'fade', to: 1, seconds: 0.4 },
+      ...SIT_WITH_REM,
+      { do: 'wait', seconds: 1.3 },
+      { do: 'fade', to: 0, seconds: 0.8 },
+      { do: 'dialogue', id: 'alc.vigil', camera: 'keep' },
+      ...STAND_FROM_REM,
+    ],
+  },
+  {
+    // The balcony at night: Emilia, the stars, and Orion.
+    id: 'alc.balcony',
+    letterbox: true,
+    steps: [
+      { do: 'place', who: 'subaru', at: '@alc.balcony_subaru' },
+      { do: 'place', who: 'emilia', at: '@alc.balcony_door', face: '@alc.balcony_emilia' },
+      // Everyone else is asleep by now.
+      ...PARTY.filter((id) => id !== 'emilia').map((id, i) => ({ do: 'place' as const, who: id, at: i % 2 ? '@alc.leave_1' : '@alc.leave_2' })),
+      { do: 'music', state: 'safe' },
+      { do: 'shot', shot: { from: '@alc.balcony_cam', at: '@alc.balcony_sky', fov: 52, drift: [0.03, 0.01, 0] } },
+      { do: 'wait', seconds: 2.2 },
+      { do: 'move', who: 'emilia', to: '@alc.balcony_emilia', speed: 'walk' },
+      { do: 'face', who: 'emilia', to: 'subaru', wait: false },
+      { do: 'face', who: 'subaru', to: 'emilia' },
+      { do: 'shot', shot: { from: '@alc.balcony_two', at: '@alc.balcony_two_look', fov: 46, drift: [0.02, 0, -0.02] }, blend: 1.2, ease: 'inOutSine' },
+      { do: 'dialogue', id: 'alc.balcony', camera: 'keep' },
+      { do: 'face', who: 'subaru', to: '@alc.balcony_sky', wait: false },
+      { do: 'face', who: 'emilia', to: '@alc.balcony_sky' },
+      { do: 'shot', shot: { from: '@alc.balcony_cam', at: '@alc.balcony_sky', fov: 52, drift: [0.03, 0.01, 0] }, blend: 1.5, ease: 'inOutSine' },
+      { do: 'wait', seconds: 2.5 },
+      { do: 'follow', blend: 1.4 },
+    ],
+  },
   {
     // Into the tower: a voice from above, and the Star Guardian drops in.
     id: 'cel.shaula',

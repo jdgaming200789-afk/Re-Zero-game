@@ -16,9 +16,11 @@ export const RBD_DIALOGUES: DialogueDef[] = [
         lines: [
           { speaker: 'subaru', text: 'White. Everything went white — and then nothing. It came from the top of the tower the moment I ran out onto the glass.', thought: true, if: "meta.last_death == 'heliosphere'", shot: 'keep' },
           { speaker: 'subaru', text: 'She smiled. She said sorry. And then that same white light, from arm’s length.', thought: true, if: "meta.last_death == 'shaula'", shot: 'keep' },
-          { speaker: 'subaru', text: 'Teeth. Claws. The sand going red... I died. Again.', thought: true, if: { all: ["meta.last_death != 'heliosphere'", "meta.last_death != 'shaula'"] }, shot: 'keep' },
+          { speaker: 'subaru', text: 'The stars. Every wrong one burned hotter than the last — and the last one didn’t stop burning.', thought: true, if: "meta.last_death == 'taygeta'", shot: 'keep' },
+          { speaker: 'subaru', text: 'Teeth. Claws. The sand going red... I died. Again.', thought: true, if: { all: ["meta.last_death != 'heliosphere'", "meta.last_death != 'shaula'", "meta.last_death != 'taygeta'"] }, shot: 'keep' },
           { speaker: 'subaru', text: 'The fire. The carriage. The same night. ...I’m back.', thought: true, if: "meta.checkpoint == 'camp_night'", shot: 'keep' },
           { speaker: 'subaru', text: 'Celaeno. The gate behind me, Shaula humming by the dais like nothing happened. For her, nothing did.', thought: true, if: "meta.checkpoint == 'celaeno'", shot: 'keep' },
+          { speaker: 'subaru', text: 'Leaves. Green light. Rem, asleep right where I left her. ...I’m back. Of course I came back here.', thought: true, if: "meta.checkpoint == 'alcyone'", shot: 'keep' },
           { speaker: 'emilia', text: 'Subaru? You went pale all of a sudden. Are you all right?', expression: 'thinking', to: 'subaru' },
           { speaker: 'meili', text: 'Onii-san smells funny all of a sudden. Like something really, really old.', expression: 'thinking' },
           { speaker: 'patrasche', text: '(Patrasche presses against Subaru’s back, snorting at a scent only she can smell.)' },

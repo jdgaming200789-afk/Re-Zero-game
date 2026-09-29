@@ -9,4 +9,6 @@ export function registerAreas(scenes: SceneManager): void {
   scenes.register('kit_gallery', () => import('./dev/KitGalleryArea'));
   scenes.register('tower_foot', () => import('./towerfoot/TowerFootArea'));
   scenes.register('celaeno', () => import('./celaeno/CelaenoArea'));
+  scenes.register('alcyone', () => import('./alcyone/AlcyoneArea'));
+  scenes.register('taygeta', () => import('./taygeta/TaygetaArea'));
 }

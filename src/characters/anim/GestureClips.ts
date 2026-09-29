@@ -1,7 +1,7 @@
 // Keyframe swings stay under 180° between keys: poses become quaternions
 // and slerp takes the short way round.
 import { CLIPS, clip, stand, type ActionClip } from './Clips';
-import { UPPER_BODY, mask, mirrorSpec, type PoseSpec } from './Pose';
+import { UPPER_BODY, mask, mirrorSpec, symmetric, type PoseSpec } from './Pose';
 
 /**
  * Conversation gestures, played on the dialogue line they belong to
@@ -257,5 +257,31 @@ add(
       { t: 1, pose: stand, ease: 'inOutCubic' },
     ],
     { mask: UPPER_BODY, fadeIn: 0.05, fadeOut: 0.4 },
+  ),
+);
+
+/**
+ * Sitting in a chair beside a bed, leaning in, elbows on the knees —
+ * Subaru's vigil at Rem's side. Played with `hold` so the pose stays.
+ * Pivots on the feet: place the character just in front of the seat.
+ */
+const seated: PoseSpec = {
+  ...symmetric({ upperLegL: [-86, 0, 4], lowerLegL: [84, 0, 0], footL: [2, 0, 0], upperArmL: [-34, -12, 8], lowerArmL: [-64, 0, 0], handL: [0, 0, 12] }),
+  hipsOffset: [0, -0.41, -0.06],
+  spine: [14, 0, 0],
+  chest: [6, 0, 0],
+  neck: [8, 0, 0],
+  head: [12, 0, 0],
+};
+add(
+  clip(
+    'sitVigil',
+    1.3,
+    [
+      { t: 0, pose: stand },
+      { t: 0.55, pose: { ...seated, hipsOffset: [0, -0.3, -0.04], spine: [22, 0, 0] }, ease: 'inOutSine' },
+      { t: 1, pose: seated, ease: 'outCubic' },
+    ],
+    { fadeIn: 0.1, fadeOut: 0.4 },
   ),
 );

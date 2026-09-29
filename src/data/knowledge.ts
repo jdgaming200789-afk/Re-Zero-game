@@ -56,6 +56,31 @@ export const KNOWLEDGE: Record<string, KnowledgeDef> = {
     text: 'I took one step toward the gate before the trials were cleared. Shaula said sorry, smiled, and the world went white. “Master” or not, the rules come first.',
     category: 'people',
   },
+  'tower.green_room': {
+    title: 'The Green Room',
+    text: 'A room in Alcyone overgrown with green, thick with mana. Whoever sleeps there needs no food or water. Rem sleeps there now.',
+    category: 'lore',
+  },
+  'sky.orion_myth': {
+    title: 'Orion and the scorpion',
+    text: 'Back home, Orion the hunter was stung to death by a scorpion the gods sent after him. They hang on opposite sides of the sky. Orion’s brightest star is Rigel, blue-white at his foot — brighter than red Betelgeuse at his shoulder.',
+    category: 'lore',
+  },
+  'sky.shaula_star': {
+    title: 'The scorpion’s stinger',
+    text: 'In my world, the star at the tip of the scorpion’s tail — the stinger that killed Orion — is called Shaula. The same name as the Star Guardian. A coincidence. Probably.',
+    category: 'lore',
+  },
+  'tower.taygeta_riddle': {
+    title: 'Taygeta’s question',
+    text: 'The black monolith in Taygeta asks: “Touch upon the greatest splendour of the hero destroyed by Shaula.” Then the white room became a sky full of stars within reach.',
+    category: 'lore',
+  },
+  'tower.taygeta_burns': {
+    title: 'Wrong stars burn',
+    text: 'In Taygeta, every star that isn’t the answer burns like the real thing. Guess wrong enough times and there’s nothing left of you. The tower doesn’t forgive guesses.',
+    category: 'danger',
+  },
   'people.julius_name': {
     title: 'Julius’s name',
     text: 'Gluttony ate Julius’s name. The whole world forgot him. He walks with us anyway, and he never complains about it — which is somehow worse.',

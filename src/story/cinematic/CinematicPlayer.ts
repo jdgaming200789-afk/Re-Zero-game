@@ -183,7 +183,8 @@ export class CinematicPlayer implements GameSystem {
       case 'place': {
         const at = this.point(s.at, 'feet');
         this.ground(at);
-        const yaw = s.face === undefined ? this.yawOf(s.who) : typeof s.face === 'number' ? (s.face * Math.PI) / 180 : yawTowards(at, this.point(s.face, 'feet'));
+        // Without a facing, a marker's own yaw applies (else keep theirs).
+        const yaw = s.face === undefined ? (this.markerYaw(s.at) ?? this.yawOf(s.who)) : typeof s.face === 'number' ? (s.face * Math.PI) / 180 : yawTowards(at, this.point(s.face, 'feet'));
         this.placeWho(s.who, at, yaw);
         return;
       }
@@ -211,6 +212,8 @@ export class CinematicPlayer implements GameSystem {
         return;
       case 'anim': {
         const v = this.visual(s.who);
+        // 'none' releases a held pose (standing up from a chair).
+        if (s.clip === 'none') return v?.stopAction();
         if (!v || (r.skipping && !s.hold)) return;
         const p = v.play(s.clip, { holdEnd: s.hold });
         if (s.wait && !s.hold) await this.until(p, r);
@@ -234,8 +237,9 @@ export class CinematicPlayer implements GameSystem {
       case 'spawn': {
         const at = this.point(s.at, 'feet');
         this.ground(at);
-        const yaw = s.face === undefined ? 0 : typeof s.face === 'number' ? (s.face * Math.PI) / 180 : yawTowards(at, this.point(s.face, 'feet'));
-        await g.actors.spawn(s.who, { position: at, yaw, scope: g.scenes.current?.scope });
+        const yaw = s.face === undefined ? (this.markerYaw(s.at) ?? 0) : typeof s.face === 'number' ? (s.face * Math.PI) / 180 : yawTowards(at, this.point(s.face, 'feet'));
+        const actor = await g.actors.spawn(s.who, { position: at, yaw, scope: g.scenes.current?.scope, physics: !s.lying });
+        if (s.lying) actor.setLying(true, 0.06);
         return;
       }
       case 'despawn':
@@ -298,6 +302,12 @@ export class CinematicPlayer implements GameSystem {
   }
 
   // ------------------------------------------------------------------ places
+  /** The facing stored with an area marker (`'@camp.fire'`), if `ref` is one. */
+  private markerYaw(ref: PlaceRef): number | null {
+    if (typeof ref !== 'string' || !ref.startsWith('@')) return null;
+    return this.game.scenes.current?.spawns.get(ref.slice(1))?.yaw ?? null;
+  }
+
   point(ref: PlaceRef, mode: 'feet' | 'head'): Vector3 {
     if (Array.isArray(ref)) return new Vector3(ref[0], ref[1], ref[2]);
     if (typeof ref === 'string') {

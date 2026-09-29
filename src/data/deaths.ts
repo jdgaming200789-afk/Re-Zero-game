@@ -14,6 +14,8 @@ export const DEATHS: Record<string, DeathDef> = {
   heliosphere: { style: 'light', learn: ['heliosphere.movement', 'heliosphere.glint'] },
   /** Broke the tower's rules: the Star Guardian keeps her word. */
   shaula: { style: 'light', learn: ['people.shaula_rules'] },
+  /** Guessed wrong once too often in Taygeta: the stars burn. */
+  taygeta: { style: 'light', learn: ['tower.taygeta_burns'] },
   'combat.sand_earthworm': { style: 'wound', learn: ['earthworm.vibration'] },
   combat: { style: 'wound', learn: [] },
   fall: { style: 'wound', learn: [] },
@@ -36,5 +38,6 @@ export interface CheckpointDef {
 export const CHECKPOINTS: Record<string, CheckpointDef> = {
   camp_night: { id: 'camp_night', area: 'tower_foot', spawn: 'camp', name: 'The camp at the tower’s foot, the first night' },
   celaeno: { id: 'celaeno', area: 'celaeno', spawn: 'gate', name: 'Celaeno, inside the tower' },
+  alcyone: { id: 'alcyone', area: 'alcyone', spawn: 'green_room', name: 'The Green Room, at Rem’s side' },
   gym: { id: 'gym', area: 'dev_gym', spawn: 'default', name: 'The practice hall' },
 };

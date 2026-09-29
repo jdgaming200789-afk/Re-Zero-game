@@ -1,10 +1,10 @@
 # Re:Zero - Pleiades — Development Status
 
-_Last updated: end of Phase 7._
+_Last updated: end of Phase 8._
 
 ## Current phase
 
-**Phase 7 complete; Phase 9 part 1 (menus, title, screens) complete → next: Phase 8** (Taygeta trial, Alcyone and the Green Room, Shaula in Celaeno).
+**Phase 8 complete** (Shaula in Celaeno, Alcyone and the Green Room, Taygeta's trial and the library) **→ next: Phase 9 part 2, then Phase 10** (assemble and polish the vertical slice).
 
 Vertical-slice design: [docs/VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) — "The Watchtower in the Sand".
 
@@ -263,9 +263,31 @@ built for the **browser**, with every original requirement kept:
 - `MenuList`: one navigable list for keyboard, gamepad and mouse (headers, disabled rows, options, sliders, toggles, value rows); `ScreenManager` with a back-stack, pausing, and a short input settle when screens change so one key press is one action.
 - Fixes: pause/unpause restores the previous time scale (the title and the Witch's frozen moment are no longer undone by a menu); a redundant story trigger that could race the new-game flow and request the opening twice is gone (a duplicate cinematic request is now a warning).
 
+### Phase 8 — Inside the tower: Shaula, Alcyone, Taygeta
+
+**Celaeno — the Star Guardian (`src/data/dialogues/celaeno.ts`, `cel.shaula` cinematic)**
+- Entering Celaeno for the first time: the party gathers inside the colonnade, a voice shouts "Maaaaster!!" from above, Shaula waves from the gallery balustrade, drops onto the star-map dais and mistakes Subaru for her Master. She lays down the tower's rules (learned as knowledge); an Insight option ("That light on the glass was you") opens if Subaru died to the Heliosphere; the scene starts **The Trial of Taygeta** and sets a Celaeno return point. Afterwards she waits by the dais and can be talked to.
+- **The first rule has teeth**: walking out of the great gate before the trial is cleared, Shaula is suddenly there asking where Master is going. Insisting is a Return by Death ("She keeps her word"); in the next loop the fatal answer is gone and the wake-up thoughts reflect it. After the trial, the gate opens normally.
+- Every doorway in the round floors now has a stairwell recess behind it (steps up into light, down into the dark, or the night outside the gate) with a blocker at its mouth, so neither characters nor the camera can walk into the void (`doorRecess` in `RoundHall`).
+- Cinematic additions: `spawn` / `despawn` steps (optionally `lying`), `anim: 'none'` releases a held pose, and placing someone on a marker without a facing uses the marker's own yaw.
+
+**Alcyone — the keepers' quarters (`src/areas/alcyone`)**
+- The first warm place in the tower: a round hall under a beamed wooden ceiling with a lantern ring over a twelve-chair table and woven rugs (canvas-generated patterns), opening onto six rooms — the entry by the stair, a stone hearth with a real fire and a pantry, the **Green Room** (walled off), the way up to Taygeta and a **balcony** over the moonlit dunes, the bedrooms (a bed to rest = save), and a small study with shelves, desk and a lectern. Lore: four hundred years of tally marks in the bedroom wall, a keeper's note on the lectern ("the tower asks only what a true visitor could know").
+- **Foliage** (`src/scene/procedural/Foliage.ts`): instanced ferns, bushes, hanging vines, ivy, grass tufts and flowers (three shapes, a handful of draw calls) with a breathing sway in the vertex shader and softly glowing blossoms. The Green Room is overgrown with it: planters along both walls, ivy over the stone, vines from the ceiling, a young tree by the windows, glowing orbs and drifting pollen.
+- **Rem is laid down in the Green Room** (zone-triggered `alc.rem` scene): Echidna explains that whoever sleeps there needs no food or water; Ram doesn't know the girl, yet looking at her feels like reaching for something that should be there; Julius — whom the whole world forgot — says she is fortunate to be remembered so fiercely. Everyone leaves; Subaru sits at her bedside and makes his promise. **The return point moves to her side.** Afterwards "Sit with Rem" plays a short vigil whose words change with how things are going (another death, the trial cleared).
+- Actors can lie down (`ActorController.setLying`: reclined on the back, foot IK and gaze off), Rem under a quilt; a seated vigil pose (`sitVigil`).
+- **The balcony** (after Rem is settled): Emilia finds Subaru under the stars. He recognises **Orion** (now hand-placed in the procedural night sky, `ORION_STARS`), tells her the myth of the hunter killed by the scorpion, points out Rigel — and realises the scorpion's stinger star is called **Shaula**.
+
+**Taygeta — the first trial (`src/areas/taygeta`, `src/data/constellations.ts`)**
+- A white room with nothing in it but a black monolith: "Touch upon the greatest splendour of the hero destroyed by Shaula." Reading it dissolves the walls into the night sky over a mirror floor, and six constellations come down within reach on their own "pages" around the room — Orion (lying on its side, as it rises), Scorpius on the far side of the sky, the Big Dipper, Cassiopeia, and two constellations of this world that mean nothing to Subaru.
+- **Aim by looking**: the star nearest the centre of the view within arm's reach is highlighted and a single "Touch" prompt follows it (belt stars sit a hand's width apart, so the default focus picker couldn't choose between them).
+- **Wrong stars burn** (30 damage, knockback, a white flash). The hints sharpen: Emilia worries, Beatrice scolds, Echidna asks whether "Shaula" might be a word from somewhere else, and on the third burn Subaru remembers on his own. A fourth guess kills him — Return by Death to Rem's side, remembering. Knowing the stinger's name (from the balcony or a previous loop) turns the monolith scene into an immediate insight.
+- **Rigel** ends the trial: a white flash, and the room becomes the **library** — three tiers of shelves all the way round, radial stacks rising out of the floor, warm reading lights, book spines from a generated texture merged into one mesh, and a black book on the lectern where the monolith stood. The quest completes ("Only someone from my world could have known").
+- Environmental harm can name its cause (`cause:<id>` damage tag), so each kind of death teaches its own lesson.
+
 ## Testing
 - `npm run typecheck` — strict TypeScript.
-- `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data, dialogue runner (lines, conditions, effects, hidden/locked/once/insight choices, branching), quest evaluation, validation of every dialogue, quest, cinematic, story trigger and talk entry, the Return-by-Death rewind semantics, death/return-point data, save validation (corrupt/tampered/future saves rejected) and the flats cover. **61/61 passing.**
+- `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data, dialogue runner (lines, conditions, effects, hidden/locked/once/insight choices, branching), quest evaluation, validation of every dialogue, quest, cinematic, story trigger and talk entry, the Return-by-Death rewind semantics, death/return-point data, save validation (corrupt/tampered/future saves rejected), the flats cover, and Taygeta's constellations (the answer exists and is Orion's brightest star, lines are valid, every figure within reach and clear of the stair, the sky's Orion matches the trial's). **68/68 passing.**
 - `npm run smoke` — Playwright drives the real game in Chromium and asserts on state:
   - `tools/browser/smoke.mjs` (dev gym): **13/13** — walk, sprint/stamina, stairs, jump/land, slope limit, corridor camera, focus + read, hold lever → gate, door → walk through.
   - `tools/browser/areas.mjs`: **7/7** — tower_foot loads grounded, dune walking, gate prompt, gate → Celaeno, Celaeno gate → back outside, no VFX leaks across unloads (emitter count back to its first-load value). 0 console errors.
@@ -276,14 +298,15 @@ built for the **browser**, with every original requirement kept:
   - `tools/browser/dialogue.mjs`: **25/25** — a conversation takes over (mode, window, camera), letter-by-letter reveal, advance completes then continues, the log, auto mode to the choice, hidden/locked options, a choice's effect, skip to the end with control and camera returned, a quest starting itself and showing on the tracker, objectives from zones and a won fight, the completion banner, an Insight option unlocked by knowledge and picked with the mouse, thought styling, the journal (quests, Subaru Remembers, pause/resume), a new game's camp opening (letterbox, party staged), reading through the conversation choosing the Insight option, quest/knowledge/control after the scene, talking to Emilia and her follow-up line, hold-to-skip reaching the same end state, 0 console errors.
   - `tools/browser/rbd.mjs`: **13/13** — the story starts with a return point and an autosave; no HUD before Subaru knows the rules; running on the open glass draws the glint and the light kills him; Return by Death to the camp in loop 2; the world rewound (ruins visited and objectives undone) while knowledge and the loop count survive; the party back whole; trying to tell brings the Witch and time resumes after; in loop 2 the detection meter appears, the glint warning shows, hiding behind the ruins makes the strike miss and teaches cover; the worm breaching on the glass is struck down; save/load restores flags, knowledge, return point and position; 0 console errors.
   - `tools/browser/menus.mjs`: **13/13** — the game opens on the title (time held, Continue disabled without saves); Settings from the title changes a volume live and returns; New Game hides the title and starts the story; Esc pauses with location/objective/return point; the inventory lists tonics and the Carriage Bell; ringing the bell closes the menus and makes the noise; the map opens drawn; saving to a slot from the pause menu; back returns to pause; rebinding Interact to G; Esc closes everything and play resumes; 0 console errors.
+  - `tools/browser/tower.mjs`: **20/20** — Shaula's arrival (rules, quest, Celaeno return point); leaving through the gate is a Return by Death, and in the next loop the fatal answer is gone; the gallery stair to Alcyone; the Green Room scene (Rem lying in bed, return point at her side); up to Taygeta; the monolith turns the room to night; aiming at Betelgeuse by looking and touching it burns; two more wrong stars and Subaru remembers; the fourth kills him and he wakes beside Rem knowing; the next climb answers the riddle at once; Rigel raises the library and completes the quest; the gate then opens; the balcony scene with Emilia; 0 console errors.
+- `node tools/browser/sheet.mjs <prefix> <out.png> [cols]` — contact sheet of test screenshots for review.
 - `npm run cast` — lineup review: every character spawned side by side plus face close-ups (`test-results/cast_*.png`).
   - Celaeno's helical stair verified climbable from floor to the 12 m gallery.
   - The container has no GPU, so the harness steps the simulation at a fixed 60 Hz and renders only for screenshots (`game.advanceAsync`). Screenshots go to `test-results/`.
 
 ## Systems in progress
-- Remaining vertical-slice interiors (Alcyone living quarters + Green Room, Taygeta white room/library) are scheduled with the puzzle/exploration work (Phase 7); the kit and RoundHall helpers already cover them.
-- Rem lying in the Green Room bed (she uses the `rest` stance and closed-eye face; the bed placement comes with Alcyone).
-- Voice: every character has a `VoiceDef` (pitch/rate/timbre) for procedural voice blips; the audio phase will play them on `bark:play` and dialogue lines.
+- The library is a destination for now: the black book (Books of the Dead) is a teaser, and Shaula's "don't damage the books" rule has no enforcement yet.
+- Getting to Taygeta skips any carrying animation: the Green Room scene opens with Rem already in bed.
 
 ## Known issues
 - Kit-to-terrain placement uses the analytic height function; very large pieces on steep dune faces can float slightly at one corner.
@@ -295,11 +318,13 @@ built for the **browser**, with every original requirement kept:
 - Enemy steering is direct (no navmesh); jackals rely on open sand and circling slots. Interiors will need a navigation grid if beasts ever come inside.
 - Julius's in-hand sword is a procedural prop and the sheathed sword mesh (hilt + scabbard) is hidden while it's drawn.
 - Real-time frame rate cannot be measured in this container (software rendering). Performance numbers must be taken on real hardware.
+- The browser harness renders only the last frame of each step, so colour-grade blends and eye adaptation barely advance between screenshots; tests call `applyAtmosphere(area, 0)` before screenshots that follow a look change. In real play they blend normally.
+- Party members walking out of the Green Room use direct steering and can snag on furniture; the scene places them outside behind a fade.
+- Rem's apron can press into the quilt from below at some angles.
 
 ## Next tasks
-1. Phase 8 — puzzles and interiors: Taygeta star-pillar trial (Orion → Rigel), Alcyone living quarters and the Green Room (carry Rem), the white room → library transition; Shaula's arrival in Celaeno and its return point.
-2. Phase 9 (part 2) — gamepad glyphs on prompts, stealth feedback polish on the flats, audio mix pass on real hardware.
-3. Phase 10 — assemble the vertical slice end to end (camp → ruins → flats loop → gate plaza jackals → the worm lured into the light → Celaeno → Alcyone → Taygeta), then polish.
+1. Phase 9 (part 2) — gamepad glyphs on prompts, stealth feedback polish on the flats, audio mix pass on real hardware.
+2. Phase 10 — assemble the vertical slice end to end (camp → ruins → flats loop → gate plaza jackals → the worm lured into the light → Celaeno and Shaula → Alcyone and Rem → Taygeta's trial → the library), then polish: pacing, a carrying scene up the stair, music cues per scene, performance on real hardware.
 
 ## Technical decisions
 - **Textures generated in Python (numpy) rather than baked from Blender nodes** — periodic noise guarantees seamless tiling and is fully deterministic; Blender is used where it is strongest (modelling with modifiers, booleans, decimation, UVs, glTF export).
@@ -321,6 +346,8 @@ built for the **browser**, with every original requirement kept:
 - **Readable cover over literal line of sight** — the summit is ~75° up from the flats, so true ray cover would be a sliver behind each wall; cover radii around the ruins match what a player reads as "behind the stone".
 - **Skipping resolves, it doesn't jump** — a skipped cinematic runs every remaining step instantly, so the world ends up identical whether the scene was watched or not.
 - **Attack tokens over per-enemy aggression** — a pack director hands out attack slots, which keeps fights readable and lets difficulty scale by token count rather than by damage.
+- **Puzzles that only Earth knowledge solves, and deaths that teach it** — Taygeta's answer can be learned three ways (the balcony conversation, the escalating hints, or dying and remembering), all through the same knowledge flags, so the riddle is fair without ever being explained by the world.
+- **Aim by looking for fine choices** — when targets sit centimetres apart, the camera ray picks, and one interactable follows the aim, instead of fighting the proximity-based focus picker.
 
 ## Performance concerns
 - tower_foot renders ~360k triangles and ~245 draw calls at High (terrain inner mesh ~100k tris, tower ~38k). Candidates if needed: terrain LOD rings, merging static kit cells into BatchedMesh, lower-res horizon skirt.
@@ -330,3 +357,5 @@ built for the **browser**, with every original requirement kept:
 - Trimesh colliders for large kit pieces should use simplified collision proxies (Phase 2 exports them).
 - Characters: ~30–41k triangles each plus an outline shell (≈2× vertex work). A full party on screen is ~300–400k triangles; candidates: outline shells dropped beyond ~25 m, LOD meshes from Blender's decimate, face texture updates throttled for distant characters (already only redrawn on change).
 - Spring bones run on the CPU at 60 Hz sub-steps (≈80 joints for Emilia); fine for a party, would need culling/LOD for crowds.
+- Alcyone: ~600k triangles and ~250 draw calls with the whole party in view (the Green Room foliage is ~6k instanced leaves). Candidates: foliage distance culling per room, fewer ivy leaves on Low.
+- Taygeta's library: three tiers of shelves around the wall (≈170 kit instances) and a single merged mesh of book spines; ~200k triangles.

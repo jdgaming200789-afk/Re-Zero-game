@@ -434,8 +434,10 @@ export class SubaruCombat extends Component {
     this.deathTimer = 0;
     const rbd = this.game.getSystem<{ name: string; die(cause: string): void }>('rbd');
     // The cause decides what Subaru takes back with him.
+    // Environmental harm names its cause with a `cause:<id>` tag.
     const killer = info?.sourceId != null ? this.game.combat.all().find((h) => h.entity.id === info.sourceId) : undefined;
-    const cause = info?.tags?.includes('heliosphere') ? 'heliosphere' : killer?.characterId ? `combat.${killer.characterId}` : 'combat';
+    const tagged = info?.tags?.find((t) => t.startsWith('cause:'))?.slice(6);
+    const cause = tagged ?? (info?.tags?.includes('heliosphere') ? 'heliosphere' : killer?.characterId ? `combat.${killer.characterId}` : 'combat');
     rbd?.die(cause);
   }
 

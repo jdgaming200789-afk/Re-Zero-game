@@ -13,4 +13,26 @@ export const STORY_TRIGGERS: StoryTrigger[] = [
     play: { cinematic: 'cel.shaula' },
     delay: 0.4,
   },
+  {
+    // Stepping into the Green Room for the first time: Rem is laid to rest.
+    id: 'alc.rem',
+    on: { zone: 'alc.green_room' },
+    if: { all: ['cel.met_shaula', '!alc.rem_settled'] },
+    play: { cinematic: 'alc.rem' },
+  },
+  {
+    id: 'tay.arrive',
+    on: { areaEnter: 'taygeta' },
+    if: '!tay.trial_started',
+    play: { cinematic: 'tay.arrive' },
+    delay: 0.6,
+  },
+  {
+    // The balcony, once Rem is settled: Emilia comes looking for Subaru.
+    id: 'alc.balcony',
+    on: { zone: 'alc.balcony' },
+    if: 'alc.rem_settled',
+    play: { cinematic: 'alc.balcony' },
+    delay: 0.3,
+  },
 ];

@@ -38,6 +38,7 @@ export type CineStep =
   | { do: 'move'; who: string; to: PlaceRef; speed?: 'walk' | 'run' | number; wait?: boolean }
   | { do: 'face'; who: string; to: PlaceRef; wait?: boolean }
   | { do: 'look'; who: string; at: PlaceRef | null }
+  /** `clip: 'none'` releases a held pose. */
   | { do: 'anim'; who: string; clip: string; wait?: boolean; hold?: boolean }
   | { do: 'expr'; who: string; expression: string; seconds?: number }
   | { do: 'say'; lines: DialogueLine[]; camera?: 'auto' | 'keep' }
@@ -46,7 +47,7 @@ export type CineStep =
   /** Wait until party membership changes have spawned everyone. */
   | { do: 'party' }
   /** Bring a character into the scene (kept by the area) / take them out. */
-  | { do: 'spawn'; who: string; at: PlaceRef; face?: PlaceRef | number }
+  | { do: 'spawn'; who: string; at: PlaceRef; face?: PlaceRef | number; lying?: boolean }
   | { do: 'despawn'; who: string }
   | { do: 'music'; state: MusicState }
   | { do: 'shake'; strength: number; seconds: number }

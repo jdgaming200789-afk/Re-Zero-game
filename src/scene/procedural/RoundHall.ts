@@ -1,10 +1,13 @@
 import type RAPIER from '@dimforge/rapier3d-compat';
 import {
+  BoxGeometry,
   BufferAttribute,
   BufferGeometry,
   DoubleSide,
+  Group,
   LatheGeometry,
   Mesh,
+  PlaneGeometry,
   Quaternion,
   RingGeometry,
   Vector2,
@@ -274,4 +277,64 @@ export function tiledFloor(batch: KitBatch, radius: number, y: number, piece = '
       batch.place(piece, x, y, z);
     }
   }
+}
+
+/**
+ * The stairwell behind a door in the outer ring wall: a shallow stone
+ * recess with a few steps climbing (or dropping) into the dark, so the door
+ * reads as the way to another floor. An invisible wall at its mouth keeps
+ * characters (and the camera) from wandering in; the level's interactable
+ * does the travel.
+ * `glow` lights the top of a rising stair (the white of the floor above).
+ */
+export function doorRecess(
+  parent: Object3D,
+  physics: Physics,
+  opts: { angle: number; radius: number; baseY: number; dir: 'up' | 'down' | 'flat'; mat: Material; floor?: Material; glow?: Material },
+): RAPIER.Collider {
+  const g = new Group();
+  g.position.copy(polar(opts.radius, opts.angle, opts.baseY));
+  g.rotation.y = opts.angle;
+  const box = (w: number, h: number, d: number, x: number, y: number, z: number, mat = opts.mat) => {
+    const m = new Mesh(new BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    g.add(m);
+    return m;
+  };
+  const depth = 2.2;
+  box(0.4, 4.4, depth, -1.5, 2.1, depth / 2);
+  box(0.4, 4.4, depth, 1.5, 2.1, depth / 2);
+  box(3.4, 4.4, 0.4, 0, 2.1, depth + 0.2);
+  box(3.4, 0.4, depth + 0.4, 0, 4.1, depth / 2);
+  if (opts.dir === 'up') {
+    box(2.6, 0.3, depth, 0, -0.15, depth / 2);
+    for (let k = 0; k < 6; k++) {
+      const h = 0.2 * (k + 1);
+      box(2.6, h, 0.32, 0, h / 2, 0.45 + k * 0.3);
+    }
+    if (opts.glow) {
+      const lightPane = new Mesh(new PlaneGeometry(2.4, 1.6), opts.glow);
+      lightPane.position.set(0, 2.6, depth - 0.02);
+      lightPane.rotation.y = Math.PI;
+      g.add(lightPane);
+    }
+  } else if (opts.dir === 'flat') {
+    box(2.6, 0.3, depth, 0, -0.15, depth / 2, opts.floor ?? opts.mat);
+    if (opts.glow) {
+      const lightPane = new Mesh(new PlaneGeometry(2.6, 3.8), opts.glow);
+      lightPane.position.set(0, 1.9, depth - 0.02);
+      lightPane.rotation.y = Math.PI;
+      g.add(lightPane);
+    }
+  } else {
+    box(2.6, 0.3, 0.45, 0, -0.15, 0.225);
+    for (let k = 1; k <= 6; k++) box(2.6, 1.4, 0.3, 0, -0.2 * k - 0.7, 0.3 + k * 0.3);
+  }
+  parent.add(g);
+  g.updateMatrixWorld(true);
+  const center = new Vector3(0, 2, 0.55).applyMatrix4(g.matrixWorld);
+  const q = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), opts.angle);
+  return physics.addBox(center, new Vector3(1.4, 2, 0.15), q);
 }

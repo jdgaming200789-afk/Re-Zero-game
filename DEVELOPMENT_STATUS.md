@@ -1,10 +1,10 @@
 # Re:Zero - Pleiades — Development Status
 
-_Last updated: end of Phase 6._
+_Last updated: end of Phase 7._
 
 ## Current phase
 
-**Phase 6 complete → starting Phase 7** (Return by Death: the Witch's miasma, the rewind sequence, checkpoints, save/load).
+**Phase 7 complete → Phases 8–9 in progress** (menus and screens, audio, puzzles and tower interiors).
 
 Vertical-slice design: [docs/VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) — "The Watchtower in the Sand".
 
@@ -220,17 +220,50 @@ built for the **browser**, with every original requirement kept:
 
 **Dev**: `newgame [skip]`, `dialogue [id]`, `cine [id]`, `quest [id] [start|complete|fail|track]`, `learn [id|all]`.
 
+### Phase 7 — Return by Death, return points, saves, the Heliosphere
+
+**Return points (`src/story/rbd/Checkpoints.ts`, `src/data/deaths.ts`)**
+- Reaching a return point snapshots every world-scope flag (quests, party, dialogue memory, visited places, items, story beats) — never `know.*` or `meta.*`. A faint violet clock sigil names the place; the autosave is written at the same moment.
+- The camp opening sets the first one ("the camp at the tower's foot, the first night"); Celaeno and the practice hall are defined for later beats. Effect `{ checkpoint: id }` lets any scene set one.
+
+**Return by Death (`src/story/rbd/ReturnByDeath.ts`, `src/ui/overlay/WitchOverlay.ts`)**
+- Any death routes here with a cause (`heliosphere`, `combat.<enemy>`, `fall`...). Wounds: time slows, the image drains of colour, Subaru collapses, the camera settles on him. Light: a white flash burns him away.
+- The Witch's shadow: black tendrils with a violet glow creep in from every edge; "I love you" whispers drift over the scene and keep going over the black. A card reads *Return by Death* and the name of the return point.
+- The rewind: the world flags are restored to the return point, the area is rebuilt from scratch (every enemy, pickup and one-time object back as it was), combat and effects are cleared, the party respawns whole, Subaru is restored. The loop counter, death count and last cause are kept.
+- He wakes facing the people who will ask if he's all right: a white flash, chromatic shiver, a gasp (new clip), the face of someone who just died. Knowledge from the death is learned then (the Heliosphere teaches that it hunts movement and glints first). A return conversation follows: his thoughts depend on how he died; Meili and Patrasche catch the Witch's scent on him.
+- **The taboo**: choosing to tell someone stops time, drains the world to grey and sends shadow hands for his heart — a faint heartbeat glow, the squeeze, the whispers rising — before letting him breathe. Available when he tries to explain himself at the camp (Insight choice) and after returning. Dialogue effects can now take time (`{ witch: 'punish' }`): the conversation hides until it passes.
+
+**The Heliosphere (`src/areas/towerfoot/Heliosphere.ts`)**
+- The star lantern at the summit (Shaula's post, 379 m up) watches the Glass Flats. Moving in the open builds its attention (faster running, faster sprinting); standing still lets it drift; the ruins on the flats are cover (readable radii around each piece — the only safe ground).
+- Full attention → the summit star flares (the glint) → 1.5 s later a column of white light comes down where it last saw you: core and halo beam, a ring of light racing out over the glass, a scorch that glows and cools, sparks, a flash of light over the whole area, camera shake. Still visible under it: death (Return by Death). Hidden: it burns the empty glass and Subaru learns that stone blocks its sight.
+- It also sees the Sand Earthworm: a worm breaching on the glass is struck down in a heartbeat — the answer to the elite fight, and knowledge ("lure it into the light").
+- Loop 1 has no interface for any of this. Once Subaru knows, an attention meter appears at the top of the screen on the flats (Still / Exposed / Hidden), and the glint triggers a warning and a flash at the screen's edges.
+
+**Saves (`src/save/SaveSystem.ts`)**
+- Slots `auto`, `slot1`–`slot3` in local storage (in-memory fallback): every flag, the current return point and its snapshot, area, position and facing, seen dialogue lines, tracked quest, playtime and a summary for the save screen. Versioned and strictly validated — corrupt or future saves are refused, never half-loaded. Settings are never part of a save.
+- Loading rebuilds the area, puts Subaru where he stood, respawns the party and restores the return point. Saving is refused mid-fight or mid-scene.
+
+**Infrastructure**: `SceneManager.goto(..., { reload })` rebuilds an area in place; `CombatManager.reset()`; `PartyManager.respawnAll()`; `SubaruCombat.restore()`; `DialogueSystem.abort()`; cinematics wait for an open conversation instead of failing.
+
+**Dev**: `die [cause]`, `punish`, `returnpoint [id]`, `save [slot]`, `load [slot]`, `saves`.
+
+**Also in this phase**
+- Fixed the Glass Flats mask: a sign error let negative edge noise flip the interior to "outside", so only about half of the flats were glass. It is now a proper signed distance with a melted-looking edge; the whole basin is glass.
+- The exposure pass clamps HDR values below half-float range, so an extreme flash can never become Inf/NaN and blank the frame through the bloom blur.
+- **Audio (`src/audio`)** — first version, all synthesized with WebAudio (no assets): mixer buses bound to the audio settings; an adaptive score (`MusicDirector`) that reshapes one continuous piece per mood — exploration, safe, mystery, tension, combat, boss, cinematic — with pads, arpeggios, bells, bass, drums and a combat motif, crossfading layers; stingers for Return by Death, the Witch, the glint and the strike, the worm's tremor, witchbeast howls, return points; hit sounds by element; UI chimes (quests, knowledge, items); footsteps by surface; desert wind and stone-hall ambience; and per-character **voice blips** from each character's voice data, driven letter by letter from the dialogue window (Subaru's thoughts stay silent). Runs in every browser test without errors; how it *sounds* still needs a pass on real hardware with speakers.
+
 ## Testing
 - `npm run typecheck` — strict TypeScript.
-- `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data, dialogue runner (lines, conditions, effects, hidden/locked/once/insight choices, branching), quest evaluation, and validation of every dialogue, quest, cinematic, story trigger and talk entry. **55/55 passing.**
+- `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data, dialogue runner (lines, conditions, effects, hidden/locked/once/insight choices, branching), quest evaluation, validation of every dialogue, quest, cinematic, story trigger and talk entry, the Return-by-Death rewind semantics, death/return-point data, save validation (corrupt/tampered/future saves rejected) and the flats cover. **61/61 passing.**
 - `npm run smoke` — Playwright drives the real game in Chromium and asserts on state:
   - `tools/browser/smoke.mjs` (dev gym): **13/13** — walk, sprint/stamina, stairs, jump/land, slope limit, corridor camera, focus + read, hold lever → gate, door → walk through.
-  - `tools/browser/areas.mjs`: **7/7** — tower_foot loads grounded, dune walking, gate prompt, gate → Celaeno, Celaeno gate → back outside, no VFX leaks across unloads. 0 console errors.
+  - `tools/browser/areas.mjs`: **7/7** — tower_foot loads grounded, dune walking, gate prompt, gate → Celaeno, Celaeno gate → back outside, no VFX leaks across unloads (emitter count back to its first-load value). 0 console errors.
   - `tools/browser/party.mjs`: **16/16** — four companions (incl. Patrasche) spawn near Subaru, keep up while sprinting, settle and give him room, climb stairs, follow him down a ledge, are placed with him on teleport; an interaction triggers Beatrice → Subaru chatter that finishes, is remembered and does not repeat; leaving despawns cleanly.
   - `tools/browser/combat.mjs`: **12/12** — entering the ring starts the encounter, lock-on, the whip combo damages dummies, the dive dodge moves Subaru with i-frames, Shamak blinds, E·M·M nullifies a hit, a tonic heals, every companion lands hits with their own kit, brains swap to combat and back, leaving the ring ends the fight.
   - `tools/browser/enemies.mjs`: **10/10** — jackals start unaware, the pack notices Subaru and alerts together, attacks are telegraphed on the ground, never more than two attack at once, Shamak blinds them, they press their attacks, the party wins and the encounter ends, the fallen are cleaned up, 0 console errors.
   - `tools/browser/earthworm.mjs`: **8/8** — invulnerable underground, standing still hides Subaru, running draws it in and it telegraphs an eruption, surfacing starts an elite encounter with the boss bar, it can be hurt (resistant) while surfaced, the Heliosphere kills it, it sinks away and the encounter ends, 0 console errors.
   - `tools/browser/dialogue.mjs`: **25/25** — a conversation takes over (mode, window, camera), letter-by-letter reveal, advance completes then continues, the log, auto mode to the choice, hidden/locked options, a choice's effect, skip to the end with control and camera returned, a quest starting itself and showing on the tracker, objectives from zones and a won fight, the completion banner, an Insight option unlocked by knowledge and picked with the mouse, thought styling, the journal (quests, Subaru Remembers, pause/resume), a new game's camp opening (letterbox, party staged), reading through the conversation choosing the Insight option, quest/knowledge/control after the scene, talking to Emilia and her follow-up line, hold-to-skip reaching the same end state, 0 console errors.
+  - `tools/browser/rbd.mjs`: **13/13** — the story starts with a return point and an autosave; no HUD before Subaru knows the rules; running on the open glass draws the glint and the light kills him; Return by Death to the camp in loop 2; the world rewound (ruins visited and objectives undone) while knowledge and the loop count survive; the party back whole; trying to tell brings the Witch and time resumes after; in loop 2 the detection meter appears, the glint warning shows, hiding behind the ruins makes the strike miss and teaches cover; the worm breaching on the glass is struck down; save/load restores flags, knowledge, return point and position; 0 console errors.
 - `npm run cast` — lineup review: every character spawned side by side plus face close-ups (`test-results/cast_*.png`).
   - Celaeno's helical stair verified climbable from floor to the 12 m gallery.
   - The container has no GPU, so the harness steps the simulation at a fixed 60 Hz and renders only for screenshots (`game.advanceAsync`). Screenshots go to `test-results/`.
@@ -252,9 +285,9 @@ built for the **browser**, with every original requirement kept:
 - Real-time frame rate cannot be measured in this container (software rendering). Performance numbers must be taken on real hardware.
 
 ## Next tasks
-1. Phase 7 — Return by Death: the Witch's miasma and the rewind sequence, checkpoints (camp, Celaeno) as world snapshots, knowledge carried back, loop counter; save/load slots (settings stay separate); the Heliosphere death on the Glass Flats as the first loop.
-2. Phase 8 — puzzles and interiors: Taygeta star-pillar trial (Orion → Rigel), Alcyone living quarters and the Green Room (carry Rem), Taygeta white room → library transition.
-3. Phase 9 — stealth on the Glass Flats (the summit glint, cover), inventory screen and items (Carriage Bell lure → `EnemyManager.noise`), pause menu, map, settings and save screens, procedural dynamic music and voice blips.
+1. Phase 9 (in progress) — menus: pause, inventory (tonics, the Carriage Bell lure, documents), map, settings (graphics/audio/gameplay/controls), save/load screens, title screen; the menu list component and item data are written.
+2. Phase 8 — puzzles and interiors: Taygeta star-pillar trial (Orion → Rigel), Alcyone living quarters and the Green Room (carry Rem), the white room → library transition; Shaula's arrival in Celaeno and its return point.
+3. Phase 10 — assemble the vertical slice end to end (camp → ruins → flats loop → gate plaza jackals → the worm lured into the light → Celaeno → Alcyone → Taygeta), then polish.
 
 ## Technical decisions
 - **Textures generated in Python (numpy) rather than baked from Blender nodes** — periodic noise guarantees seamless tiling and is fully deterministic; Blender is used where it is strongest (modelling with modifiers, booleans, decimation, UVs, glTF export).
@@ -272,6 +305,8 @@ built for the **browser**, with every original requirement kept:
 - **Creatures share the actor stack** — a land dragon is just another `CharacterVisual`, so party, chatter, dialogue and cinematics address it like any character.
 - **Telegraphs are data the AI reads** — the same warning the player sees is what companions query to dodge and what the attack resolves against, so what you see is what hits.
 - **Story state is flags, all the way down** — quests, dialogue memory, visited places and story beats all live in world flags, so saving is a snapshot and Return by Death rewinds everything except `know.*`.
+- **Death is a restore, not a reload of a save** — Return by Death restores world flags from the return point and rebuilds the area; knowledge and loop bookkeeping are separate scopes, so the rule "Subaru keeps only what he knows" is enforced by the data model, not by special cases.
+- **Readable cover over literal line of sight** — the summit is ~75° up from the flats, so true ray cover would be a sliver behind each wall; cover radii around the ruins match what a player reads as "behind the stone".
 - **Skipping resolves, it doesn't jump** — a skipped cinematic runs every remaining step instantly, so the world ends up identical whether the scene was watched or not.
 - **Attack tokens over per-enemy aggression** — a pack director hands out attack slots, which keeps fights readable and lets difficulty scale by token count rather than by damage.
 

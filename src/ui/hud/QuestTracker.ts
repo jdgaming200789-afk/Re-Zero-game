@@ -33,7 +33,11 @@ export class QuestTracker {
       else this.render();
     });
     const ev = game.events;
-    ev.on('game:modeChanged', () => this.updateVisibility());
+    ev.on('game:modeChanged', ({ to }) => {
+      this.updateVisibility();
+      // A banner never plays over a scene or a death.
+      if (to !== 'exploration' && to !== 'combat') this.banner.classList.remove('visible');
+    });
     ev.on('flag:changed', ({ key }) => {
       if (key === '*' || key.startsWith('quest.')) this.render();
     });

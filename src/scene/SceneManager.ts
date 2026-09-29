@@ -17,6 +17,8 @@ export interface TransitionOptions {
   beforeReveal?: () => Promise<void> | void;
   /** Fade back in at the end (default true). False leaves the screen black for a cutscene to reveal. */
   reveal?: boolean;
+  /** Rebuild the area even if it is already loaded (Return by Death, loading a save). */
+  reload?: boolean;
 }
 
 /**
@@ -60,7 +62,7 @@ export class SceneManager implements GameSystem {
       g.setMode('loading');
 
       // Same-area respawn: just move the player.
-      if (this.current?.id === areaId) {
+      if (this.current?.id === areaId && !opts.reload) {
         this.placePlayer(spawnId);
       } else {
         g.events.emit('area:loadStarted', { areaId });

@@ -23,7 +23,31 @@ export const CAMP = new Vector3(6, 0, 52);
 export const FLATS = { minX: -54, maxX: 54, minZ: -84, maxZ: -26 };
 export const CORRIDOR_HALF_WIDTH = 62;
 export const CORRIDOR_FRONT_Z = 80;
-export const SUMMIT = new Vector3(TOWER_CENTER.x, 400, TOWER_CENTER.z);
+/** The star lantern at the summit (Shaula's post): where the Heliosphere comes from. */
+export const LANTERN = new Vector3(TOWER_CENTER.x, 379, TOWER_CENTER.z);
+
+/**
+ * Ruins scattered across the Glass Flats: [kit piece, x, z, rotY, scale,
+ * cover radius]. Standing within the cover radius hides you from the
+ * summit — the only safe ground out there.
+ */
+export const FLATS_COVER: Array<[string, number, number, number, number, number]> = [
+  ['RuinWall_B', -6, -32, 0.1, 1, 3.6],
+  ['Rock_B', 9, -38, 1.2, 0.8, 2.8],
+  ['RuinWall_A', -14, -45, 0.4, 1, 3.8],
+  ['Column_Broken', 3, -47, 0, 1, 2.4],
+  ['Rock_A', 16, -55, 0.3, 1.3, 3.0],
+  ['RuinWall_B', -4, -60, -0.3, 1, 3.6],
+  ['FallenGiant', 10, -68, 1.45, 1, 5.2],
+  ['Rock_B', -18, -72, 2.1, 0.9, 2.8],
+  ['RuinWall_A', 26, -76, -0.2, 1, 3.8],
+];
+
+/** Is (x, z) sheltered by one of the ruins on the flats? */
+export function inFlatsCover(x: number, z: number): boolean {
+  for (const [, cx, cz, , , r] of FLATS_COVER) if ((x - cx) ** 2 + (z - cz) ** 2 < r * r) return true;
+  return false;
+}
 
 const noise = new Noise2D(20251);
 const detail = new Noise2D(7);
@@ -35,13 +59,14 @@ function smooth(e0: number, e1: number, x: number): number {
 
 /** 0..1 inside the glass flats (noisy, melted-looking edge). */
 export function flatsMask(x: number, z: number): number {
+  // Signed distance to the flats rectangle (negative inside), with the edge
+  // pushed in and out by noise so it looks melted rather than drawn.
   const edge = noise.fbm(x * 0.05, z * 0.05, 3) * 7;
   const dx = Math.max(FLATS.minX - x, x - FLATS.maxX, 0);
   const dz = Math.max(FLATS.minZ - z, z - FLATS.maxZ, 0);
-  const outside = Math.hypot(dx, dz) - edge;
-  // Also rounded corners: distance inside the box counts negative.
+  const outside = Math.hypot(dx, dz);
   const inside = Math.min(x - FLATS.minX, FLATS.maxX - x, z - FLATS.minZ, FLATS.maxZ - z);
-  const sd = outside > 0 ? outside : -inside - edge * 0.3;
+  const sd = (outside > 0 ? outside : -inside) - edge;
   return 1 - smooth(-3, 3, sd);
 }
 

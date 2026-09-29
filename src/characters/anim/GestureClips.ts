@@ -235,3 +235,27 @@ add(
     { mask: UPPER_BODY },
   ),
 );
+
+/**
+ * Waking from Return by Death: doubled over, a hand clutching the chest,
+ * heaving breaths that slowly settle.
+ */
+const clutch = right({ upperArmL: [-34, -50, 10], lowerArmL: [-120, 0, 0], handL: [6, 0, 18] });
+const gaspA: PoseSpec = { ...stand, ...clutch, spine: [20, 0, 0], chest: [12, 0, 0], neck: [-6, 0, 0], head: [-14, 0, 0], upperArmL: [-18, 0, 12], lowerArmL: [-24, 0, 0] };
+const gaspB: PoseSpec = { ...gaspA, spine: [16, 0, 0], chest: [6, 0, 0], head: [-8, 0, 0] };
+add(
+  clip(
+    'gasp',
+    3,
+    [
+      { t: 0, pose: stand },
+      { t: 0.06, pose: gaspA, ease: 'outCubic' },
+      { t: 0.18, pose: gaspB, ease: 'inOutSine' },
+      { t: 0.3, pose: gaspA, ease: 'inOutSine' },
+      { t: 0.44, pose: gaspB, ease: 'inOutSine' },
+      { t: 0.6, pose: { ...gaspB, spine: [10, 0, 0], chest: [4, 0, 0], head: [2, 0, 0] }, ease: 'inOutSine' },
+      { t: 1, pose: stand, ease: 'inOutCubic' },
+    ],
+    { mask: UPPER_BODY, fadeIn: 0.05, fadeOut: 0.4 },
+  ),
+);

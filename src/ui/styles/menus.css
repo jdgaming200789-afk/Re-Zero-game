@@ -1,0 +1,396 @@
+/* ---------------------------------------------------------------- menu lists */
+.rz-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+}
+.rz-menu .row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.4em 1fr auto;
+  align-items: center;
+  gap: 0.6em;
+  min-height: 2.35em;
+  padding: 0.25em 0.9em 0.25em 0.5em;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    background 0.18s,
+    border-color 0.18s,
+    color 0.18s;
+}
+.rz-menu .row.header {
+  display: block;
+  min-height: 0;
+  margin-top: 0.9em;
+  padding: 0.2em 0.5em;
+  font-family: var(--font-display);
+  font-size: 0.68em;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  cursor: default;
+}
+.rz-menu .row .mark {
+  width: 0.5em;
+  height: 0.5em;
+  margin-left: 0.3em;
+  border: 1px solid var(--gold-dim);
+  transform: rotate(45deg);
+  transition:
+    background 0.18s,
+    box-shadow 0.18s;
+}
+.rz-menu .row .label {
+  display: flex;
+  flex-direction: column;
+}
+.rz-menu .row .txt {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.14em;
+  letter-spacing: 0.02em;
+}
+.rz-menu .row .hint {
+  font-size: 0.8em;
+  color: var(--text-dim);
+}
+.rz-menu .row.selected {
+  background: linear-gradient(90deg, rgba(243, 226, 176, 0.14), rgba(243, 226, 176, 0) 85%);
+  border-left-color: var(--gold-bright);
+  color: var(--gold-bright);
+}
+.rz-menu .row.selected .mark {
+  background: var(--gold-bright);
+  box-shadow: 0 0 8px var(--gold-bright);
+}
+.rz-menu .row.disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+.rz-menu .value {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  min-width: 13em;
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+.rz-menu .value .v {
+  min-width: 6.5em;
+  text-align: center;
+  color: var(--text);
+}
+.rz-menu .row.selected .value .v {
+  color: var(--gold-bright);
+}
+.rz-menu .value .arrow {
+  background: none;
+  border: none;
+  padding: 0 0.3em;
+  font-size: 0.8em;
+  color: var(--gold-dim);
+  cursor: pointer;
+}
+.rz-menu .row.selected .value .arrow {
+  color: var(--gold-bright);
+}
+.rz-menu .slider .value .v {
+  min-width: 3em;
+}
+.rz-menu .bar {
+  position: relative;
+  width: 9em;
+  height: 0.42em;
+  background: rgba(4, 6, 12, 0.85);
+  border: 1px solid rgba(217, 196, 143, 0.35);
+  overflow: hidden;
+}
+.rz-menu .bar > i {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold-bright));
+}
+
+/* ---------------------------------------------------------------- shared screen frame */
+.rz-sframe {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(62em, 94vw);
+  max-height: 86vh;
+  padding: 1.3em 2em 1em;
+}
+.rz-sframe > h2 {
+  margin: 0 0 0.6em;
+  text-align: center;
+  font-size: 1.05em;
+}
+.rz-sframe .tabs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2em;
+  margin-bottom: 0.7em;
+}
+.rz-sframe .tab {
+  background: none;
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 0.2em 0;
+  font-family: var(--font-display);
+  font-size: 0.92em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.rz-sframe .tab.on {
+  color: var(--gold-bright);
+  border-bottom-color: var(--gold);
+  text-shadow: 0 0 10px rgba(243, 226, 176, 0.45);
+}
+.rz-sframe .scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.5em;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-dim) transparent;
+}
+.rz-sframe .foot {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.45em;
+  padding-top: 0.8em;
+  font-size: 0.8em;
+  color: var(--text-dim);
+}
+.rz-sframe .foot .gap {
+  width: 1.2em;
+}
+
+/* ---------------------------------------------------------------- pause */
+.rz-pause .panel {
+  display: grid;
+  grid-template-columns: 17em 1fr;
+  gap: 2.4em;
+  width: min(52em, 92vw);
+  padding: 2em 2.4em;
+}
+.rz-pause .brand .kicker {
+  font-family: var(--font-display);
+  font-size: 0.68em;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+.rz-pause .brand .title {
+  margin: 0.2em 0 0.9em;
+  font-family: var(--font-display);
+  font-size: 1.9em;
+  letter-spacing: 0.14em;
+  color: var(--gold-bright);
+}
+.rz-pause .status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  font-size: 0.92em;
+  color: var(--text-dim);
+}
+.rz-pause .status b {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.12em;
+  color: var(--text);
+}
+.rz-pause .status .loop {
+  margin-top: 0.8em;
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--violet);
+}
+
+/* ---------------------------------------------------------------- inventory */
+.rz-inventory .body {
+  display: grid;
+  grid-template-columns: 20em 1fr;
+  gap: 2em;
+  min-height: 22em;
+}
+.rz-inventory .count {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+.rz-inventory .detail h3 {
+  margin: 0.1em 0 0.2em;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.45em;
+  letter-spacing: 0.06em;
+  color: var(--gold-bright);
+}
+.rz-inventory .detail .kind {
+  font-family: var(--font-display);
+  font-size: 0.64em;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--azure);
+}
+.rz-inventory .detail p {
+  font-family: var(--font-serif);
+  font-size: 1.16em;
+  line-height: 1.5;
+  color: var(--silver);
+}
+.rz-inventory .detail .doc {
+  margin-top: 0.8em;
+  padding: 0.8em 1em;
+  border-left: 2px solid var(--gold-dim);
+  background: rgba(243, 226, 176, 0.05);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.1em;
+  line-height: 1.55;
+  color: var(--text);
+}
+.rz-inventory .detail .use {
+  margin-top: 1em;
+  font-size: 0.85em;
+  color: var(--azure);
+}
+.rz-inventory .empty {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--text-dim);
+}
+
+/* ---------------------------------------------------------------- saves */
+.rz-saves .row .label .txt {
+  font-size: 1.05em;
+}
+.rz-saves .slot-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.82em;
+  color: var(--text-dim);
+}
+.rz-saves .confirm {
+  margin-top: 0.8em;
+  padding: 0.6em 1em;
+  border: 1px solid var(--gold-dim);
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: 1.05em;
+  color: var(--gold-bright);
+  display: none;
+}
+.rz-saves .confirm.on {
+  display: block;
+}
+.rz-saves .msg {
+  min-height: 1.4em;
+  margin-top: 0.4em;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--violet);
+}
+
+/* ---------------------------------------------------------------- map */
+.rz-map .frame {
+  width: min(70em, 94vw);
+  height: min(46em, 88vh);
+}
+.rz-map canvas {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: 1px solid rgba(217, 196, 143, 0.2);
+}
+.rz-map .legend {
+  display: flex;
+  gap: 1.6em;
+  justify-content: center;
+  padding-top: 0.6em;
+  font-size: 0.82em;
+  color: var(--text-dim);
+}
+.rz-map .legend i {
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  margin-right: 0.4em;
+  vertical-align: middle;
+}
+
+/* ---------------------------------------------------------------- title */
+.rz-title {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  background: #03050b;
+  pointer-events: auto;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 1.2s var(--ease-in-out),
+    visibility 0s 1.2s;
+}
+.rz-title.visible {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 1.2s var(--ease-in-out);
+}
+.rz-title canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.rz-title .content {
+  position: relative;
+  margin-left: 9vw;
+  display: flex;
+  flex-direction: column;
+  gap: 2.4em;
+}
+.rz-title .logo .kicker {
+  font-family: var(--font-display);
+  font-size: 0.9em;
+  letter-spacing: 0.55em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+.rz-title .logo .name {
+  margin: 0.1em 0 0.15em;
+  font-family: var(--font-display);
+  font-size: 4.4em;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  color: var(--gold-bright);
+  text-shadow:
+    0 0 30px rgba(243, 226, 176, 0.35),
+    0 0 80px rgba(140, 170, 255, 0.2);
+}
+.rz-title .logo .sub {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.2em;
+  color: var(--silver);
+}
+.rz-title .rz-menu {
+  width: 20em;
+}
+.rz-title .foot {
+  position: absolute;
+  right: 2.4em;
+  bottom: 1.8em;
+  font-size: 0.75em;
+  color: var(--text-dim);
+}

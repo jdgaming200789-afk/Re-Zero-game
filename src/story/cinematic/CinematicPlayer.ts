@@ -94,7 +94,7 @@ export class CinematicPlayer implements GameSystem {
     }
     // ---- wrap up (identical whether watched or skipped)
     g.dialogue.fastForward = false;
-    applyEffects(g, def.onEnd);
+    await applyEffects(g, def.onEnd);
     g.ui.letterbox(false);
     g.ui.skipHold(null);
     g.ui.titleCardHide();
@@ -222,7 +222,7 @@ export class CinematicPlayer implements GameSystem {
         await g.dialogue.play(s.id, { camera: s.camera ?? 'auto', releaseCamera: false });
         return;
       case 'effects':
-        applyEffects(g, s.effects);
+        await applyEffects(g, s.effects);
         return;
       case 'party':
         await g.party.settled();

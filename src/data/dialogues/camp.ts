@@ -87,7 +87,26 @@ export const CAMP_OPENING: DialogueDef = {
       lines: [
         { speaker: 'julius', text: 'You say that as though you have already seen it.', expression: 'surprised', to: 'subaru' },
         { speaker: 'subaru', text: 'I have. I watched that light burn me into a shadow on the glass.', thought: true },
-        { speaker: 'subaru', text: 'Call it a hunch. A very, very strong hunch.', anim: 'shrug' },
+      ],
+      choices: [
+        { text: 'Call it a hunch. A very, very strong hunch.', goto: 'hunch' },
+        { text: 'Because I died out there. I came back, and—', goto: 'taboo', effects: [{ witch: 'punish' }] },
+      ],
+    },
+    taboo: {
+      lines: [
+        { speaker: 'subaru', text: '—!! ...Right. Right. I can’t tell them. She won’t let me.', thought: true, expression: 'pain' },
+        { speaker: 'emilia', text: 'Subaru!? You grabbed your chest all of a sudden — are you hurt?', expression: 'surprised', to: 'subaru' },
+        { speaker: 'subaru', text: 'I’m fine. Just... a cramp. Forget it. Call it a hunch, okay?', expression: 'pain', anim: 'sigh' },
+      ],
+      next: 'believe',
+    },
+    hunch: {
+      lines: [{ speaker: 'subaru', text: 'Call it a hunch. A very, very strong hunch.', anim: 'shrug' }],
+      next: 'believe',
+    },
+    believe: {
+      lines: [
         { speaker: 'emilia', text: '...Okay. I believe you, Subaru.', expression: 'determined', anim: 'nod' },
         { speaker: 'ram', text: 'Ram will pretend that made sense.', expression: 'annoyed' },
       ],

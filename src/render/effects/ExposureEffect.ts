@@ -9,7 +9,11 @@ export class ExposureEffect extends Effect {
       /* glsl */ `
       uniform float uExposure;
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-        outputColor = vec4(inputColor.rgb * uExposure, inputColor.a);
+        // Clamp below half-float range: one blown-out flash must never turn into
+        // Inf/NaN that the blur passes would smear across the whole frame.
+        vec3 c = inputColor.rgb * uExposure;
+        c = clamp(c, vec3(0.0), vec3(3.0e4));
+        outputColor = vec4(c, inputColor.a);
       }`,
       { uniforms: new Map([['uExposure', new Uniform(1)]]) },
     );

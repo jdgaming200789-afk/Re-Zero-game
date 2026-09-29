@@ -89,6 +89,22 @@ export class PartyManager implements GameSystem {
     return this.followers.get(id)?.actor;
   }
 
+  /**
+   * Remove every companion and spawn them fresh from story state (Return by
+   * Death, loading a save): nobody keeps wounds, statuses or brains from a
+   * timeline that no longer exists.
+   */
+  async respawnAll(): Promise<void> {
+    await this.settled();
+    for (const [id, f] of this.followers) {
+      f.actor.brain = null;
+      this.game.actors.despawn(id);
+    }
+    this.followers.clear();
+    this.requestReconcile();
+    await this.settled();
+  }
+
   /** Resolves once spawning/despawning has caught up with membership. */
   async settled(): Promise<void> {
     while (this.reconciling) await this.reconciling;

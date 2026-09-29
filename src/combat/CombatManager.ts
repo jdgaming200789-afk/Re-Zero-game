@@ -236,6 +236,15 @@ export class CombatManager implements GameSystem {
     log.info(`Encounter ${id} started (${opts.enemies.length} enemies)`);
   }
 
+  /** Drop every fight, projectile, lingering effect and warning (Return by Death, loads). */
+  reset(): void {
+    if (this.encounter) this.endEncounter(false);
+    for (const p of this.projectiles.splice(0)) p.dispose();
+    for (const t of this.transients.splice(0)) t.dispose();
+    for (const a of this.areas.splice(0)) a.dispose();
+    for (const t of this.telegraphs.list.slice()) this.telegraphs.cancel(t.id);
+  }
+
   endEncounter(victory: boolean): void {
     const e = this.encounter;
     if (!e) return;

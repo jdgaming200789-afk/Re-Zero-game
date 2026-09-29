@@ -17,6 +17,7 @@ try {
   await waitReady(page, 240000);
   await step(page, 0.6);
   let s = await state(page);
+  const baseline = await page.evaluate(() => window.__game.vfx.stats.emitters);
   log('tower_foot', s);
   expect(s.area === 'tower_foot' && s.grounded, 'tower_foot loads with the player grounded at camp');
   await hold(page, 'Key:KeyW', 2);
@@ -55,7 +56,7 @@ try {
   expect(s.area === 'tower_foot' && s.grounded, 'leaving returns to the tower foot');
   const leaked = await page.evaluate(() => window.__game.vfx.stats);
   log('vfx after round trip', leaked);
-  expect(leaked.emitters <= 1, 'area effects are released on unload (no emitter leaks)');
+  expect(leaked.emitters <= baseline, `area effects are released on unload (no emitter leaks: ${leaked.emitters} vs ${baseline} on first load)`);
 
   log(`console errors: ${errors.length}`);
   for (const e of errors) log('  ERR', e);

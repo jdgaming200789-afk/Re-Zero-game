@@ -27,6 +27,10 @@ import type { CinematicPlayer } from '../story/cinematic/CinematicPlayer';
 import type { QuestSystem } from '../story/quests/QuestSystem';
 import type { StoryDirector } from '../story/StoryDirector';
 import type { ScreenManager } from '../ui/screens/Screen';
+import type { CheckpointSystem } from '../story/rbd/Checkpoints';
+import type { ReturnByDeath } from '../story/rbd/ReturnByDeath';
+import type { SaveSystem } from '../save/SaveSystem';
+import type { AudioManager } from '../audio/AudioManager';
 
 /**
  * The composition root's public surface. Systems receive this instead of
@@ -61,6 +65,10 @@ export interface GameContext {
   readonly quests: QuestSystem;
   readonly story: StoryDirector;
   readonly screens: ScreenManager;
+  readonly checkpoints: CheckpointSystem;
+  readonly rbd: ReturnByDeath;
+  readonly saves: SaveSystem;
+  readonly audio: AudioManager;
 
   readonly mode: GameMode;
   setMode(mode: GameMode): void;

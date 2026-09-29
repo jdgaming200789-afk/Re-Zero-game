@@ -4,7 +4,7 @@ import { clamp } from '../core/math/MathUtil';
 import type { GameContext } from '../game/GameContext';
 import type { PlayerController } from '../player/PlayerController';
 import { ParticlePresets } from '../vfx/ParticleEmitter';
-import { hostile } from './Damage';
+import { hostile, type DamageInfo } from './Damage';
 import { BarrierVfx } from './effects/BarrierVfx';
 import { Health } from './Health';
 import { WhipProp } from './props/WhipProp';
@@ -85,7 +85,7 @@ export class SubaruCombat extends Component {
       if (r.staggered) this.enter('stagger', 0.85, () => void this.player.visual.play('stagger', { fadeIn: 0.03 }));
       else void this.player.visual.play('flinch', { fadeIn: 0.03 });
     };
-    this.health.onDeath = () => this.die();
+    this.health.onDeath = (info) => this.die(info);
     if (!this.game.state.has('inv.tonic')) this.game.state.set('inv.tonic', 3);
   }
 
@@ -249,8 +249,9 @@ export class SubaruCombat extends Component {
     if (this.absorbedDuringBarrier) this.nextCritical = true;
   }
 
-  private drinkTonic(): void {
-    if (this.tonics <= 0 || this.health.hp >= this.health.max) return;
+  /** Drink a tonic (quick item or the inventory). False if there's none or no need. */
+  drinkTonic(): boolean {
+    if (this.tonics <= 0 || this.health.hp >= this.health.max || this.state !== 'free') return false;
     this.game.state.add('inv.tonic', -1);
     this.enter('item', 1.1, () =>
       void this.player.visual.play('drink', {
@@ -261,6 +262,7 @@ export class SubaruCombat extends Component {
       }),
     );
     this.game.ui.notify(`Tonic ×${this.tonics}`, 'item');
+    return true;
   }
 
   private orderParty(kind: 'focus' | 'regroup'): void {
@@ -409,11 +411,32 @@ export class SubaruCombat extends Component {
   }
 
   // ------------------------------------------------------------------ death
-  private die(): void {
+  /** Whole again (Return by Death, loading a save). */
+  restore(): void {
+    this.whip.cancel();
+    this.setLock(null);
+    this.health.revive(1);
+    this.mana = this.maxMana;
+    this.cooldowns.shamak = 0;
+    this.cooldowns.barrier = 0;
+    this.cooldowns.snare = 0;
+    this.nextCritical = false;
+    this.deathTimer = 0;
+    this.player.visual.stopAction();
+    this.player.stamina = this.player.movement.maxStamina;
+    this.enter('free', 0);
+  }
+
+  private die(info?: DamageInfo): void {
     this.whip.cancel();
     this.setLock(null);
     this.enter('down', 0, () => void this.player.visual.play('collapse', { fadeIn: 0.05, holdEnd: true }));
     this.deathTimer = 0;
+    const rbd = this.game.getSystem<{ name: string; die(cause: string): void }>('rbd');
+    // The cause decides what Subaru takes back with him.
+    const killer = info?.sourceId != null ? this.game.combat.all().find((h) => h.entity.id === info.sourceId) : undefined;
+    const cause = info?.tags?.includes('heliosphere') ? 'heliosphere' : killer?.characterId ? `combat.${killer.characterId}` : 'combat';
+    rbd?.die(cause);
   }
 
   private updateDeath(dt: number): void {

@@ -111,7 +111,7 @@ export class QuestSystem implements GameSystem {
     for (const o of def.objectives) if (!o.optional) this.game.state.set(objectiveKey(id, o.id), true);
     this.game.state.set(questKey(id), 'done');
     log.info(`Quest complete: ${id}`);
-    applyEffects(this.game, def.onComplete);
+    void applyEffects(this.game, def.onComplete);
     this.game.events.emit('quest:completed', { questId: id });
     this.emit({ kind: 'completed', quest: def });
     if (this.tracked === id) this.tracked = this.list('active')[0]?.id ?? null;

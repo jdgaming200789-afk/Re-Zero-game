@@ -1,4 +1,5 @@
 import type { FlagValue } from '../core/events/GameEvents';
+import { CHECKPOINTS } from '../data/deaths';
 import { KNOWLEDGE } from '../data/knowledge';
 import type { GameContext } from '../game/GameContext';
 
@@ -25,7 +26,11 @@ export type Effect =
   | { quest: string; do?: 'start' | 'complete' | 'fail' }
   | { join: string }
   | { leave: string }
-  | { notify: string };
+  | { notify: string }
+  /** Set Subaru's return point here. */
+  | { checkpoint: string }
+  /** Subaru tries to speak of Return by Death; the Witch answers. */
+  | { witch: 'punish' };
 
 const KEY = /^[a-z0-9_]+(\.[a-z0-9_]+)*$/i;
 
@@ -46,10 +51,13 @@ export function validateEffect(e: Effect, known: { quests?: Set<string>; charact
   } else if ('join' in e || 'leave' in e) {
     const id = 'join' in e ? e.join : e.leave;
     if (known.characters && !known.characters.has(id)) throw new Error(`Unknown party member "${id}"`);
-  } else if (!('notify' in e)) throw new Error(`Unknown effect ${JSON.stringify(e)}`);
+  } else if ('checkpoint' in e) {
+    if (!CHECKPOINTS[e.checkpoint]) throw new Error(`Unknown return point "${e.checkpoint}"`);
+  } else if (!('notify' in e) && !('witch' in e)) throw new Error(`Unknown effect ${JSON.stringify(e)}`);
 }
 
-export function applyEffect(game: GameContext, e: Effect): void {
+/** Applies an effect; returns a promise for the ones that take time (the Witch). */
+export function applyEffect(game: GameContext, e: Effect): void | Promise<void> {
   const s = game.state;
   if ('set' in e) s.set(e.set, e.to ?? true);
   else if ('add' in e) s.add(e.add, e.by ?? 1);
@@ -68,10 +76,18 @@ export function applyEffect(game: GameContext, e: Effect): void {
   } else if ('join' in e) game.party.join(e.join);
   else if ('leave' in e) game.party.leave(e.leave);
   else if ('notify' in e) game.ui.notify(e.notify, 'info');
+  else if ('checkpoint' in e) game.checkpoints.reach(e.checkpoint);
+  else if ('witch' in e) return game.rbd.punish();
 }
 
-export function applyEffects(game: GameContext, effects: readonly Effect[] | undefined): void {
-  if (effects) for (const e of effects) applyEffect(game, e);
+/** Applies effects in order; resolves when any that take time have finished. */
+export function applyEffects(game: GameContext, effects: readonly Effect[] | undefined): Promise<void> {
+  const waits: Promise<void>[] = [];
+  for (const e of effects ?? []) {
+    const r = applyEffect(game, e);
+    if (r) waits.push(r);
+  }
+  return waits.length ? Promise.all(waits).then(() => undefined) : Promise.resolve();
 }
 
 /** Subaru learns something. Knowledge survives Return by Death. */

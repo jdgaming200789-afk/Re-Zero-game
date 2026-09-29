@@ -1,0 +1,45 @@
+import type { DialogueDef } from '../../story/dialogue/Dialogue';
+
+/**
+ * Waking up after Return by Death. Subaru knows; nobody else does. What he
+ * thinks depends on how he died (`meta.last_death`); the people around him
+ * only see him turn pale. Meili and Patrasche, closest to the beasts, catch
+ * the Witch's scent that clings to him.
+ */
+export const RBD_DIALOGUES: DialogueDef[] = [
+  {
+    id: 'rbd.return',
+    cast: ['subaru', 'emilia', 'meili', 'patrasche'],
+    start: 'start',
+    nodes: {
+      start: {
+        lines: [
+          { speaker: 'subaru', text: 'White. Everything went white — and then nothing. It came from the top of the tower the moment I ran out onto the glass.', thought: true, if: "meta.last_death == 'heliosphere'", shot: 'keep' },
+          { speaker: 'subaru', text: 'Teeth. Claws. The sand going red... I died. Again.', thought: true, if: "meta.last_death != 'heliosphere'", shot: 'keep' },
+          { speaker: 'subaru', text: 'The fire. The carriage. The same night. ...I’m back.', thought: true, if: "meta.checkpoint == 'camp_night'", shot: 'keep' },
+          { speaker: 'emilia', text: 'Subaru? You went pale all of a sudden. Are you all right?', expression: 'thinking', to: 'subaru' },
+          { speaker: 'meili', text: 'Onii-san smells funny all of a sudden. Like something really, really old.', expression: 'thinking' },
+          { speaker: 'patrasche', text: '(Patrasche presses against Subaru’s back, snorting at a scent only she can smell.)' },
+        ],
+        choices: [
+          { text: 'I’m fine. Just... a bad dream.', goto: 'fine' },
+          { text: 'Listen. I died just now. There’s a light on that tower that—', goto: 'taboo', effects: [{ witch: 'punish' }] },
+        ],
+      },
+      taboo: {
+        lines: [
+          { speaker: 'subaru', text: 'Her hand. Around my heart. Every time I try to say it...', thought: true, expression: 'pain' },
+          { speaker: 'emilia', text: 'Subaru!', expression: 'surprised', to: 'subaru' },
+          { speaker: 'subaru', text: 'It’s — it’s nothing. Let’s just... be careful tomorrow. Really careful.', expression: 'pain', anim: 'sigh' },
+        ],
+        next: 'fine',
+      },
+      fine: {
+        lines: [
+          { speaker: 'emilia', text: '...If you say so. But you don’t have to carry everything by yourself, okay?', expression: 'sad', to: 'subaru' },
+          { speaker: 'subaru', text: 'I know what’s out there now. That has to count for something.', thought: true, expression: 'determined' },
+        ],
+      },
+    },
+  },
+];

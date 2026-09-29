@@ -36,7 +36,7 @@ interface Active {
   runner: DialogueRunner;
   camera: 'auto' | 'keep';
   releaseCamera: boolean;
-  phase: 'line' | 'choice';
+  phase: 'line' | 'choice' | 'waiting';
   line: DialogueLine | null;
   speaker: string | null;
   prevSpeaker: string | null;
@@ -71,6 +71,8 @@ export class DialogueSystem implements GameSystem {
   /** Set by cinematics being skipped: lines fly past, choices still wait. */
   fastForward = false;
   private active: Active | null = null;
+  /** Effects still playing out (the Witch) before the next step shows. */
+  private readonly pending: Promise<void>[] = [];
   private readonly box: DialogueBox;
   private readonly logView: DialogueLog;
   private readonly conv: ConversationCamera;
@@ -82,7 +84,11 @@ export class DialogueSystem implements GameSystem {
     this.logView = new DialogueLog(game.ui.layers.screens, glyph);
     this.conv = new ConversationCamera(game.physics);
     this.auto = game.settings.gameplay.autoAdvance;
-    this.box.onLetter = (ch) => this.voice?.letter?.(this.active?.speaker ?? null, ch);
+    // Thoughts are silent; everyone else speaks in their own voice.
+    this.box.onLetter = (ch) => {
+      const a = this.active;
+      if (a && !a.line?.thought) this.voice?.letter?.(a.speaker, ch);
+    };
     this.box.onChoose = (i) => {
       if (this.active?.phase === 'choice') this.choose(i);
     };
@@ -128,7 +134,7 @@ export class DialogueSystem implements GameSystem {
   }
 
   /** What the player is looking at right now (tests, debug). */
-  get state(): { id: string; phase: 'line' | 'choice'; speaker: string | null; text: string; options: string[] } | null {
+  get state(): { id: string; phase: 'line' | 'choice' | 'waiting'; speaker: string | null; text: string; options: string[] } | null {
     const a = this.active;
     if (!a) return null;
     const step = a.runner.step;
@@ -185,7 +191,10 @@ export class DialogueSystem implements GameSystem {
     const camera = opts.camera ?? def.camera ?? 'auto';
     const runner = new DialogueRunner(def, {
       conditions: this.conditions,
-      apply: (e) => applyEffect(g, e),
+      apply: (e) => {
+        const r = applyEffect(g, e);
+        if (r) this.pending.push(r);
+      },
       remember: (k) => g.state.set(`dlg.${k}`, true),
       remembers: (k) => g.state.bool(`dlg.${k}`),
     });
@@ -226,9 +235,31 @@ export class DialogueSystem implements GameSystem {
       this.finish();
       return;
     }
+    const waits = this.pending.splice(0);
+    if (waits.length) {
+      // Something is happening that words can't cover: hide the window until it passes.
+      a.phase = 'waiting';
+      this.box.hide();
+      this.speakerVisual()?.setSpeaking(false);
+      void Promise.all(waits).then(() => {
+        if (this.active !== a) return;
+        this.box.show();
+        this.present(step);
+      });
+      return;
+    }
+    this.present(step);
+  }
+
+  private present(step: DialogueStep): void {
     if (step.kind === 'end') this.finish();
     else if (step.kind === 'line') this.presentLine(step.line, step.lineId);
     else this.presentChoice(step);
+  }
+
+  /** Close the conversation immediately (Subaru died mid-sentence). */
+  abort(): void {
+    if (this.active) this.finish();
   }
 
   private presentLine(line: DialogueLine, lineId: string): void {
@@ -355,6 +386,7 @@ export class DialogueSystem implements GameSystem {
       input.consume('confirm');
     }
 
+    if (a.phase === 'waiting') return;
     if (a.phase === 'choice') {
       if (input.pressed('navUp')) this.box.move(-1);
       if (input.pressed('navDown')) this.box.move(1);

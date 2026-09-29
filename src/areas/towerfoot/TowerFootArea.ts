@@ -13,7 +13,8 @@ import { Rng } from '../../core/math/MathUtil';
 import { Layer } from '../../physics/Physics';
 import { SHADOW_MAP_SIZE } from '../../settings/Settings';
 import { Interactable } from '../../interaction/Interactable';
-import { CAMP, FLATS, GATE_FRONT_Z, STAIRS_FOOT_Z, TOWER_CENTER, flatsMask, heightAt, plazaMask, splatAt } from './TowerFootLayout';
+import { CAMP, FLATS, FLATS_COVER, GATE_FRONT_Z, STAIRS_FOOT_Z, TOWER_CENTER, flatsMask, heightAt, plazaMask, splatAt } from './TowerFootLayout';
+import { Heliosphere } from './Heliosphere';
 import type { ColorGrade } from '../../render/effects/ColorGradeEffect';
 
 export const NIGHT_GRADE: ColorGrade = {
@@ -39,6 +40,7 @@ class TowerFootArea extends Area {
   private moon!: FollowShadowLight;
   private batches: KitBatch[] = [];
   private terrain!: DuneTerrain;
+  heliosphere!: Heliosphere;
 
   constructor(game: GameContext) {
     super(game);
@@ -109,6 +111,9 @@ class TowerFootArea extends Area {
     this.root.add(drift);
     const wall = g.vfx.add(new SandWall(950, 300, Math.PI * 0.15, Math.PI * 1.2), this.scope);
     this.root.add(wall);
+
+    // ---- The light from the summit.
+    this.heliosphere = new Heliosphere(g, this.root, this.scope);
 
     // ---- Bounds: the dunes are climbable, the Sand Time is not an option.
     this.addBoundary();
@@ -238,20 +243,9 @@ class TowerFootArea extends Area {
 
   /** Sparse cover across the Glass Flats — the route that keeps you alive. */
   private placeFlatsCover(b: KitBatch): void {
-    const cover: Array<[string, number, number, number, number?]> = [
-      ['RuinWall_B', -6, -32, 0.1],
-      ['Rock_B', 9, -38, 1.2, 0.8],
-      ['RuinWall_A', -14, -45, 0.4],
-      ['Column_Broken', 3, -47, 0],
-      ['Rock_A', 16, -55, 0.3, 1.3],
-      ['RuinWall_B', -4, -60, -0.3],
-      ['FallenGiant', 10, -68, 1.45],
-      ['Rock_B', -18, -72, 2.1, 0.9],
-      ['RuinWall_A', 26, -76, -0.2],
-    ];
-    for (const [name, x, z, r, s] of cover) {
+    for (const [name, x, z, r, sc] of FLATS_COVER) {
       const sink = name.startsWith('Rock') ? 0.4 : name === 'FallenGiant' ? 0.7 : 0.25;
-      b.place(name, x, this.ground(x, z, sink), z, { rotY: r, scale: s ?? 1 });
+      b.place(name, x, this.ground(x, z, sink), z, { rotY: r, scale: sc });
     }
     // Glass-fused debris scattered in the open (no cover value, all dread).
     const rng = new Rng(88);
@@ -395,6 +389,7 @@ class TowerFootArea extends Area {
     const focus = this.game.player?.entity.object3D.position ?? cam.position;
     this.moon.update(focus);
     for (const b of this.batches) b.update(dt, cam.position);
+    this.heliosphere.update(dt);
   }
 
   atmosphere(): AtmosphereProfile {
@@ -426,6 +421,7 @@ class TowerFootArea extends Area {
     for (const b of this.batches) b.dispose();
     this.batches = [];
     this.terrain.dispose();
+    this.heliosphere.dispose();
     this.sky.dispose();
     this.env?.dispose();
     super.dispose();

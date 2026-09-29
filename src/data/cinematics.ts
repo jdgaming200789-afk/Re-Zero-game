@@ -50,6 +50,7 @@ export const CINEMATICS: CinematicDef[] = [
       { do: 'music', state: 'exploration' },
       { do: 'follow', blend: 1.6 },
     ],
-    onEnd: [...JOIN_ALL, { quest: 'watchtower' }, { set: 'story.opening_done' }],
+    // The Witch sets Subaru's return point here: the first night at the tower.
+    onEnd: [...JOIN_ALL, { quest: 'watchtower' }, { set: 'story.opening_done' }, { checkpoint: 'camp_night' }],
   },
 ];

@@ -16,6 +16,9 @@ export async function startNewGame(game: GameContext, opts: { skipOpening?: bool
   if (opts.skipOpening) s.set('story.opening_done', true);
   await game.scenes.goto('tower_foot', 'camp', { loadingScreen: true, fadeSeconds: 0.01, reveal: !!opts.skipOpening });
   await game.party.settled();
-  if (opts.skipOpening) game.quests.start('watchtower');
+  if (opts.skipOpening) {
+    game.quests.start('watchtower');
+    game.checkpoints.reach('camp_night');
+  }
   else await game.cinematics.play('tf.opening');
 }

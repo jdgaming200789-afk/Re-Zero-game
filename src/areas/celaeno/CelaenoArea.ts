@@ -393,6 +393,8 @@ class CelaenoArea extends Area {
       exposure: 1.5,
       music: 'mystery',
       tension: 0.2,
+      keyLight: new Vector3(-0.78, 0.46, 0.22),
+      rim: { color: new Color(0.95, 0.62, 0.36), strength: 0.4 },
     };
   }
 

@@ -83,6 +83,8 @@ export class FaceRenderer {
   private dirty = true;
   private redrawCooldown = 0;
   private lastKey = '';
+  /** Line-weight multiplier for distant faces (see setDetail). */
+  private boost = 1;
 
   constructor(readonly style: FaceStyle) {
     const c = document.createElement('canvas');
@@ -131,6 +133,14 @@ export class FaceRenderer {
   setGaze(x: number, y: number): void {
     this.gaze.tx = clamp(x, -1, 1);
     this.gaze.ty = clamp(y, -1, 1);
+  }
+
+  /** Thicken painted lines for distant viewing (1 = close-up). */
+  setDetail(boost: number): void {
+    if (boost === this.boost) return;
+    this.boost = boost;
+    this.dirty = true;
+    this.lastKey = '';
   }
 
   blink(): void {
@@ -238,7 +248,7 @@ export class FaceRenderer {
     const size = (s.eyeSize ?? 1) * SIZE;
     const w = 0.2 * size;
     const h = 0.17 * size;
-    const lashW = (s.lashWeight ?? 1) * 8;
+    const lashW = (s.lashWeight ?? 1) * 8 * this.boost;
 
     // Closed-eye arcs (happy ^ ^) or sleeping lines.
     if (e.happyClose > 0.5 || open < 0.08 || e.squint > 0.5) {
@@ -296,7 +306,7 @@ export class FaceRenderer {
     g.ellipse(irisCx, irisCy, ir, irY, 0, 0, Math.PI * 2);
     g.fill();
     g.strokeStyle = shadeColor(s.iris, -0.5);
-    g.lineWidth = 2.2;
+    g.lineWidth = 2.2 * this.boost;
     g.stroke();
     // Pupil
     g.fillStyle = s.pupil ?? shadeColor(s.iris, -0.65);
@@ -394,7 +404,7 @@ export class FaceRenderer {
     const outerX = cx + side * w * 0.55;
     g.strokeStyle = this.style.brow;
     g.lineCap = 'round';
-    g.lineWidth = 6;
+    g.lineWidth = 6 * Math.min(this.boost, 1.6);
     g.beginPath();
     g.moveTo(innerX, baseY + innerDrop);
     g.quadraticCurveTo(cx, baseY - 0.012 * SIZE + innerDrop * 0.3, outerX, baseY + 0.008 * SIZE);
@@ -408,7 +418,7 @@ export class FaceRenderer {
     const w = SIZE * 0.055;
     const line = this.style.mouthColor ?? '#9a4a48';
     g.strokeStyle = line;
-    g.lineWidth = 4;
+    g.lineWidth = 4 * Math.min(this.boost, 1.8);
     g.lineCap = 'round';
     const fillOpen = (rx: number, ry: number, dy = 0) => {
       g.fillStyle = '#6e2a2e';

@@ -385,6 +385,8 @@ class TowerFootArea extends Area {
       exposure: 1.25,
       music: 'exploration',
       tension: 0.1,
+      keyLight: this.sky.moonDirection,
+      rim: { color: new Color(0.5, 0.6, 0.9), strength: 0.45 },
     };
   }
 

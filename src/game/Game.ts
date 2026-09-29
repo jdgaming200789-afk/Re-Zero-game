@@ -24,6 +24,11 @@ import type { PlayerController } from '../player/PlayerController';
 import type { GameContext, GameSystem } from './GameContext';
 import { DevConsole } from '../debug/DevConsole';
 import { registerCoreDevCommands } from '../debug/coreCommands';
+import { registerCastDevCommands } from '../debug/castCommands';
+import { CharacterFactory } from '../characters/CharacterFactory';
+import { CharacterLighting } from '../characters/render/AnimeMaterial';
+import { ActorManager } from '../actors/ActorManager';
+import { PartyManager } from '../party/PartyManager';
 
 const log = createLogger('Game');
 
@@ -63,6 +68,9 @@ export class Game implements GameContext {
   readonly assets: AssetManager;
   readonly environment: EnvironmentLibrary;
   readonly vfx: VfxSystem;
+  readonly characters: CharacterFactory;
+  readonly actors: ActorManager;
+  readonly party: PartyManager;
   readonly devMode: boolean;
   dev: DevConsole | null = null;
   player: PlayerController | null = null;
@@ -103,6 +111,11 @@ export class Game implements GameContext {
     this.addSystem(this.scenes);
     this.addSystem(this.interaction);
     this.vfx = new VfxSystem(this);
+    this.characters = new CharacterFactory(this.physics, this.scheduler);
+    this.actors = new ActorManager(this, this.characters);
+    this.addSystem(this.actors);
+    this.party = new PartyManager(this);
+    this.addSystem(this.party);
 
     this.events.on('settings:changed', ({ key }) => {
       if (key.startsWith('graphics') || key === '*') {
@@ -123,6 +136,7 @@ export class Game implements GameContext {
     if (this.devMode) {
       this.dev = new DevConsole(this);
       registerCoreDevCommands(this.dev, this);
+      registerCastDevCommands(this.dev, this);
     }
   }
 
@@ -250,6 +264,7 @@ export class Game implements GameContext {
 
     const player = this.player;
     this.camera.update(t.dt, t.unscaledDt, player ? player.followTarget : null, this.input.look);
+    CharacterLighting.viewPosition.copy(this.render.camera.position);
     // Effects update after the camera so billboards face this frame's view.
     this.vfx.update(t.dt);
     this.ui.updatePrompt(

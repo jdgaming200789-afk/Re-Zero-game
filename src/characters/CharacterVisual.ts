@@ -65,6 +65,8 @@ export interface CharacterVisual {
   setExpression(expression: string, intensity?: number, holdSeconds?: number): void;
   /** Mouth movement driver for dialogue (0..1 openness or viseme id). */
   setSpeaking(speaking: boolean): void;
+  /** Partially dissolve (e.g. while standing between the camera and the player). */
+  setOccluding?(occluding: boolean): void;
   /** World position of a named socket (hand_R, head, chest...). */
   socketPosition(name: string, out: Vector3): Vector3;
   dispose(): void;

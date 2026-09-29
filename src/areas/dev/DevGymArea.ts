@@ -230,6 +230,7 @@ class DevGymArea extends Area {
       environment: this.envMap,
       environmentIntensity: 0.35,
       fog: { color: new Color(0x8f9bb0), density: 0.012, heightFalloff: 0.002, skyHaze: 0.6 },
+      keyLight: new Vector3(18, 26, 12),
       grade: NEUTRAL_GRADE,
       exposure: 1,
       tension: 0,

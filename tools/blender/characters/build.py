@@ -23,7 +23,7 @@ HERE = os.path.dirname(__file__)
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.dirname(HERE))
 
-from humanoid import BodySpec, Joints, add_chain, build_armature, build_body  # noqa: E402
+from humanoid import BodySpec, Joints, add_chain, build_armature, build_body, build_hand  # noqa: E402
 from head import HeadSpec, build_head  # noqa: E402
 from hair import HairStyle, build_hair  # noqa: E402
 from outfit import Garments, Rule, make_material, hex3, zone  # noqa: E402
@@ -141,6 +141,13 @@ def build(spec: CharacterSpec) -> str:
     # Auto (heat) weights for the body against the humanoid bones only.
     select_only(body, arm)
     bpy.ops.object.parent_set(type="ARMATURE_AUTO")
+    # Modelled hands, rigid to the hand bones, merged into the body mesh.
+    for side, bone in ((1, "hand.L"), (-1, "hand.R")):
+        hand = build_hand(f"{spec.id}_hand{side}", spec.body, j, side)
+        zone(hand, j, spec.zones, mats, spec.default_zone)
+        rigid(hand, arm, bone)
+        select_only(hand, body)
+        bpy.ops.object.join()
 
     head, meta = build_head(f"{spec.id}_head", j, spec.head)
     head.data.materials.append(mats["face"])
@@ -149,12 +156,17 @@ def build(spec: CharacterSpec) -> str:
     ears.data.materials.append(mats["skin"])
 
     hair, hmeta = build_hair(f"{spec.id}_hair", j, head, spec.head, spec.hair)
-    hair.data.materials.clear()
-    hair.data.materials.append(mats["hair"])
-    extra_mats = [m for m in mats if m.startswith("hair_")]
-    for m in extra_mats:
-        hair.data.materials.append(mats[m])
+    # Slot 0 = hair; slot 1 = "hair_tip" (dyed tips) when the palette has one.
+    # The cap (joined last) keeps slot 0.
+    # Assign in place: clearing the slots would reset every face's index.
+    hair.data.materials[0] = mats["hair"]
+    if "hair_tip" in mats:
+        hair.data.materials[1] = mats["hair_tip"]
+    else:
+        hair.data.materials.pop(index=1)
 
+    # Garments drape onto the finished body (collars, capes).
+    j.body = body
     garments = spec.garments(j, mats) if spec.garments else Garments()
     acc = spec.accessories(j, mats, head) if spec.accessories else []
 

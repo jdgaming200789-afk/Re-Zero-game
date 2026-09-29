@@ -149,6 +149,7 @@ export class PlayerController extends Component {
     this.scripted = null;
     this.entity.object3D.rotation.set(0, yaw, 0);
     this.syncFollowTarget(0);
+    this.game.events.emit('player:placed', { position: feet.clone(), yaw });
   }
 
   // ------------------------------------------------------------------ frame

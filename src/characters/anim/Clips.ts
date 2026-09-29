@@ -287,15 +287,20 @@ export const STANCES: Record<string, PoseSpec> = {
     hipsOffset: [0.012, -0.004, 0],
   },
   // Emilia: upright, hands lightly clasped in front.
-  emilia: { ...symmetric({ upperArmL: [-14, 12, -14], lowerArmL: [-58, 0, 0], handL: [0, 0, -20] }), spine: [-1, 0, 0] },
+  // (Arm twist: rotY < 0 on the left arm turns the elbow's flex plane inwards.)
+  emilia: { ...symmetric({ upperArmL: [-12, -34, -6], lowerArmL: [-62, 0, 0], handL: [0, 0, -12] }), spine: [-1, 0, 0] },
   // Beatrice: arms folded, chin up — "I suppose."
-  beatrice: { ...symmetric({ upperArmL: [-40, 30, -8], lowerArmL: [-112, 0, 0], handL: [0, 0, 10] }), neck: [-4, 0, 0], head: [-6, 0, 0], spine: [-3, 0, 0] },
+  beatrice: { ...symmetric({ upperArmL: [-26, -58, 10], lowerArmL: [-116, 0, 0], handL: [0, 0, 8] }), neck: [-4, 0, 0], head: [-6, 0, 0], spine: [-3, 0, 0] },
   // Julius: parade-ground upright; left hand resting on the sword hilt.
-  julius: { upperArmL: [8, 0, 14], lowerArmL: [-60, 0, 0], handL: [0, 0, 10], upperArmR: [2, 0, -4], lowerArmR: [-8, 0, 0], spine: [-2, 0, 0], neck: [-2, 0, 0] },
+  julius: { upperArmL: [6, -22, 12], lowerArmL: [-58, 0, 0], handL: [0, 0, 10], upperArmR: [2, 0, -4], lowerArmR: [-8, 0, 0], spine: [-2, 0, 0], neck: [-2, 0, 0] },
   // Ram: composed maid posture, hands folded at the apron.
-  ram: { ...symmetric({ upperArmL: [-8, 16, -10], lowerArmL: [-62, 0, 0], handL: [0, 0, -18] }), head: [-4, 0, 0] },
+  ram: { ...symmetric({ upperArmL: [-10, -32, -8], lowerArmL: [-68, 0, 0], handL: [0, 0, -14] }), head: [-4, 0, 0] },
   // Meili: hands behind the back, swaying.
-  meili: { ...symmetric({ upperArmL: [22, -10, 6], lowerArmL: [-40, 0, 0] }), spine: [-2, 0, 0] },
+  meili: { ...symmetric({ upperArmL: [18, -80, 4], lowerArmL: [-72, 0, 0] }), spine: [-2, 0, 0] },
   // Anastasia: one hand at the scarf, thinking.
-  anastasia: { upperArmL: [-20, 20, -6], lowerArmL: [-120, 0, 0], handL: [0, 0, 0], upperArmR: [0, 0, -4], lowerArmR: [-20, 0, 0] },
+  anastasia: { upperArmL: [-18, -42, -4], lowerArmL: [-122, 0, 0], handL: [0, 0, 0], upperArmR: [0, 0, -4], lowerArmR: [-20, 0, 0] },
+  // Shaula: hand on the cocked hip, bouncing with energy.
+  shaula: { upperArmL: [6, -72, 36], lowerArmL: [-92, 0, 0], handL: [0, 0, -14], upperArmR: [-4, 0, -8], lowerArmR: [-16, 0, 0], hips: [0, 0, -5], spine: [-1, 0, 4], upperLegL: [-4, 0, 3], lowerLegL: [9, 0, 0], hipsOffset: [-0.02, -0.004, 0] },
+  // At rest (lying in bed / unconscious): everything slack and straight.
+  rest: { ...symmetric({ upperArmL: [0, 0, 4], lowerArmL: [-6, 0, 0], handL: [0, 0, 4] }), neck: [0, 0, 0], head: [0, 0, 0] },
 };

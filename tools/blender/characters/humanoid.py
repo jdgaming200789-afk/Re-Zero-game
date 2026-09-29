@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 
 import bpy  # noqa: F401  (must precede bmesh/mathutils)
 import bmesh
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 
 @dataclass
@@ -224,10 +224,9 @@ def build_body(name: str, s: BodySpec, j: Joints) -> bpy.types.Object:
         v(f"fore_{side}", fore, 0.028 * L * sl, 0.026 * L * sl)
         cuff = s.sleeve_cuff
         v(f"wrist_{side}", m(j.wrist_l), 0.02 * L * cuff, 0.017 * L * cuff)
-        hand_mid = m(j.wrist_l.lerp(j.hand_end_l, 0.45))
-        v(f"palm_{side}", hand_mid, 0.027 * L, 0.013 * L)
-        v(f"hand_end_{side}", m(j.hand_end_l), 0.019 * L, 0.009 * L)
-        v(f"thumb_{side}", m(j.thumb_l), 0.009 * L, 0.009 * L)
+        # Stub only: the modelled hand (build_hand) is joined over it.
+        hand_mid = m(j.wrist_l.lerp(j.hand_end_l, 0.3))
+        v(f"palm_{side}", hand_mid, 0.012 * L, 0.01 * L)
 
     def e(a, b):
         bm.edges.new((verts[a], verts[b]))
@@ -252,8 +251,6 @@ def build_body(name: str, s: BodySpec, j: Joints) -> bpy.types.Object:
         e(f"elbow_{side}", f"fore_{side}")
         e(f"fore_{side}", f"wrist_{side}")
         e(f"wrist_{side}", f"palm_{side}")
-        e(f"palm_{side}", f"hand_end_{side}")
-        e(f"wrist_{side}", f"thumb_{side}")
 
     me = bpy.data.meshes.new(name)
     bm.to_mesh(me)
@@ -303,3 +300,92 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
         if p.z < 0.004 * H:
             p.z = 0.0
         vert.co = p
+
+
+# --------------------------------------------------------------------------- hands
+
+
+def _tube(bm, pts: list[Vector], radii: list[float], sides: int = 8, cap_end: bool = True) -> None:
+    """Sweep a round tube along pts with per-point radii; rounded tip."""
+    rows = []
+    for i, p in enumerate(pts):
+        tan = (pts[min(i + 1, len(pts) - 1)] - pts[max(i - 1, 0)]).normalized()
+        ref = Vector((0, 0, 1)) if abs(tan.z) < 0.9 else Vector((1, 0, 0))
+        a = tan.cross(ref).normalized()
+        b = tan.cross(a).normalized()
+        row = [bm.verts.new(p + (a * math.cos(2 * math.pi * k / sides) + b * math.sin(2 * math.pi * k / sides)) * radii[i]) for k in range(sides)]
+        rows.append(row)
+    for i in range(len(rows) - 1):
+        for k in range(sides):
+            bm.faces.new((rows[i][k], rows[i][(k + 1) % sides], rows[i + 1][(k + 1) % sides], rows[i + 1][k]))
+    bm.faces.new(list(reversed(rows[0])))
+    if cap_end:
+        tan = (pts[-1] - pts[-2]).normalized()
+        tip = bm.verts.new(pts[-1] + tan * radii[-1] * 0.9)
+        for k in range(sides):
+            bm.faces.new((rows[-1][k], rows[-1][(k + 1) % sides], tip))
+
+
+def build_hand(name: str, s: BodySpec, j: Joints, side: int) -> bpy.types.Object:
+    """Slender anime hand in a relaxed pose: flattened palm, four curled
+    fingers and a thumb. Built for the left hand and mirrored for the right."""
+    H = j.H
+    L = s.limb
+    wrist = j.wrist_l
+    d = (j.hand_end_l - j.wrist_l).normalized()  # along the hand
+    w = Vector((0, 1, 0))  # across the palm (+y = pinky side, towards the back)
+    w = (w - d * d.dot(w)).normalized()
+    n = w.cross(d).normalized()  # palm side
+    bm = bmesh.new()
+    # Palm: flattened ellipsoid
+    palm = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=10, radius=1.0)
+    centre = wrist + d * 0.046 * H
+    basis = Matrix((d * 0.047 * H * L, w * 0.034 * H * L, n * 0.0135 * H * L)).transposed()
+    for vtx in palm["verts"]:
+        c = vtx.co.copy()
+        # Slightly cupped: the palm side is flatter than the back.
+        if c.z > 0:
+            c.z *= 0.7
+        vtx.co = centre + basis @ c
+    # Fingers: index (thumb side, -w) to pinky
+    specs = [(-0.022, 0.043, 1.0), (-0.0075, 0.047, 1.0), (0.0075, 0.044, 0.96), (0.021, 0.035, 0.86)]
+    for off, length, rs in specs:
+        base = wrist + d * 0.082 * H + w * off * H * L - n * 0.002 * H
+        pts = [base]
+        seg = length * H * L / 3
+        direction = (d + w * off * 1.6).normalized()
+        for bend in (14, 22, 16):
+            direction = (Matrix.Rotation(math.radians(bend), 3, w) @ direction).normalized()
+            pts.append(pts[-1] + direction * seg)
+        r0 = 0.0064 * H * L * rs
+        _tube(bm, pts, [r0, r0 * 0.94, r0 * 0.86, r0 * 0.76])
+    # Thumb: from the heel of the palm, forward and across
+    tb = wrist + d * 0.022 * H - w * 0.022 * H * L + n * 0.004 * H
+    tdir = (d * 0.62 - w * 0.55 + n * 0.5).normalized()
+    pts = [tb]
+    for bend, ln in ((10, 0.026), (20, 0.022), (18, 0.018)):
+        tdir = (Matrix.Rotation(math.radians(-bend), 3, (tdir.cross(n)).normalized()) @ tdir).normalized()
+        pts.append(pts[-1] + tdir * ln * H * L)
+    r0 = 0.0085 * H * L
+    _tube(bm, pts, [r0, r0 * 0.95, r0 * 0.85, r0 * 0.75])
+    # Anime hands are small and slender (children's even more so).
+    hs = 0.84 if s.heads_tall >= 5.5 else 0.74
+    for vtx in bm.verts:
+        vtx.co = wrist + (vtx.co - wrist) * hs
+    if side < 0:
+        for vtx in bm.verts:
+            vtx.co.x = -vtx.co.x
+        bmesh.ops.reverse_faces(bm, faces=bm.faces)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    obj = bpy.data.objects.new(name, me)
+    bpy.context.scene.collection.objects.link(obj)
+    for p in me.polygons:
+        p.use_smooth = True
+    sub = obj.modifiers.new("Sub", "SUBSURF")
+    sub.levels = 1
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.modifier_apply(modifier=sub.name)
+    return obj

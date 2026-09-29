@@ -33,9 +33,12 @@ class Clump:
     curl: float = 0.0  # radians per unit length around the growth axis
     lift: float = 0.0  # extra push away from the head
     tip: float = 1.4  # taper exponent
+    hold: float = 0.45  # fraction of the length kept at full width before tapering
     chain: str | None = None
     twist: float = 0.0
     root_offset: float = 0.012
+    tip_material: int = 0  # material slot for the tip (0 = same as root)
+    tip_start: float = 0.8
 
 
 @dataclass
@@ -48,6 +51,8 @@ class Drill:
     turns: float
     tube: float
     chain: str | None = None
+    tip_material: int = 0
+    tip_start: float = 0.78
 
 
 @dataclass
@@ -124,8 +129,11 @@ def sweep(bm: bmesh.types.BMesh, pts: list[Vector], frame: HeadFrame, c: Clump, 
         if c.twist:
             wide = (Matrix.Rotation(c.twist * t, 3, tan) @ wide).normalized()
         thick = wide.cross(tan).normalized()
-        taper = (1 - t**c.tip) if t < 0.999 else 0.0
-        w = c.width * H * 0.5 * max(taper, 0.02) * (0.85 + 0.15 * math.sin(math.pi * min(1, t * 1.4)))
+        # Anime locks keep their width (even swell a little) and then taper
+        # to a point: a leaf shape, not a triangle.
+        u = max(0.0, (t - c.hold) / max(1e-4, 1 - c.hold))
+        taper = (1 - u**c.tip) ** 0.85 if t < 0.999 else 0.0
+        w = c.width * H * 0.5 * max(taper, 0.02) * (0.82 + 0.26 * math.sin(math.pi * min(1.0, t * 1.25)))
         th = c.thickness * H * 0.5 * max(taper, 0.05)
         row = []
         for k in range(ring):
@@ -143,6 +151,8 @@ def sweep(bm: bmesh.types.BMesh, pts: list[Vector], frame: HeadFrame, c: Clump, 
             cc = rows[i + 1][(k + 1) % ring]
             d = rows[i + 1][k]
             f = bm.faces.new((a, b, cc, d))
+            if c.tip_material and (i + 0.5) / (n - 1) > c.tip_start:
+                f.material_index = c.tip_material
             for loop in f.loops:
                 vi = rows[i].index(loop.vert) if loop.vert in rows[i] else rows[i + 1].index(loop.vert)
                 row_i = i if loop.vert in rows[i] else i + 1
@@ -152,36 +162,52 @@ def sweep(bm: bmesh.types.BMesh, pts: list[Vector], frame: HeadFrame, c: Clump, 
     return created
 
 
-def helix_drill(bm, frame: HeadFrame, d: Drill, uv_layer, steps: int = 72, ring: int = 10):
+def helix_drill(bm, frame: HeadFrame, d: Drill, uv_layer, steps: int = 96, ring: int = 10):
+    """Drill curl as a wound ribbon: a flat band spiralling down a narrowing
+    cone, each turn overlapping the one below — the classic ojou-sama
+    ringlet silhouette of stacked tiers."""
     H = frame.H
     top = frame.c + Vector(d.top) * H
     created = []
     rows = []
+    pitch = d.length * H / max(0.5, d.turns)
     for i in range(steps + 1):
         t = i / steps
         ang = t * d.turns * 2 * math.pi * d.side
-        r = d.radius * H * (1 - 0.45 * t)
+        # Cone: fuller in the middle, tight at the tip.
+        r = d.radius * H * (0.75 + 0.45 * math.sin(math.pi * min(1.0, t * 1.15))) * (1 - 0.55 * t * t)
         centre = top + Vector((0, 0, -d.length * H * t))
-        p = centre + Vector((math.cos(ang) * r, math.sin(ang) * r, 0))
-        nxt_ang = ang + 0.1 * d.side
-        tan = (Vector((math.cos(nxt_ang) * r, math.sin(nxt_ang) * r, -d.length * H / steps * 1.0)) - Vector((math.cos(ang) * r, math.sin(ang) * r, 0))).normalized()
-        out = (p - centre).normalized() if r > 1e-5 else Vector((1, 0, 0))
-        side = tan.cross(out).normalized()
-        tube = d.tube * H * (1 - 0.55 * t) * (0.3 + 0.7 * min(1.0, t * 8))
+        radial = Vector((math.cos(ang), math.sin(ang), 0))
+        p = centre + radial * r
+        tangent = Vector((-math.sin(ang) * d.side, math.cos(ang) * d.side, 0))
+        up = Vector((0, 0, 1))
+        # Band: tall along the axis (overlaps the tier below), thin radially.
+        band = pitch * (0.62 + 0.25 * (1 - t)) * min(1.0, 0.25 + t * 6)
+        thick = d.tube * H * 0.32 * (1 - 0.5 * t) * min(1.0, 0.4 + t * 5)
         row = []
         for k in range(ring):
             phi = 2 * math.pi * k / ring
-            v = bm.verts.new(p + out * math.cos(phi) * tube + side * math.sin(phi) * tube)
+            # Lens: flattened against the cone, bulging outward, drooping.
+            off = up * math.sin(phi) * band * 0.5 + radial * math.cos(phi) * thick - up * band * 0.18
+            # Lower edge flares out so tiers read as layered.
+            if math.sin(phi) < 0:
+                off += radial * (-math.sin(phi)) * thick * 0.9
+            v = bm.verts.new(p + off)
             row.append(v)
             created.append((v, t))
         rows.append(row)
+    _ = tangent
     for i in range(steps):
         for k in range(ring):
             f = bm.faces.new((rows[i][k], rows[i][(k + 1) % ring], rows[i + 1][(k + 1) % ring], rows[i + 1][k]))
+            if d.tip_material and i / steps > d.tip_start:
+                f.material_index = d.tip_material
             for loop in f.loops:
                 loop[uv_layer].uv = (k / ring, i / steps)
     bm.faces.new(list(reversed(rows[0])))
-    bm.faces.new(rows[-1])
+    tipf = bm.faces.new(rows[-1])
+    if d.tip_material:
+        tipf.material_index = d.tip_material
     return created
 
 
@@ -265,7 +291,14 @@ def build_hair(name: str, j: Joints, head_obj, head_spec, style: HairStyle) -> t
     bpy.context.scene.collection.objects.link(obj)
     for p in me.polygons:
         p.use_smooth = True
+    # Placeholder slots so the join keeps per-face material indices (dyed
+    # tips use slot 1); build.py swaps in the real materials afterwards.
+    slot0 = bpy.data.materials.get("_hair_slot0") or bpy.data.materials.new("_hair_slot0")
+    slot1 = bpy.data.materials.get("_hair_slot1") or bpy.data.materials.new("_hair_slot1")
+    me.materials.append(slot0)
+    me.materials.append(slot1)
     cap = build_cap(name + "_cap", head_spec, frame, style)
+    cap.data.materials.append(slot0)
     # Join cap into hair (keeps vertex indices of clumps stable: cap appended after)
     n_clump_verts = len(me.vertices)
     bpy.context.view_layer.objects.active = obj

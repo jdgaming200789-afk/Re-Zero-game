@@ -10,6 +10,7 @@ from typing import Callable
 import bpy  # noqa: F401
 import bmesh
 from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 from humanoid import Joints
 
@@ -216,51 +217,208 @@ def skirt(name: str, j: Joints, s: SkirtSpec, mat, frill_mat=None) -> tuple[bpy.
     return obj, guides
 
 
-def cape(name: str, j: Joints, width: float, length: float, mat, tatters: float = 0.0, chains: int = 4, bones: int = 4) -> tuple[bpy.types.Object, list[list[Vector]]]:
-    """Cloak hanging from the shoulders down the back."""
-    H = j.H
-    bm = bmesh.new()
-    cols, rows = 16, 14
-    top_z = j.upper_chest.z + 0.02 * H
-    grid = []
-    for r in range(rows + 1):
-        t = r / rows
-        row = []
-        for c in range(cols + 1):
-            u = c / cols - 0.5
-            spread = width * H * (1 + 0.35 * t)
-            x = u * spread
-            # wrap around the back and over the shoulders
-            wrap = math.cos(u * math.pi * 0.9)
-            y = 0.06 * H + 0.04 * H * wrap * (1 - t * 0.5) + t * 0.03 * H
-            z = top_z - length * H * t
-            if tatters > 0 and r == rows:
-                z += tatters * H * 0.05 * (0.5 + 0.5 * math.sin(c * 2.7) * math.cos(c * 1.3))
-            row.append(bm.verts.new(Vector((x, y, z))))
-        grid.append(row)
-    for r in range(rows):
-        for c in range(cols):
-            bm.faces.new((grid[r][c], grid[r][c + 1], grid[r + 1][c + 1], grid[r + 1][c]))
+def body_bvh(j: Joints) -> BVHTree:
+    """BVH of the (rest-pose) body for draping garments onto it."""
+    cached = getattr(j, "_bvh", None)
+    if cached is not None:
+        return cached
+    dg = bpy.context.evaluated_depsgraph_get()
+    tree = BVHTree.FromObject(j.body, dg)
+    j._bvh = tree
+    return tree
+
+
+def drape_down(j: Joints, x: float, y: float, offset: float) -> Vector | None:
+    """Drop a point onto the body from above (collars, shoulder capes)."""
+    hit = body_bvh(j).ray_cast(Vector((x, y, j.head_top.z + 0.05 * j.H)), Vector((0, 0, -1)))
+    if hit[0] is None:
+        return None
+    loc, nrm = hit[0], hit[1]
+    return loc + nrm * offset
+
+
+def push_outside_torso(j: Joints, p: Vector, offset: float, torso_half_x: float) -> Vector:
+    """Push a point radially out of the torso (ignores arm hits)."""
+    radial = Vector((p.x, p.y - j.neck_base.y, 0))
+    if radial.length < 1e-6:
+        return p
+    d = radial.normalized()
+    origin = Vector((d.x * 2.0, j.neck_base.y + d.y * 2.0, p.z))
+    hit = body_bvh(j).ray_cast(origin, -d)
+    if hit[0] is None or abs(hit[0].x) > torso_half_x:
+        return p
+    surface_r = Vector((hit[0].x, hit[0].y - j.neck_base.y, 0)).length
+    if radial.length < surface_r + offset:
+        q = Vector((d.x * (surface_r + offset), j.neck_base.y + d.y * (surface_r + offset), p.z))
+        return q
+    return p
+
+
+def _finish(name: str, bm: bmesh.types.BMesh, mat, thickness: float, smooth: bool = True) -> bpy.types.Object:
     me = bpy.data.meshes.new(name)
     bm.to_mesh(me)
     bm.free()
     obj = bpy.data.objects.new(name, me)
     bpy.context.scene.collection.objects.link(obj)
-    sol = obj.modifiers.new("Sol", "SOLIDIFY")
-    sol.thickness = 0.005
-    bpy.context.view_layer.objects.active = obj
-    bpy.ops.object.modifier_apply(modifier=sol.name)
-    for p in me.polygons:
-        p.use_smooth = True
+    if thickness > 0:
+        sol = obj.modifiers.new("Sol", "SOLIDIFY")
+        sol.thickness = thickness
+        sol.offset = 1.0
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.modifier_apply(modifier=sol.name)
+    if smooth:
+        for p in me.polygons:
+            p.use_smooth = True
     obj.data.materials.append(mat)
+    return obj
+
+
+def shoulder_collar(
+    name: str,
+    j: Joints,
+    mat,
+    outer_x: float,
+    outer_front: float,
+    outer_back: float,
+    frill_waves: int = 0,
+    frill_amp: float = 0.0,
+    flare: float = 0.012,
+    rings: int = 6,
+    segments: int = 64,
+    thickness: float = 0.004,
+    open_front: float = 0.0,
+    slope: float = 0.5,
+    lift: float = 0.0,
+) -> bpy.types.Object:
+    """A collar that lies on the shoulders and chest (sailor collar, maid
+    neckline frill, capelet): an annulus around the neck dropped onto the
+    body, with its outer edge lifted into a flare or ruffle."""
+    H = j.H
+    bm = bmesh.new()
+    grid = []
+    rx_in, ry_in = 0.043 * H, 0.041 * H
+    off = (0.005 + lift) * H
+    for r in range(rings + 1):
+        t = r / rings
+        row = []
+        for i in range(segments + (1 if open_front else 0)):
+            if open_front:
+                a = open_front / 2 + (2 * math.pi - open_front) * i / segments
+            else:
+                a = 2 * math.pi * i / segments  # 0 = front (-y)
+            fb = (1 + math.cos(a)) / 2
+            ry_out = (outer_back + (outer_front - outer_back) * fb) * H
+            rx = rx_in + (outer_x * H - rx_in) * t
+            ry = ry_in + (ry_out - ry_in) * t
+            x = math.sin(a) * rx
+            y = j.neck_base.y - math.cos(a) * ry
+            # Stiff fabric: the collar follows a shallow cone out from the
+            # neck and only rests on the body where the body rises above it
+            # (the shoulders); elsewhere it flares free instead of sliding
+            # down the chest, back or the A-posed arms.
+            radial_d = math.hypot(x, y - j.neck_base.y)
+            cone_z = j.neck_base.z - 0.006 * H + lift * H - slope * max(0.0, radial_d - rx_in)
+            p = drape_down(j, x, y, off + 0.002 * H * t)
+            if p is None or p.z < cone_z:
+                p = Vector((x, y, cone_z))
+            if t > 0.5:
+                # Edge stands off the body a little: fabric has body.
+                k = (t - 0.5) / 0.5
+                radial = Vector((math.sin(a), -math.cos(a), 0))
+                wave = 0.5 + 0.5 * math.sin(frill_waves * a) if frill_waves else 1.0
+                p = p + radial * (flare * H * k * k + frill_amp * H * k * wave) + Vector((0, 0, -0.4 * frill_amp * H * k * wave))
+            row.append(bm.verts.new(p))
+        grid.append(row)
+    n = len(grid[0])
+    for r in range(rings):
+        for i in range(n if not open_front else n - 1):
+            a0, a1 = grid[r][i], grid[r][(i + 1) % n]
+            b0, b1 = grid[r + 1][i], grid[r + 1][(i + 1) % n]
+            bm.faces.new((a0, a1, b1, b0))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    obj = _finish(name, bm, mat, thickness * H / 1.7)
+    return obj
+
+
+def cape(
+    name: str,
+    j: Joints,
+    width: float,
+    length: float,
+    mat,
+    tatters: float = 0.0,
+    chains: int = 4,
+    bones: int = 4,
+    wrap: float = 128.0,
+    folds: int = 5,
+    fold_depth: float = 0.012,
+    flare: float = 0.35,
+) -> tuple[bpy.types.Object, list[list[Vector]]]:
+    """Cloak fastened at the neck: drapes over the shoulders (dropped onto
+    the body), then hangs down the back with folds and flare. `width` is
+    the half-width at the shoulders as a fraction of H; `length` is measured
+    from the shoulders down."""
+    H = j.H
+    bm = bmesh.new()
+    cols, rows = 26, 20
+    drape_rows = 5
+    shoulder_rx = width * H
+    shoulder_ry = 0.085 * H
+    wrap_r = math.radians(wrap)
+    grid = []
+    rim = []
+    torso_x = 0.13 * H
+    for c in range(cols + 1):
+        u = c / cols - 0.5
+        a = math.pi + u * wrap_r  # pi = straight back
+        # --- draped part: neck → shoulder rim
+        col = []
+        for r in range(drape_rows + 1):
+            k = r / drape_rows
+            rx = 0.046 * H + (shoulder_rx - 0.046 * H) * k
+            ry = 0.044 * H + (shoulder_ry - 0.044 * H) * k
+            x = math.sin(a) * rx
+            y = j.neck_base.y - math.cos(a) * ry
+            radial_d = math.hypot(x, y - j.neck_base.y)
+            cone_z = j.neck_base.z - 0.006 * H - 0.8 * max(0.0, radial_d - 0.046 * H)
+            p = drape_down(j, x, y, 0.007 * H)
+            if p is None or p.z < cone_z:
+                p = Vector((x, y, cone_z))
+            col.append(p)
+        rim.append(col[-1])
+        grid.append(col)
+    # --- hanging part
+    rim_z = min(p.z for p in rim)
+    for c in range(cols + 1):
+        u = c / cols - 0.5
+        a = math.pi + u * wrap_r
+        top = rim[c]
+        radial = Vector((math.sin(a), -math.cos(a), 0))
+        for r in range(1, rows - drape_rows + 1):
+            t = r / (rows - drape_rows)
+            z = top.z + (rim_z - top.z) * min(1.0, t * 4) - length * H * t
+            fold = fold_depth * H * math.sin(u * folds * 2 * math.pi) * min(1.0, t * 1.5)
+            out = flare * 0.12 * H * t + fold
+            p = Vector((top.x, top.y, z)) + radial * out
+            if tatters > 0 and r == rows - drape_rows:
+                p.z += tatters * H * 0.045 * (0.5 + 0.5 * math.sin(c * 2.7) * math.cos(c * 1.3))
+            p = push_outside_torso(j, p, 0.012 * H, torso_x)
+            grid[c].append(p)
+    verts = [[bm.verts.new(p) for p in col] for col in grid]
+    for c in range(cols):
+        for r in range(len(verts[c]) - 1):
+            bm.faces.new((verts[c][r], verts[c + 1][r], verts[c + 1][r + 1], verts[c][r + 1]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    obj = _finish(name, bm, mat, 0.005)
     guides = []
     for ci in range(chains):
-        u = (ci + 0.5) / chains - 0.5
+        c = round((ci + 0.5) / chains * cols)
+        col = grid[c]
         line = []
         for b in range(bones + 1):
             t = b / bones
-            spread = width * H * (1 + 0.35 * t)
-            line.append(Vector((u * spread, 0.1 * H, top_z - length * H * t)))
+            idx = drape_rows + round(t * (len(col) - 1 - drape_rows))
+            line.append(col[idx].copy())
         guides.append(line)
     return obj, guides
 

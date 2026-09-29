@@ -32,6 +32,10 @@ export interface GameEvents {
 
   // ---- Player / characters -------------------------------------------------
   'player:spawned': { characterId: string };
+  /** Player teleported/placed (spawns, checkpoints, Return by Death). */
+  'player:placed': { position: Vector3; yaw: number };
+  'party:joined': { characterId: string };
+  'party:left': { characterId: string };
   'player:landed': { fallHeight: number };
   'player:footstep': { position: Vector3; surface: string; intensity: number };
   'character:damaged': { entityId: number; amount: number; sourceId: number | null; stagger: boolean };

@@ -23,6 +23,10 @@ export interface AtmosphereProfile {
   music?: MusicState;
   /** Player posture tension 0..1 (fear makes Subaru hunch and move cautiously). */
   tension?: number;
+  /** Direction towards the key light (sun/moon) for character shading probes. */
+  keyLight?: Vector3;
+  /** Character rim light colour / strength for this area's mood. */
+  rim?: { color: Color; strength: number };
 }
 
 /**
@@ -39,6 +43,8 @@ export abstract class Area {
   abstract readonly subtitle: string;
   readonly root = new Group();
   readonly spawns = new Map<string, AreaSpawn>();
+  /** Whether party members follow the player here ('hidden' for solo scenes). */
+  readonly partyPolicy: 'follow' | 'hidden' = 'follow';
   protected readonly colliders: RAPIER.Collider[] = [];
   protected readonly bodies: RAPIER.RigidBody[] = [];
   /** Shared assets (kit meshes, textures) that must not be disposed with this area. */

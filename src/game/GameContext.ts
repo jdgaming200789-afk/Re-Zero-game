@@ -16,6 +16,9 @@ import type { AssetManager } from '../assets/AssetManager';
 import type { Scheduler } from '../core/Scheduler';
 import type { EnvironmentLibrary } from '../scene/EnvironmentLibrary';
 import type { VfxSystem } from '../vfx/VfxSystem';
+import type { CharacterFactory } from '../characters/CharacterFactory';
+import type { ActorManager } from '../actors/ActorManager';
+import type { PartyManager } from '../party/PartyManager';
 
 /**
  * The composition root's public surface. Systems receive this instead of
@@ -39,6 +42,9 @@ export interface GameContext {
   readonly scheduler: Scheduler;
   readonly environment: EnvironmentLibrary;
   readonly vfx: VfxSystem;
+  readonly characters: CharacterFactory;
+  readonly actors: ActorManager;
+  readonly party: PartyManager;
 
   readonly mode: GameMode;
   setMode(mode: GameMode): void;

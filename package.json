@@ -11,11 +11,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke": "node tools/browser/smoke.mjs && node tools/browser/areas.mjs",
+    "smoke": "node tools/browser/smoke.mjs && node tools/browser/areas.mjs && node tools/browser/party.mjs",
     "assets:blender": "node tools/blender/run-blender.mjs",
     "assets:textures": "node tools/blender/run-blender.mjs textures",
     "assets:kit": "node tools/blender/run-blender.mjs kit",
-    "assets:tower": "node tools/blender/run-blender.mjs tower"
+    "assets:tower": "node tools/blender/run-blender.mjs tower",
+    "cast": "node tools/browser/cast.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "0.21.0",

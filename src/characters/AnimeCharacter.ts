@@ -1,4 +1,4 @@
-import { Color, Group, Quaternion, SkinnedMesh, Vector3, type Bone, type Material, type MeshStandardMaterial, type Object3D } from 'three';
+import { Color, Group, Quaternion, SkinnedMesh, Uniform, Vector3, type Bone, type Material, type MeshStandardMaterial, type Object3D } from 'three';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -15,7 +15,7 @@ import { SpringChainSystem } from './anim/SpringBones';
 import type { CharacterVisual, LocomotionState, PlayActionOptions } from './CharacterVisual';
 import { FaceRenderer, type MouthShape } from './face/FaceRenderer';
 import { HUMAN_BONES, HumanoidRig, type HumanBone } from './rig/HumanoidRig';
-import { createAnimeMaterial, createOutlineMaterial, type AnimeRole } from './render/AnimeMaterial';
+import { CharacterLighting, createAnimeMaterial, createOutlineMaterial, type AnimeRole } from './render/AnimeMaterial';
 
 export type GroundQuery = (x: number, y: number, z: number) => { y: number; normal: Vector3 } | null;
 
@@ -76,6 +76,17 @@ export class AnimeCharacter implements CharacterVisual {
   private ikHipsDrop = 0;
   private readonly footOffsets = { L: 0, R: 0 };
   private moveBlend = 0;
+  private readonly owned: Array<{ dispose(): void }> = [];
+  /** 0 = in shadow .. 1 = lit, from the occlusion probe (face and hair). */
+  readonly envShadow = new Uniform(1);
+  /** Dither fade (1 = opaque): characters dissolve when the camera is inside them. */
+  readonly fade = new Uniform(1);
+  private occluding = false;
+  /** Returns true when the ray from a point towards the key light is blocked. */
+  occlusionQuery: ((from: Vector3, dirToLight: Vector3) => boolean) | null = null;
+  private envShadowTimer = Math.random() * 0.12;
+  private envShadowTarget = 1;
+  private readonly lastRootPos = new Vector3(1e9, 0, 0);
   private airBlend = 0;
 
   private constructor(
@@ -84,6 +95,11 @@ export class AnimeCharacter implements CharacterVisual {
     readonly scheduler: Scheduler,
   ) {
     this.root.name = `char:${def.id}`;
+  }
+
+  /** Fetch and parse the model without instantiating it. */
+  static async preload(def: CharacterDefinition): Promise<void> {
+    await loadModel(def.model);
   }
 
   static async create(def: CharacterDefinition, scheduler: Scheduler): Promise<AnimeCharacter> {
@@ -102,16 +118,24 @@ export class AnimeCharacter implements CharacterVisual {
       if ((o as SkinnedMesh).isSkinnedMesh) skinned.push(o as SkinnedMesh);
     });
     const outlineBase = new Color(def.outline);
+    // Head centre in model space (bind pose) for hair normal smoothing.
+    model.updateMatrixWorld(true);
+    const headBone = skinned[0]?.skeleton.bones.find((b) => b.name === 'head');
+    const headCenter = headBone ? headBone.getWorldPosition(new Vector3()).add(new Vector3(0, 0.1 * (def.height / 1.7), 0)) : null;
     for (const mesh of skinned) {
       const isFace = typeof mesh.userData.face === 'string';
       if (isFace) this.face = new FaceRenderer({ ...def.face, eyeLine: def.face.eyeLine ?? JSON.parse(mesh.userData.face as string).eyeLine });
       const convert = (m: Material): Material => {
         const src = m as MeshStandardMaterial;
         const role = ((src.userData.role as AnimeRole) ?? 'cloth') as AnimeRole;
-        if (role === 'face' && this.face) return createAnimeMaterial({ color: new Color(1, 1, 1), role: 'face', map: this.face.texture, emissiveMap: this.face.glow });
-        return createAnimeMaterial({ color: src.color.clone(), role });
+        if (role === 'face' && this.face)
+          return createAnimeMaterial({ color: new Color(1, 1, 1), role: 'face', map: this.face.texture, emissiveMap: this.face.glow, envShadow: this.envShadow, fade: this.fade });
+        return createAnimeMaterial({ color: src.color.clone(), role, envShadow: role === 'hair' ? this.envShadow : undefined, fade: this.fade });
       };
+      const firstMat = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as MeshStandardMaterial;
+      const isHair = firstMat.userData.role === 'hair';
       mesh.material = Array.isArray(mesh.material) ? mesh.material.map(convert) : convert(mesh.material);
+      for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) this.owned.push(m);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.frustumCulled = false; // skinned bounds are unreliable when posed
@@ -119,6 +143,12 @@ export class AnimeCharacter implements CharacterVisual {
         sphericalNormals(mesh.geometry);
         // Hair/fringe self-shadowing bands across an anime face read as dirt.
         mesh.receiveShadow = false;
+      }
+      if (isHair) {
+        // Strand-level self shadowing reads as dark shards; the character's
+        // environment shadow probe darkens hair instead.
+        mesh.receiveShadow = false;
+        if (headCenter) smoothHairNormals(mesh.geometry, mesh.worldToLocal(headCenter.clone()));
       }
     }
 
@@ -142,7 +172,9 @@ export class AnimeCharacter implements CharacterVisual {
           : first.geometry;
       const outlineColor = role === 'hair' ? mat0.color.clone().multiplyScalar(0.35).lerp(outlineBase, 0.4) : role === 'face' || role === 'skin' ? new Color(0x8a5048) : outlineBase;
       const width = role === 'face' ? 0.0012 : role === 'hair' ? 0.0022 : 0.0026;
-      const outline = new SkinnedMesh(geometry, createOutlineMaterial(outlineColor, width));
+      const outline = new SkinnedMesh(geometry, createOutlineMaterial(outlineColor, width, this.fade));
+      if (geometry !== first.geometry) this.owned.push(geometry);
+      this.owned.push(outline.material as Material);
       outline.bind(first.skeleton, first.bindMatrix);
       outline.position.copy(first.position);
       outline.quaternion.copy(first.quaternion);
@@ -245,6 +277,10 @@ export class AnimeCharacter implements CharacterVisual {
     this.face?.setViseme(v);
   }
 
+  setOccluding(occluding: boolean): void {
+    this.occluding = occluding;
+  }
+
   socketPosition(name: string, out: Vector3): Vector3 {
     const bone = HUMAN_BONES.includes(name as HumanBone) ? this.rig.bone(name as HumanBone) : this.rig.bone('head');
     return bone.getWorldPosition(out);
@@ -252,12 +288,47 @@ export class AnimeCharacter implements CharacterVisual {
 
   dispose(): void {
     this.face?.dispose();
+    // Materials and merged outline shells are per instance; source geometry
+    // stays with the shared glTF cache.
+    for (const o of this.owned) o.dispose();
+    this.owned.length = 0;
     this.root.removeFromParent();
+  }
+
+  private updateCameraFade(dt: number): void {
+    // Nearest of chest / head to the camera: fade before it clips inside.
+    const view = CharacterLighting.viewPosition;
+    const d = Math.min(this.rig.bone('chest').getWorldPosition(_v).distanceTo(view), this.rig.bone('head').getWorldPosition(_v).distanceTo(view));
+    const target = Math.min(clamp((d - 0.45) / 0.75, 0, 1), this.occluding ? 0.35 : 1);
+    this.fade.value = damp(this.fade.value, target, 0.06, dt);
+  }
+
+  private updateFaceDetail(): void {
+    if (!this.face) return;
+    const d = this.rig.bone('head').getWorldPosition(_v).distanceTo(CharacterLighting.viewPosition);
+    // Thin painted lines vanish in mip levels at distance: thicken them.
+    this.face.setDetail(d < 4 ? 1 : d < 9 ? 1.6 : 2.4);
+  }
+
+  private updateEnvShadow(dt: number): void {
+    if (!this.occlusionQuery) return;
+    this.envShadowTimer -= dt;
+    if (this.envShadowTimer <= 0) {
+      this.envShadowTimer = 0.12;
+      const head = this.rig.bone('head').getWorldPosition(_v);
+      const dir = CharacterLighting.keyLightDir;
+      _r.copy(head).addScaledVector(dir, 0.35);
+      this.envShadowTarget = this.occlusionQuery(_r, dir) ? 0 : 1;
+    }
+    this.envShadow.value = damp(this.envShadow.value, this.envShadowTarget, 0.12, dt);
   }
 
   // ------------------------------------------------------------------ frame
   update(dt: number, loco: LocomotionState): void {
     this.updateFace(dt);
+    this.updateEnvShadow(dt);
+    this.updateFaceDetail();
+    this.updateCameraFade(dt);
 
     // --- Base: idle ↔ locomotion
     const moving = clamp((loco.speed - 0.05) / 0.5, 0, 1);
@@ -340,8 +411,12 @@ export class AnimeCharacter implements CharacterVisual {
     else this.ikHipsDrop = damp(this.ikHipsDrop, 0, 0.1, dt);
 
     // --- Springs last (they react to the final pose)
+    // Chain bones are never written by animation, so their rest stays the
+    // bind pose; they only need a reset after a teleport.
     if (this.springs.chainCount > 0) {
-      this.springs.captureRest();
+      const p = this.root.getWorldPosition(_v);
+      if (p.distanceToSquared(this.lastRootPos) > 1.5 * 1.5) this.springs.reset();
+      this.lastRootPos.copy(p);
       this.springs.update(dt);
     }
   }
@@ -436,6 +511,35 @@ export class AnimeCharacter implements CharacterVisual {
 
 const _v = new Vector3();
 const _r = new Vector3();
+
+/**
+ * Blend hair normals towards a smooth field around the head (spherical
+ * above the ears, cylindrical below) so the whole hairstyle shades as one
+ * volume, as in anime key art, instead of every lock catching light on its
+ * own. Also gives the outline shell a consistent outward direction.
+ */
+function smoothHairNormals(g: BufferGeometry, center: Vector3): void {
+  if (g.userData.animeHairNormals) return;
+  g.userData.animeHairNormals = true;
+  const pos = g.getAttribute('position');
+  const nrm = g.getAttribute('normal');
+  const p = new Vector3();
+  const n = new Vector3();
+  const r = new Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    p.fromBufferAttribute(pos, i);
+    n.fromBufferAttribute(nrm, i);
+    r.subVectors(p, center);
+    if (r.y < 0) r.y *= 0.25;
+    if (r.lengthSq() < 1e-8) continue;
+    r.normalize();
+    // Keep a little of the lock's own normal for form.
+    if (n.dot(r) < 0) n.negate();
+    n.lerp(r, 0.72).normalize();
+    nrm.setXYZ(i, n.x, n.y, n.z);
+  }
+  nrm.needsUpdate = true;
+}
 
 /** Keep only the attributes an outline shell needs (so split primitives merge). */
 function stripForOutline(g: BufferGeometry): BufferGeometry {

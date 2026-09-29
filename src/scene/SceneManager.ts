@@ -1,6 +1,7 @@
 import { createLogger } from '../core/Log';
 import type { GameContext, GameSystem } from '../game/GameContext';
 import type { Area, AreaFactory } from './Area';
+import { CharacterLighting } from '../characters/render/AnimeMaterial';
 
 const log = createLogger('Scenes');
 
@@ -126,6 +127,11 @@ export class SceneManager implements GameSystem {
     r.setGrade(a.grade, seconds);
     r.exposureTarget = a.exposure;
     if (this.game.player && a.tension !== undefined) this.game.player.tension = a.tension;
+    if (a.keyLight) CharacterLighting.keyLightDir.copy(a.keyLight).normalize();
+    if (a.rim) {
+      CharacterLighting.rimColor.value.copy(a.rim.color);
+      CharacterLighting.rimStrength.value = a.rim.strength;
+    }
     if (a.music) this.game.events.emit('audio:musicState', { state: a.music });
   }
 

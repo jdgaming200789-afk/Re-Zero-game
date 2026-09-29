@@ -8,6 +8,7 @@ import type { Health } from './Health';
 import { AreaEffect, type AreaEffectOptions } from './AreaEffect';
 import { Projectile, type ProjectileOptions } from './Projectile';
 import type { TransientVfx } from './effects/CombatVfx';
+import { Telegraphs, type Telegraph, type TelegraphShape } from './Telegraphs';
 
 const log = createLogger('Combat');
 
@@ -49,11 +50,13 @@ export class CombatManager implements GameSystem {
   private readonly projectiles: Projectile[] = [];
   private readonly transients: TransientVfx[] = [];
   readonly impacts: Impacts;
+  readonly telegraphs: Telegraphs;
   /** Game-time clock for statuses and cooldowns. */
   now = 0;
 
   constructor(private readonly game: GameContext) {
     this.impacts = new Impacts(game.vfx, game.render.scene);
+    this.telegraphs = new Telegraphs(game.render.scene);
     game.events.on('area:unloaded', () => this.prune());
   }
 
@@ -154,8 +157,9 @@ export class CombatManager implements GameSystem {
       if (!this.passes(h, f)) continue;
       const base = h.entity.object3D.position;
       const y = Math.min(Math.max(center.y, base.y), base.y + h.height);
-      const d = Math.hypot(center.x - base.x, center.y - y, center.z - base.z);
-      if (d <= radius + h.radius && this.visible(f.lineOfSightFrom, h)) out.push(h);
+      let d = Math.hypot(center.x - base.x, center.y - y, center.z - base.z) - h.radius;
+      if (h.extraPoints) for (const p of h.extraPoints) d = Math.min(d, p.distanceTo(center) - h.extraRadius);
+      if (d <= radius && this.visible(f.lineOfSightFrom, h)) out.push(h);
     }
     return out;
   }
@@ -169,15 +173,21 @@ export class CombatManager implements GameSystem {
     const fl = Math.hypot(fx, fz) || 1;
     for (const h of this.bodies) {
       if (!this.passes(h, f)) continue;
-      const p = h.entity.object3D.position;
-      if (Math.abs(p.y + h.height * 0.5 - origin.y) > h.height * 0.5 + 1.2) continue;
-      const dx = p.x - origin.x;
-      const dz = p.z - origin.z;
-      const d = Math.hypot(dx, dz);
-      if (d - h.radius > range) continue;
-      // Anything overlapping the attacker counts; otherwise it must be in the arc.
-      if (d > h.radius + 0.2 && (dx * fx + dz * fz) / (d * fl) < cosHalf) continue;
-      if (this.visible(f.lineOfSightFrom, h)) out.push(h);
+      const pts = h.extraPoints ? [h.entity.object3D.position, ...h.extraPoints] : [h.entity.object3D.position];
+      const r = h.extraPoints ? Math.max(h.radius, h.extraRadius) : h.radius;
+      let inside = false;
+      for (const p of pts) {
+        if (Math.abs(p.y + (p === h.entity.object3D.position ? h.height * 0.5 : 0) - origin.y) > h.height * 0.5 + 1.2 + (p === h.entity.object3D.position ? 0 : r)) continue;
+        const dx = p.x - origin.x;
+        const dz = p.z - origin.z;
+        const d = Math.hypot(dx, dz);
+        if (d - r > range) continue;
+        // Anything overlapping the attacker counts; otherwise it must be in the arc.
+        if (d > r + 0.2 && (dx * fx + dz * fz) / (d * fl) < cosHalf) continue;
+        inside = true;
+        break;
+      }
+      if (inside && this.visible(f.lineOfSightFrom, h)) out.push(h);
     }
     return out;
   }
@@ -206,7 +216,8 @@ export class CombatManager implements GameSystem {
   }
 
   get enemies(): Health[] {
-    return this.encounter ? this.encounter.enemies.filter((e) => e.alive && !e.entity.destroyed) : [];
+    // Charmed witchbeasts fight for the party: they don't hold the encounter open.
+    return this.encounter ? this.encounter.enemies.filter((e) => e.alive && !e.entity.destroyed && e.effectiveFaction === 'enemy') : [];
   }
 
   startEncounter(id: string, opts: EncounterOptions): void {
@@ -294,8 +305,19 @@ export class CombatManager implements GameSystem {
     }
   }
 
+  /** Warn of an attack landing in `seconds` over `shape`. */
+  telegraph(shape: TelegraphShape, source: Health, seconds: number): Telegraph {
+    return this.telegraphs.add(shape, source.entity.id, source.effectiveFaction, this.now, seconds);
+  }
+
+  /** Incoming telegraphed attacks that would catch `h` where it stands. */
+  threatsTo(h: Health): Telegraph[] {
+    return this.telegraphs.threatening(h.entity.object3D.position, h.radius, h.effectiveFaction, hostile);
+  }
+
   update(dt: number): void {
     this.now += dt;
+    this.telegraphs.update(this.now);
     this.stepProjectiles(dt);
     for (let i = this.transients.length - 1; i >= 0; i--) {
       if (!this.transients[i]!.update(dt)) {

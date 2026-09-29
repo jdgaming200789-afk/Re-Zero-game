@@ -66,6 +66,7 @@ export class ActorController extends Component {
   /** Planar velocity actually applied this frame. */
   readonly velocity = new Vector3();
   private goal: MoveGoal | null = null;
+  private dashState: { vel: Vector3; t: number; duration: number } | null = null;
   private faceGoal: { yaw: number; rate: number; resolve: () => void } | null = null;
   private lastYaw = 0;
   private readonly lastPos = new Vector3();
@@ -115,6 +116,19 @@ export class ActorController extends Component {
     return new Promise((resolve) => {
       this.goal = { target: target.clone(), speed: this.speedOf(speed), tolerance, timeout, resolve };
     });
+  }
+
+  /** Burst movement (lunges, dodges): `distance` along `dir` over `duration`, front-loaded. */
+  dash(dir: Vector3, distance: number, duration: number, face = true): void {
+    const d = _to.set(dir.x, 0, dir.z);
+    if (d.lengthSq() < 1e-6) return;
+    d.normalize();
+    this.dashState = { vel: d.clone().multiplyScalar(distance / duration), t: 0, duration };
+    if (face) this.yaw = Math.atan2(d.x, d.z);
+  }
+
+  get dashing(): boolean {
+    return this.dashState !== null;
   }
 
   get hasMoveGoal(): boolean {
@@ -175,8 +189,19 @@ export class ActorController extends Component {
     const mv = this.movement;
     if (!this.held) this.brain?.update(this, dt);
 
-    // ---- Desired velocity: scripted goal first, then brain steering.
+    // ---- Desired velocity: dash, scripted goal, then brain steering.
     const desired = _desired.set(0, 0, 0);
+    if (this.dashState) {
+      const d = this.dashState;
+      d.t += dt;
+      const u = Math.min(1, d.t / d.duration);
+      this.velocity.copy(d.vel).multiplyScalar(1.6 * Math.pow(1 - u, 0.6));
+      if (u >= 1) this.dashState = null;
+      if (this.motor) this.motor.desiredVelocity.copy(this.velocity);
+      else this.position.addScaledVector(this.velocity, dt);
+      this.feedAnimation(dt, this.velocity.length());
+      return;
+    }
     if (this.goal) {
       const g = this.goal;
       g.timeout -= dt;
@@ -235,7 +260,11 @@ export class ActorController extends Component {
     else this.stuckTime = Math.max(0, this.stuckTime - dt * 2);
 
     // ---- Animation
-    const planar = this.motor ? this.motor.planarSpeed : moved / dt;
+    this.feedAnimation(dt, this.motor ? this.motor.planarSpeed : moved / dt);
+  }
+
+  private feedAnimation(dt: number, planar: number): void {
+    const mv = this.movement;
     const yawRate = angleDelta(this.lastYaw, this.yaw) / dt;
     this.lastYaw = this.yaw;
     const l = this.loco;

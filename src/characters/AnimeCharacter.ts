@@ -357,7 +357,8 @@ export class AnimeCharacter implements CharacterVisual {
       a.t += (dt * a.speed) / c.duration;
       const u = Math.min(a.t, 1);
       sampleClip(c, u, this.actionPose, this.tmpA, this.tmpB);
-      let w = Math.min(1, u / Math.max(c.fadeIn / c.duration, 1e-3), (1 - u) / Math.max(c.fadeOut / c.duration, 1e-3));
+      const holding = a.opts.holdEnd && !a.stopping;
+      let w = Math.min(1, u / Math.max(c.fadeIn / c.duration, 1e-3), holding ? 1 : (1 - u) / Math.max(c.fadeOut / c.duration, 1e-3));
       if (a.stopping) {
         a.stopT += dt / 0.2;
         w *= 1 - Math.min(1, a.stopT);
@@ -370,7 +371,13 @@ export class AnimeCharacter implements CharacterVisual {
         a.contactFired = true;
         a.opts.onContact?.();
       }
-      if (u >= 1 || (a.stopping && a.stopT >= 1)) {
+      if (holding && u >= 1) {
+        if (!a.contactFired) {
+          a.contactFired = true;
+          a.opts.onContact?.();
+        }
+        a.resolve();
+      } else if (u >= 1 || (a.stopping && a.stopT >= 1)) {
         if (!a.contactFired) a.opts.onContact?.();
         this.action = null;
         a.resolve();

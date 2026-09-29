@@ -342,3 +342,40 @@
 .rz-numbers .dmg.hurt {
   color: #ff8e84;
 }
+
+/* Elite / boss bar */
+.rz-boss {
+  position: absolute;
+  left: 50%;
+  bottom: 7.6em;
+  width: 38em;
+  transform: translateX(-50%);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.rz-boss.visible {
+  opacity: 1;
+}
+.rz-boss .bname {
+  font-family: var(--font-display);
+  letter-spacing: 0.22em;
+  font-size: 1.05em;
+  color: var(--gold-bright);
+  text-shadow: 0 1px 4px #000;
+  margin-bottom: 0.35em;
+}
+.rz-boss .bname::before,
+.rz-boss .bname::after {
+  content: '\2726';
+  margin: 0 0.8em;
+  font-size: 0.7em;
+  color: var(--gold-dim);
+}
+.rz-bar.boss {
+  height: 0.7em;
+  border-color: var(--gold-dim);
+}
+.rz-bar.boss > .fill {
+  background: linear-gradient(180deg, #ffb37a, #c9502f 55%, #7e2a1d);
+}

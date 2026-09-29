@@ -82,6 +82,9 @@ export class CombatHud {
   private readonly targetBar = bar('enemy');
   private readonly targetStatus: HTMLElement;
   private readonly plates = new Map<Health, Plate>();
+  private readonly boss: HTMLElement;
+  private readonly bossName: HTMLElement;
+  private readonly bossBar = bar('boss');
   private readonly world: HTMLElement;
   private readonly numbers: HTMLElement;
   private visibility = 0;
@@ -120,7 +123,9 @@ export class CombatHud {
     this.targetStatus = el('div', { class: 'tstatus' });
     this.target = el('div', { class: 'rz-target' }, [this.targetName, this.targetBar.root, this.targetStatus]);
     this.numbers = el('div', { class: 'rz-numbers' });
-    this.root = el('div', { class: 'rz-combat-hud' }, [this.self, this.party, this.abilityBar, this.target]);
+    this.bossName = el('div', { class: 'bname' });
+    this.boss = el('div', { class: 'rz-boss' }, [this.bossName, this.bossBar.root]);
+    this.root = el('div', { class: 'rz-combat-hud' }, [this.self, this.party, this.abilityBar, this.target, this.boss]);
     ui.layers.hud.append(this.root);
     this.world.append(this.reticle, this.numbers);
 
@@ -226,6 +231,15 @@ export class CombatHud {
       this.reticle.classList.remove('visible');
       this.target.classList.remove('visible');
     }
+
+    // Elite bar across the bottom of the screen while an elite is in the fight.
+    const elite = g.combat.enemies.find((e) => e.elite);
+    this.boss.classList.toggle('visible', !!elite);
+    if (elite) {
+      this.bossName.textContent = elite.name;
+      setBar(this.bossBar, elite.fraction, dt);
+    }
+    this.target.classList.toggle('below-boss', !!elite);
 
     // Floating plates over enemies that have been hurt (not the locked one).
     const now = g.time.elapsed;

@@ -40,6 +40,8 @@ export interface CombatStyle {
   range: [number, number];
   /** Stays by Subaru's side (Beatrice, Patrasche). */
   guard?: boolean;
+  /** Chance to read and sidestep a telegraphed attack (0..1). */
+  dodge: number;
   abilities: CompanionAbility[];
   downLine?: string;
   onEnterCombat?(ctx: AbilityContext): void;
@@ -78,6 +80,7 @@ function melee(ctx: AbilityContext, opts: { reach: number; arc: number; damage: 
 
 // ------------------------------------------------------------------ Emilia
 const emilia: CombatStyle = {
+  dodge: 0.55,
   maxHp: 150,
   poise: 30,
   resist: { ice: 0.2 },
@@ -147,6 +150,7 @@ const emilia: CombatStyle = {
 
 // ------------------------------------------------------------------ Beatrice
 const beatrice: CombatStyle = {
+  dodge: 0.4,
   maxHp: 100,
   poise: 20,
   resist: { yin: 0 },
@@ -221,6 +225,7 @@ function makeSword(): Group {
 }
 
 const julius: CombatStyle = {
+  dodge: 0.8,
   maxHp: 180,
   poise: 45,
   range: [1.2, 2.2],
@@ -284,6 +289,7 @@ const julius: CombatStyle = {
 
 // ------------------------------------------------------------------ Ram
 const ram: CombatStyle = {
+  dodge: 0.6,
   maxHp: 110,
   poise: 20,
   resist: { wind: 0.3 },
@@ -320,6 +326,7 @@ const ram: CombatStyle = {
 
 // ------------------------------------------------------------------ Anastasia / Echidna
 const anastasia: CombatStyle = {
+  dodge: 0.35,
   maxHp: 100,
   poise: 18,
   range: [6, 11],
@@ -345,16 +352,38 @@ const anastasia: CombatStyle = {
 
 // ------------------------------------------------------------------ Meili (charm comes with the witchbeasts)
 const meili: CombatStyle = {
+  dodge: 0.5,
   maxHp: 90,
   poise: 16,
-  range: [7, 12],
-  guard: true,
+  range: [6, 11],
   downLine: 'Owie... Onii-san...',
-  abilities: [],
+  abilities: [
+    {
+      // Divine protection of beast-taming: a witchbeast turns on its pack.
+      id: 'charm',
+      clip: 'castPoint',
+      cooldown: 16,
+      range: [0, 14],
+      commit: 0.9,
+      score: (ctx) => {
+        const t = ctx.target;
+        if (!t || t.elite || !t.tags.includes('witchbeast') || t.hasStatus('charmed')) return 0;
+        return ctx.game.combat.enemies.length >= 2 ? 4 : 0.5;
+      },
+      bark: 'Come here, doggy~ Fight for us now.',
+      execute: (ctx) => {
+        const t = ctx.target;
+        if (!t || !t.tags.includes('witchbeast')) return;
+        t.applyStatus({ id: 'charmed', seconds: 12 });
+        ctx.game.combat.impacts.burst('light', t.center(new Vector3()), 20);
+      },
+    },
+  ],
 };
 
 // ------------------------------------------------------------------ Patrasche
 const patrasche: CombatStyle = {
+  dodge: 0.3,
   maxHp: 240,
   poise: 70,
   range: [1.4, 2.6],

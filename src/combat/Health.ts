@@ -17,6 +17,8 @@ export interface HealthOptions {
   height?: number;
   /** Bosses/elites get a big HUD bar. */
   elite?: boolean;
+  /** e.g. 'witchbeast' (charmable). */
+  tags?: string[];
 }
 
 interface ActiveStatus {
@@ -39,6 +41,7 @@ export class Health extends Component {
   readonly radius: number;
   readonly height: number;
   readonly elite: boolean;
+  readonly tags: readonly string[];
   resist: Resistances;
   poise: number;
   readonly poiseMax: number;
@@ -53,6 +56,10 @@ export class Health extends Component {
   private readonly statusIds = new Set<StatusId>();
   /** Game time (seconds), advanced by the CombatManager. */
   now = 0;
+  /** Extra hittable points for long bodies (worm segments), world space. */
+  extraPoints: Vector3[] | null = null;
+  /** Radius of each extra point. */
+  extraRadius = 0;
 
   onHit?: (result: DamageResult, info: DamageInfo) => void;
   onDeath?: (info: DamageInfo) => void;
@@ -72,6 +79,7 @@ export class Health extends Component {
     this.radius = opts.radius ?? 0.35;
     this.height = opts.height ?? 1.7;
     this.elite = opts.elite ?? false;
+    this.tags = opts.tags ?? [];
   }
 
   /** Charmed witchbeasts fight for the other side. */

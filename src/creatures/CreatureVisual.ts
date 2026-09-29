@@ -38,6 +38,8 @@ interface ActiveAction {
   opts: PlayActionOptions;
   resolve: () => void;
   contactFired: boolean;
+  stopping: boolean;
+  stopT: number;
 }
 
 /**
@@ -195,13 +197,13 @@ export class CreatureVisual implements CharacterVisual {
     const clip = creatureClip(name);
     this.action?.resolve();
     return new Promise((resolve) => {
-      this.action = { clip, t: 0, speed: opts.speed ?? 1, opts, resolve, contactFired: false };
+      this.action = { clip, t: 0, speed: opts.speed ?? 1, opts, resolve, contactFired: false, stopping: false, stopT: 0 };
     });
   }
 
   stopAction(): void {
-    this.action?.resolve();
-    this.action = null;
+    // Blend out rather than pop (getting up from a knock-down).
+    if (this.action) this.action.stopping = true;
   }
 
   lookAt(target: Vector3 | null, weight = 1): void {
@@ -318,7 +320,11 @@ export class CreatureVisual implements CharacterVisual {
     const g = this.def.gait;
     let lowest = 0;
     for (const leg of this.legs) {
-      const ph = (this.phase + leg.def.phase) % 1;
+      // Walk → run phase offsets blend along the shortest way round the cycle.
+      const run = leg.def.runPhase ?? leg.def.phase;
+      let dp = run - leg.def.phase;
+      dp -= Math.round(dp);
+      const ph = (((this.phase + leg.def.phase + dp * this.runBlend) % 1) + 1) % 1;
       const target = _t.copy(leg.restContact);
       let lift = 0;
       if (ph < duty) {
@@ -365,7 +371,8 @@ export class CreatureVisual implements CharacterVisual {
   private toeTipWorld(toe: Bone, out: Vector3): Vector3 {
     const child = toe.children.find((c) => (c as Bone).isBone) as Bone | undefined;
     if (child) return child.getWorldPosition(out);
-    return out.set(0, 0, 0.1).applyQuaternion(toe.getWorldQuaternion(_q)).add(toe.getWorldPosition(_c));
+    // Blender bones point along their local +Y.
+    return out.set(0, 0.1, 0).applyQuaternion(toe.getWorldQuaternion(_q)).add(toe.getWorldPosition(_c));
   }
 
   private aimHead(dt: number, lean: number): void {
@@ -415,6 +422,15 @@ export class CreatureVisual implements CharacterVisual {
     const u = Math.min(1, a.t / a.clip.duration);
     const fadeIn = a.opts.fadeIn ?? 0.15;
     this.actionWeight = Math.min(1, a.t / Math.max(0.01, fadeIn));
+    if (a.stopping) {
+      a.stopT += dt / 0.25;
+      this.actionWeight *= Math.max(0, 1 - a.stopT);
+      if (a.stopT >= 1) {
+        this.action = null;
+        a.resolve();
+        return;
+      }
+    }
     sampleCreatureClip(a.clip, u, this.sampled);
     for (const [name, [x, y, z]] of Object.entries(this.sampled.bones)) {
       const b = this.bone(name);
@@ -425,6 +441,10 @@ export class CreatureVisual implements CharacterVisual {
       a.opts.onContact?.();
     }
     if (u >= 1) {
+      if (a.opts.holdEnd && !a.stopping) {
+        a.resolve();
+        return;
+      }
       this.action = null;
       a.resolve();
     }

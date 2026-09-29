@@ -1,10 +1,10 @@
 # Re:Zero - Pleiades — Development Status
 
-_Last updated: end of Phase 4._
+_Last updated: end of Phase 5._
 
 ## Current phase
 
-**Phase 4 complete → starting Phase 5** (enemy AI: dune jackal witchbeasts, the Sand Earthworm elite, perception and threat).
+**Phase 5 complete → starting Phase 6** (dialogue & cinematics: branching conversations, conditions, history, auto/skip/text speed, voice-ready lines; story flags and quests).
 
 Vertical-slice design: [docs/VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) — "The Watchtower in the Sand".
 
@@ -156,14 +156,45 @@ built for the **browser**, with every original requirement kept:
 
 **HUD (`src/ui/hud/CombatHud.ts`)**: Subaru's panel (HP with trailing damage and a striped shield overlay, stamina, Beatrice's mana), party roster with knock-out state, ability bar with cooldown sweeps and availability, lock-on chevrons, target plate with status effects, floating plates over hurt enemies, rising damage numbers coloured by element (criticals larger). Fades in for combat or when hurt; hidden in dialogue/cinematics.
 
+### Phase 5 — Enemy AI
+
+**Witchbeast models (Blender, `tools/blender/creatures/bestiary.py`)**
+- **Dune Jackal** (10.7k tris): digitigrade hind legs, horn, torn ears, red eyes, bared teeth, a mane of spines along the back; fur/back/belly/sock colour zones.
+- **Sand Earthworm** (3.8k tris): fifteen armoured segments with plates and spines, a flared maw collar, throat and three rings of teeth.
+- `CreatureVisual` gained a proper quadruped gait for the jackal (phase-based walk → gallop blend, digitigrade IK, body bob/lean) and new additive clips: bite, pounce, howl, snarl, flinch, death (held on the last frame).
+- `WormVisual`: segments laid along the path the head has travelled, so the worm breaches, arcs and dives as one body; segment positions double as hit points.
+
+**Enemy framework (`src/enemies`, `src/data/enemies.ts`)**
+- Data-driven `EnemyDefinition`: HP, poise, resistances, perception (sight distance, field of view, hearing, awareness rate), behaviour, circling band, flee threshold, tags; attacks with range bands, windup/recovery/cooldown, shape (arc, lunge, circle), damage, stagger and weight.
+- `EnemyController` states: idle → suspicious → engaged → windup → strike → recover, plus retreat, flee, stagger, dead.
+  - **Perception**: sight cones with line of sight; awareness builds with visibility and fades when nothing is seen; hearing from `EnemyManager` noise (walking 3, running 7.5, sprinting 13, combat hits 9); damage alerts instantly.
+  - **Threat table**: damage dealt, proximity and visibility, decaying over time; the target only switches when someone is clearly more threatening.
+  - **Telegraphed attacks**: every attack shows a ground warning (arc, lunge line or circle) whose fill grows until impact; the hit is resolved against the telegraph's area at the contact beat.
+  - Blinded beasts thrash at random; charmed beasts fight for the party and run off once the fight is over; the dead play their death and are cleaned up.
+- `PackDirector`: at most two jackals press the attack at once (waiting fairness so everyone gets a turn), the rest circle in evenly spaced slots and keep their distance from each other.
+- `EnemyManager`: spawning, groups that alert together (a howl, then the encounter starts), noise propagation.
+- `Telegraphs` (`src/combat`): shared warnings players read and companions query.
+- **Companions dodge**: each companion has a dodge skill (chance to read and step out of a telegraph), so the party is strong but not untouchable. **Meili** charms witchbeasts for 12 s.
+
+**Sand Earthworm (elite, `EarthwormController`)**
+- Hunts by vibration: wanders under the sand, homes in on running and fighting, loses track of those who stand still.
+- Invulnerable while burrowed. A tremor circle warns of an eruption (1.35 s), then it breaches in an arc, rears up for a few seconds, slams down along a telegraphed line and dives. Heavily resistant while surfaced — it is not meant to be out-fought.
+- Surfacing starts an elite encounter with a boss bar; it raises `story:event earthworm.surfaced`, the hook the Heliosphere (light) uses on the Glass Flats in the vertical slice. Sand bursts and spray while it moves.
+
+**HUD**: elite bar (name between ornaments, trailing damage) at the bottom centre; enemy plates.
+
+**Dev**: `spawn <enemy|sand_earthworm> [count] [distance]` console command.
+
 ## Testing
 - `npm run typecheck` — strict TypeScript.
-- `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation). combat damage model and Health. **32/32 passing.**
+- `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data. **40/40 passing.**
 - `npm run smoke` — Playwright drives the real game in Chromium and asserts on state:
   - `tools/browser/smoke.mjs` (dev gym): **13/13** — walk, sprint/stamina, stairs, jump/land, slope limit, corridor camera, focus + read, hold lever → gate, door → walk through.
   - `tools/browser/areas.mjs`: **7/7** — tower_foot loads grounded, dune walking, gate prompt, gate → Celaeno, Celaeno gate → back outside, no VFX leaks across unloads. 0 console errors.
   - `tools/browser/party.mjs`: **16/16** — four companions (incl. Patrasche) spawn near Subaru, keep up while sprinting, settle and give him room, climb stairs, follow him down a ledge, are placed with him on teleport; an interaction triggers Beatrice → Subaru chatter that finishes, is remembered and does not repeat; leaving despawns cleanly.
   - `tools/browser/combat.mjs`: **12/12** — entering the ring starts the encounter, lock-on, the whip combo damages dummies, the dive dodge moves Subaru with i-frames, Shamak blinds, E·M·M nullifies a hit, a tonic heals, every companion lands hits with their own kit, brains swap to combat and back, leaving the ring ends the fight.
+  - `tools/browser/enemies.mjs`: **10/10** — jackals start unaware, the pack notices Subaru and alerts together, attacks are telegraphed on the ground, never more than two attack at once, Shamak blinds them, they press their attacks, the party wins and the encounter ends, the fallen are cleaned up, 0 console errors.
+  - `tools/browser/earthworm.mjs`: **8/8** — invulnerable underground, standing still hides Subaru, running draws it in and it telegraphs an eruption, surfacing starts an elite encounter with the boss bar, it can be hurt (resistant) while surfaced, the Heliosphere kills it, it sinks away and the encounter ends, 0 console errors.
 - `npm run cast` — lineup review: every character spawned side by side plus face close-ups (`test-results/cast_*.png`).
   - Celaeno's helical stair verified climbable from floor to the 12 m gallery.
   - The container has no GPU, so the harness steps the simulation at a fixed 60 Hz and renders only for screenshots (`game.advanceAsync`). Screenshots go to `test-results/`.
@@ -180,14 +211,14 @@ built for the **browser**, with every original requirement kept:
 - Belly/throat colour zones on Patrasche follow face boundaries and look slightly blocky up close.
 - Party slots are path-based; in very cluttered rooms a companion may briefly take the breadcrumb route before a direct line opens. Warps only happen out of view.
 - `PlaceholderVisual` remains as the fallback if a character model fails to load.
-- Combat against practice dummies only until Phase 5's enemies; companion dodging of telegraphed attacks arrives with them.
+- Enemy steering is direct (no navmesh); jackals rely on open sand and circling slots. Interiors will need a navigation grid if beasts ever come inside.
 - Julius's in-hand sword is a procedural prop and the sheathed sword mesh (hilt + scabbard) is hidden while it's drawn.
 - Real-time frame rate cannot be measured in this container (software rendering). Performance numbers must be taken on real hardware.
 
 ## Next tasks
-1. Phase 5 — enemy AI: dune jackals (quadruped creature spec + pack behaviour: circling, feints, lunges, flanking, retreat), the Sand Earthworm elite (hunts by vibration through sand, surfacing attacks, lured onto the Glass Flats), perception (sight cones, hearing/vibration), threat tables, telegraphed attacks companions can dodge, spawners; Meili's beast-taming (charm).
-2. Phase 6 — dialogue & cinematics (branching data, conditions, history, auto/skip/text speed, voice-ready), story flags and quests.
-3. Phase 7 — Return by Death, checkpoints and saves.
+1. Phase 6 — dialogue & cinematics: branching dialogue data with conditions and effects, history log, auto/skip/text speed, voice-ready lines, camera shots and staging for conversations; story flags and quests (journal, objectives, markers).
+2. Phase 7 — Return by Death (the Witch's miasma, the rewind sequence, checkpoints as "save points" of fate), save/load slots.
+3. Phase 8+ — Taygeta star-pillar puzzle, Alcyone and Taygeta interiors, the Heliosphere on the Glass Flats (stealth), inventory items (Carriage Bell lure → `EnemyManager.noise`), menus/map/journal/settings UI, procedural dynamic music and voice blips.
 
 ## Technical decisions
 - **Textures generated in Python (numpy) rather than baked from Blender nodes** — periodic noise guarantees seamless tiling and is fully deterministic; Blender is used where it is strongest (modelling with modifiers, booleans, decimation, UVs, glTF export).
@@ -203,6 +234,8 @@ built for the **browser**, with every original requirement kept:
 - **Shadows through the toon ramp** — shadowed regions take the material's shade tint (anime convention) instead of darkening towards ambient grey.
 - **Party membership as flags** — the party rewinds with the world on Return by Death; spawning is a reconcile of flags → actors.
 - **Creatures share the actor stack** — a land dragon is just another `CharacterVisual`, so party, chatter, dialogue and cinematics address it like any character.
+- **Telegraphs are data the AI reads** — the same warning the player sees is what companions query to dodge and what the attack resolves against, so what you see is what hits.
+- **Attack tokens over per-enemy aggression** — a pack director hands out attack slots, which keeps fights readable and lets difficulty scale by token count rather than by damage.
 
 ## Performance concerns
 - tower_foot renders ~360k triangles and ~245 draw calls at High (terrain inner mesh ~100k tris, tower ~38k). Candidates if needed: terrain LOD rings, merging static kit cells into BatchedMesh, lower-res horizon skirt.

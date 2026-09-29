@@ -44,6 +44,8 @@ export interface PlayActionOptions {
   fadeOut?: number;
   /** Mirror left/right. */
   mirror?: boolean;
+  /** Stay on the final pose until stopAction() (knock-outs, deaths). */
+  holdEnd?: boolean;
 }
 
 /**

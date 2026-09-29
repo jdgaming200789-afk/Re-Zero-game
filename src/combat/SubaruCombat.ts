@@ -412,7 +412,7 @@ export class SubaruCombat extends Component {
   private die(): void {
     this.whip.cancel();
     this.setLock(null);
-    this.enter('down', 0, () => void this.player.visual.play('collapse', { fadeIn: 0.05 }));
+    this.enter('down', 0, () => void this.player.visual.play('collapse', { fadeIn: 0.05, holdEnd: true }));
     this.deathTimer = 0;
   }
 

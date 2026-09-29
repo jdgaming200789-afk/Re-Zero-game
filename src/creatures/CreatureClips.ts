@@ -104,8 +104,74 @@ reg({
   ],
 });
 
+// ------------------------------------------------------------------ witchbeast combat
+reg({
+  id: 'bite',
+  duration: 0.75,
+  contact: 0.5,
+  keys: [
+    { t: 0, bones: {} },
+    { t: 0.4, bones: { chest: [-6, 0, 0], neck0: [-14, 0, 0], neck1: [-10, 0, 0], head: [-12, 0, 0] }, jaw: 0.7, lift: 0.02, ease: 'outCubic' },
+    { t: 0.52, bones: { chest: [8, 0, 0], neck0: [22, 0, 0], neck1: [12, 0, 0], head: [10, 0, 0] }, jaw: 0.05, ease: 'inExpo' },
+    { t: 0.7, bones: { chest: [4, 0, 0], neck0: [12, 0, 0], head: [6, 0, 0] }, jaw: 0.2 },
+    { t: 1, bones: {}, jaw: 0, ease: 'inOutCubic' },
+  ],
+});
+reg({
+  id: 'pounce',
+  duration: 1.0,
+  contact: 0.55,
+  keys: [
+    { t: 0, bones: {} },
+    { t: 0.4, bones: { hips: [10, 0, 0], chest: [-4, 0, 0], neck0: [-10, 0, 0], head: [-8, 0, 0], tail0: [-15, 0, 0] }, lift: -0.12, jaw: 0.4, ease: 'outCubic' },
+    { t: 0.55, bones: { hips: [-14, 0, 0], chest: [-10, 0, 0], neck0: [16, 0, 0], head: [8, 0, 0], tail0: [10, 0, 0] }, lift: 0.28, jaw: 0.9, ease: 'outExpo' },
+    { t: 0.75, bones: { hips: [6, 0, 0], chest: [6, 0, 0], neck0: [10, 0, 0] }, lift: 0.02, jaw: 0.1, ease: 'inQuad' },
+    { t: 1, bones: {}, jaw: 0, ease: 'inOutCubic' },
+  ],
+});
+reg({
+  id: 'howl',
+  duration: 1.8,
+  contact: 0.3,
+  keys: [
+    { t: 0, bones: {} },
+    { t: 0.25, bones: { chest: [-8, 0, 0], neck0: [-35, 0, 0], neck1: [-25, 0, 0], head: [-25, 0, 0], tail0: [-10, 0, 0] }, jaw: 0.9, ease: 'outCubic' },
+    { t: 0.8, bones: { chest: [-8, 0, 0], neck0: [-38, 0, 0], neck1: [-28, 0, 0], head: [-28, 0, 0], tail0: [-12, 0, 0] }, jaw: 1 },
+    { t: 1, bones: {}, jaw: 0, ease: 'inOutCubic' },
+  ],
+});
+reg({
+  id: 'snarl',
+  duration: 0.9,
+  upperOnly: true,
+  keys: [
+    { t: 0, bones: {} },
+    { t: 0.3, bones: { neck0: [14, 0, 0], neck1: [8, 0, 0], head: [-6, 0, 0], tail0: [-8, 0, 0] }, jaw: 0.45, ease: 'outCubic' },
+    { t: 0.8, bones: { neck0: [14, 0, 0], neck1: [8, 0, 0], head: [-6, 0, 0] }, jaw: 0.35 },
+    { t: 1, bones: {}, jaw: 0, ease: 'inOutCubic' },
+  ],
+});
+reg({
+  id: 'flinch',
+  duration: 0.4,
+  keys: [
+    { t: 0, bones: {} },
+    { t: 0.25, bones: { chest: [0, 0, 8], neck0: [-8, 10, 0], head: [-6, 12, 0], tail1: [0, -12, 0] }, jaw: 0.3, ease: 'outExpo' },
+    { t: 1, bones: {}, jaw: 0, ease: 'outCubic' },
+  ],
+});
+reg({
+  id: 'death',
+  duration: 1.4,
+  keys: [
+    { t: 0, bones: {} },
+    { t: 0.35, bones: { chest: [0, 0, 18], neck0: [-10, 14, 0], head: [-12, 16, 0], tail0: [10, 0, 0] }, jaw: 0.6, lift: -0.12, ease: 'outCubic' },
+    { t: 1, bones: { hips: [0, 0, 70], chest: [0, 0, 20], neck0: [20, 18, 0], neck1: [10, 0, 0], head: [10, 10, 0], tail0: [0, 20, 0] }, jaw: 0.3, lift: -0.42, ease: 'inQuad' },
+  ],
+});
+
 /** Interaction verbs the humanoids use, mapped to creature equivalents. */
-const ALIASES: Record<string, string> = { reachMid: 'snort', reachLow: 'lowerHead', use: 'snort', examine: 'lowerHead', surprised: 'alert', hitReact: 'shake' };
+const ALIASES: Record<string, string> = { reachMid: 'snort', reachLow: 'lowerHead', use: 'snort', examine: 'lowerHead', surprised: 'alert', hitReact: 'flinch', stagger: 'shake', collapse: 'death' };
 
 export function creatureClip(name: string): CreatureClip {
   return clips[ALIASES[name] ?? name] ?? clips.snort!;

@@ -21,6 +21,7 @@ import type { ActorManager } from '../actors/ActorManager';
 import type { PartyManager } from '../party/PartyManager';
 import type { ChatterSystem } from '../party/Chatter';
 import type { CombatManager } from '../combat/CombatManager';
+import type { EnemyManager } from '../enemies/EnemyManager';
 
 /**
  * The composition root's public surface. Systems receive this instead of
@@ -49,6 +50,7 @@ export interface GameContext {
   readonly party: PartyManager;
   readonly chatter: ChatterSystem;
   readonly combat: CombatManager;
+  readonly enemies: EnemyManager;
 
   readonly mode: GameMode;
   setMode(mode: GameMode): void;

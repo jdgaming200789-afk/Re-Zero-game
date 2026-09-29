@@ -27,6 +27,8 @@ export class CompanionCombat extends Component {
   target: Health | null = null;
   inCombat = false;
   private orbitDir = Math.random() < 0.5 ? 1 : -1;
+  private dodgeCooldown = 0;
+  private readonly readTelegraphs = new Set<number>();
   readonly ctx: AbilityContext;
 
   constructor(
@@ -110,7 +112,7 @@ export class CompanionCombat extends Component {
     this.state = 'down';
     this.actor.hold();
     this.actor.stop();
-    void this.actor.visual.play('collapse', { fadeIn: 0.05 });
+    void this.actor.visual.play('collapse', { fadeIn: 0.05, holdEnd: true });
     this.game.events.emit('bark:play', { speakerId: this.actor.id, text: this.style.downLine ?? '...!', duration: 1.8 });
   }
 
@@ -200,6 +202,7 @@ export class CompanionCombat extends Component {
       return;
     }
     if (!this.health.canAct) return;
+    if (this.tryDodge(dt)) return;
     this.thinkTimer -= dt;
     if (this.thinkTimer > 0) return;
     this.thinkTimer = 0.18 + Math.random() * 0.1;
@@ -207,6 +210,33 @@ export class CompanionCombat extends Component {
     this.ctx.target = this.target;
     const a = this.pickAbility();
     if (a) this.use(a);
+  }
+
+  /** Step out of a telegraphed attack that's about to land. */
+  private tryDodge(dt: number): boolean {
+    this.dodgeCooldown -= dt;
+    if (this.dodgeCooldown > 0 || this.actor.dashing) return false;
+    const combat = this.game.combat;
+    const threats = combat.threatsTo(this.health).filter((t) => t.hitsAt - combat.now < 0.45 && t.hitsAt > combat.now && !this.readTelegraphs.has(t.id));
+    if (!threats.length) return false;
+    // Each warning gets one read: skill decides whether they react in time.
+    for (const t of threats) this.readTelegraphs.add(t.id);
+    if (this.readTelegraphs.size > 64) this.readTelegraphs.clear();
+    if (Math.random() > this.style.dodge) return false;
+    const s = threats[0]!.shape;
+    const from = s.kind === 'circle' ? s.center : s.origin;
+    const away = _a.subVectors(this.actor.position, from).setY(0);
+    if (s.kind !== 'circle') {
+      // Sidestep perpendicular to a lunge/cone rather than backing down its length.
+      const side = _b.set(-s.dir.z, 0, s.dir.x);
+      if (side.dot(away) < 0) side.negate();
+      away.copy(side);
+    }
+    if (away.lengthSq() < 1e-4) away.set(Math.random() - 0.5, 0, Math.random() - 0.5);
+    this.actor.dash(away, 2.6, 0.3, false);
+    this.health.grantInvulnerability(0.15);
+    this.dodgeCooldown = 1.4;
+    return true;
   }
 
   /** Where this companion wants to stand (read by the combat brain). */

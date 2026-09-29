@@ -98,6 +98,34 @@ export function registerCastDevCommands(dev: DevConsole, game: Game): void {
   });
 
   dev.register({
+    name: 'spawn',
+    usage: 'spawn <enemy> [count] [distance]',
+    help: 'Spawn a pack of enemies ahead of the player',
+    run: async (args) => {
+      const player = game.player;
+      if (!player || !args[0]) return 'Usage: spawn enemy [count] [distance]';
+      const n = Number(args[1] ?? 1);
+      const dist = Number(args[2] ?? 10);
+      const p = player.entity.object3D.position;
+      const fwd = new Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
+      const center = p.clone().addScaledVector(fwd, dist);
+      if (args[0] === 'sand_earthworm') {
+        await game.enemies.spawnWorm(center);
+        return 'The sand stirs...';
+      }
+      const group = `dev.${args[0]}.${Math.round(game.time.elapsed * 10)}`;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        const pos = center.clone().add(new Vector3(Math.cos(a) * 1.6, 0, Math.sin(a) * 1.6));
+        const g = game.physics.groundHeight(pos.x, pos.y + 2, pos.z, 6);
+        if (g !== null) pos.y = g;
+        await game.enemies.spawn(args[0], { position: pos, yaw: player.yaw + Math.PI, group });
+      }
+      return `Spawned ${n}× ${args[0]} (${group})`;
+    },
+  });
+
+  dev.register({
     name: 'aexpr',
     usage: 'aexpr <id> <expression> [intensity]',
     help: 'Set an actor\'s facial expression',

@@ -33,6 +33,7 @@ import { ChatterSystem } from '../party/Chatter';
 import { CHATTER } from '../data/chatter';
 import { CombatManager } from '../combat/CombatManager';
 import { CombatHud } from '../ui/hud/CombatHud';
+import { EnemyManager } from '../enemies/EnemyManager';
 
 const log = createLogger('Game');
 
@@ -77,6 +78,7 @@ export class Game implements GameContext {
   readonly party: PartyManager;
   readonly chatter: ChatterSystem;
   readonly combat: CombatManager;
+  readonly enemies: EnemyManager;
   private combatHud: CombatHud | null = null;
   readonly devMode: boolean;
   dev: DevConsole | null = null;
@@ -129,6 +131,8 @@ export class Game implements GameContext {
     this.combat = new CombatManager(this);
     this.addSystem(this.combat);
     this.combatHud = new CombatHud(this);
+    this.enemies = new EnemyManager(this);
+    this.addSystem(this.enemies);
 
     this.events.on('settings:changed', ({ key }) => {
       if (key.startsWith('graphics') || key === '*') {

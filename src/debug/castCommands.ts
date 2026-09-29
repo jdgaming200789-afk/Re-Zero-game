@@ -1,5 +1,6 @@
 import { Vector3 } from 'three';
 import { CHARACTERS } from '../data/characters';
+import { CREATURES } from '../data/creatures';
 import { PARTY_ORDER } from '../data/party';
 import type { Game } from '../game/Game';
 import { shotLookingAt } from '../camera/CameraDirector';
@@ -23,7 +24,7 @@ export function registerCastDevCommands(dev: DevConsole, game: Game): void {
         return 'Lineup cleared';
       }
       const ids = !args.length || args[0] === 'all' ? Object.keys(CHARACTERS).filter((id) => id !== player.characterId) : args;
-      const unknown = ids.filter((id) => !CHARACTERS[id]);
+      const unknown = ids.filter((id) => !CHARACTERS[id] && !CREATURES[id]);
       if (unknown.length) return `Unknown: ${unknown.join(', ')}`;
       const origin = player.entity.object3D.position.clone();
       const yaw = player.yaw;

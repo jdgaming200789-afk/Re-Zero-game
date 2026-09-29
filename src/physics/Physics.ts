@@ -267,7 +267,9 @@ export class Physics {
     );
     const collider = this.world.createCollider(
       RAPIER.ColliderDesc.capsule(halfHeight, radius)
-        .setCollisionGroups(groups(membership, filter))
+        // Trigger volumes must see characters; the character controller
+        // ignores sensors when resolving movement.
+        .setCollisionGroups(groups(membership, filter | Layer.Trigger))
         .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS)
         .setActiveCollisionTypes(RAPIER.ActiveCollisionTypes.ALL),
       body,

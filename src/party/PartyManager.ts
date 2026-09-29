@@ -31,7 +31,7 @@ export class PartyManager implements GameSystem {
   /** Seconds the leader has been standing still. */
   leaderStillFor = 0;
   private readonly followers = new Map<string, Follower>();
-  private attention: { point: Vector3; until: number } | null = null;
+  private attention: { point: Vector3; until: number; source: string | null } | null = null;
   private reconciling: Promise<void> | null = null;
   private reconcileAgain = false;
   private held = false;
@@ -90,14 +90,18 @@ export class PartyManager implements GameSystem {
 
   // ------------------------------------------------------------------ attention
   /** Make the party look at something (a speaker, a discovery) for a while. */
-  attend(point: Vector3, seconds: number): void {
-    this.attention = { point: point.clone(), until: this.time + seconds };
+  attend(point: Vector3, seconds: number, source: string | null = null): void {
+    this.attention = { point: point.clone(), until: this.time + seconds, source };
   }
 
-  attentionPoint(): Vector3 | null {
-    if (this.attention && this.time < this.attention.until) return this.attention.point;
-    this.attention = null;
-    return null;
+  /** What `forId` should be looking at, if anything (never its own voice). */
+  attentionPoint(forId?: string): Vector3 | null {
+    const a = this.attention;
+    if (!a || this.time >= a.until) {
+      this.attention = null;
+      return null;
+    }
+    return a.source !== null && a.source === forId ? null : a.point;
   }
 
   // ------------------------------------------------------------------ frame

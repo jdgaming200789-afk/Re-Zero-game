@@ -15,7 +15,7 @@ async function boot(): Promise<void> {
   registerAreas(game.scenes);
   const visual = await game.characters.create('subaru');
   spawnPlayer(game, visual);
-  game.ui.registerSpeakerName('subaru', 'Subaru');
+  game.ui.registerSpeakerName('subaru', 'Subaru', '#f0a060');
 
   // Automation / debugging hook (tests drive the game through this).
   (window as unknown as { __game: Game }).__game = game;

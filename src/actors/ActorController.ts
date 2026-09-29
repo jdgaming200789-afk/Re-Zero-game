@@ -3,7 +3,7 @@ import { Component } from '../core/ecs/Component';
 import { angleDelta, clamp, damp, DEG, moveTowards, moveTowardsAngle } from '../core/math/MathUtil';
 import type { CharacterMotor } from '../characters/CharacterMotor';
 import { idleLocomotion, type CharacterVisual, type LocomotionState } from '../characters/CharacterVisual';
-import type { CharacterDefinition } from '../data/characters';
+import type { ActorDefinition } from '../data/actors';
 import type { GameContext } from '../game/GameContext';
 import { Masks } from '../physics/Physics';
 
@@ -76,7 +76,7 @@ export class ActorController extends Component {
 
   constructor(
     private readonly game: GameContext,
-    readonly def: CharacterDefinition,
+    readonly def: ActorDefinition,
     public visual: CharacterVisual,
     readonly motor: CharacterMotor | null,
     readonly movement: ActorMovement = DEFAULT_ACTOR_MOVEMENT,

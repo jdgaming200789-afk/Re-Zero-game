@@ -37,6 +37,8 @@ export interface AnimeMaterialOptions {
   envShadow?: Uniform<number>;
   /** Per-character dither fade (1 = opaque), e.g. near the camera. */
   fade?: Uniform<number>;
+  /** Self-illumination (glowing eyes). */
+  emissive?: Color;
 }
 
 /** Ordered-dither discard: screen-door transparency that needs no sorting. */
@@ -72,6 +74,7 @@ export function createAnimeMaterial(o: AnimeMaterialOptions): MeshToonMaterial {
     mat.emissiveMap = o.emissiveMap;
     mat.emissive = new Color(0.55, 0.55, 0.55);
   }
+  if (o.emissive) mat.emissive = o.emissive.clone();
   const tint = o.shadowTint ?? new Color(...SHADOW_TINTS[o.role]);
   const threshold = o.role === 'skin' || o.role === 'face' ? 0.42 : 0.5;
   const soft = o.role === 'hair' ? 0.05 : 0.035;

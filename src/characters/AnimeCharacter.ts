@@ -1,9 +1,7 @@
-import { Color, Group, Quaternion, SkinnedMesh, Uniform, Vector3, type Bone, type Material, type MeshStandardMaterial, type Object3D } from 'three';
-import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { BufferAttribute, Color, Group, Quaternion, SkinnedMesh, Uniform, Vector3, type Bone, type BufferGeometry, type Material, type MeshStandardMaterial, type Object3D } from 'three';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { Box3, BufferAttribute, type BufferGeometry } from 'three';
-import { AssetManager } from '../assets/AssetManager';
+import { loadModel } from './ModelCache';
+import { buildOutlines } from './render/Outlines';
 import { clamp, damp, DEG, Easing } from '../core/math/MathUtil';
 import type { Scheduler } from '../core/Scheduler';
 import type { CharacterDefinition } from '../data/characters';
@@ -15,19 +13,9 @@ import { SpringChainSystem } from './anim/SpringBones';
 import type { CharacterVisual, LocomotionState, PlayActionOptions } from './CharacterVisual';
 import { FaceRenderer, type MouthShape } from './face/FaceRenderer';
 import { HUMAN_BONES, HumanoidRig, type HumanBone } from './rig/HumanoidRig';
-import { CharacterLighting, createAnimeMaterial, createOutlineMaterial, type AnimeRole } from './render/AnimeMaterial';
+import { CharacterLighting, createAnimeMaterial, type AnimeRole } from './render/AnimeMaterial';
 
 export type GroundQuery = (x: number, y: number, z: number) => { y: number; normal: Vector3 } | null;
-
-const gltfCache = new Map<string, Promise<GLTF>>();
-function loadModel(url: string): Promise<GLTF> {
-  let p = gltfCache.get(url);
-  if (!p) {
-    p = new GLTFLoader().loadAsync(AssetManager.url(url));
-    gltfCache.set(url, p);
-  }
-  return p;
-}
 
 const ANIM_ALIASES: Record<string, string> = { reachHigh: 'reachMid', use: 'reachMid' };
 const VISEMES: MouthShape[] = ['A', 'I', 'U', 'E', 'O', 'A', 'line', 'O', 'E'];
@@ -152,38 +140,15 @@ export class AnimeCharacter implements CharacterVisual {
       }
     }
 
-    // Outlines: one inverted-hull shell per source mesh. Multi-material glTF
-    // meshes arrive split per material; merge them back so outlines don't
-    // draw along internal material seams.
-    const groups = new Map<Object3D, SkinnedMesh[]>();
-    for (const mesh of skinned) {
-      const key = mesh.parent && mesh.parent.children.filter((c) => (c as SkinnedMesh).isSkinnedMesh).length > 1 ? mesh.parent : mesh;
-      const list = groups.get(key) ?? [];
-      list.push(mesh);
-      groups.set(key, list);
-    }
-    for (const list of groups.values()) {
-      const first = list[0]!;
-      const mat0 = (Array.isArray(first.material) ? first.material[0] : first.material) as MeshStandardMaterial;
-      const role = mat0.userData.role as AnimeRole;
-      const geometry =
-        list.length > 1
-          ? mergeGeometries(list.map((m) => stripForOutline(m.geometry)), false) ?? first.geometry
-          : first.geometry;
-      const outlineColor = role === 'hair' ? mat0.color.clone().multiplyScalar(0.35).lerp(outlineBase, 0.4) : role === 'face' || role === 'skin' ? new Color(0x8a5048) : outlineBase;
-      const width = role === 'face' ? 0.0012 : role === 'hair' ? 0.0022 : 0.0026;
-      const outline = new SkinnedMesh(geometry, createOutlineMaterial(outlineColor, width, this.fade));
-      if (geometry !== first.geometry) this.owned.push(geometry);
-      this.owned.push(outline.material as Material);
-      outline.bind(first.skeleton, first.bindMatrix);
-      outline.position.copy(first.position);
-      outline.quaternion.copy(first.quaternion);
-      outline.scale.copy(first.scale);
-      outline.frustumCulled = false;
-      outline.castShadow = false;
-      outline.name = `${first.name}_outline`;
-      first.parent!.add(outline);
-    }
+    // Outlines: hair takes a darker shade of itself, skin a warm brown.
+    this.owned.push(
+      ...buildOutlines(skinned, {
+        base: outlineBase,
+        fade: this.fade,
+        color: (role, mat, base) => (role === 'hair' ? mat.color.clone().multiplyScalar(0.35).lerp(base, 0.4) : role === 'face' || role === 'skin' ? new Color(0x8a5048) : base),
+        width: (role) => (role === 'face' ? 0.0012 : role === 'hair' ? 0.0022 : 0.0026),
+      }),
+    );
 
     this.rig = new HumanoidRig(model, skinned);
     const hips = this.rig.bone('hips');
@@ -541,15 +506,6 @@ function smoothHairNormals(g: BufferGeometry, center: Vector3): void {
   nrm.needsUpdate = true;
 }
 
-/** Keep only the attributes an outline shell needs (so split primitives merge). */
-function stripForOutline(g: BufferGeometry): BufferGeometry {
-  const out = g.clone();
-  for (const name of Object.keys(out.attributes)) {
-    if (!['position', 'normal', 'skinIndex', 'skinWeight'].includes(name)) out.deleteAttribute(name);
-  }
-  out.clearGroups();
-  return out;
-}
 
 /**
  * Replace head normals with normals from a sphere centred slightly behind
@@ -571,4 +527,3 @@ function sphericalNormals(g: BufferGeometry): void {
   }
   g.setAttribute('normal', new BufferAttribute(n, 3));
 }
-void Box3;

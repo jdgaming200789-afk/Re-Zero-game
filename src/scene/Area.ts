@@ -69,6 +69,25 @@ export abstract class Area {
     else this.colliders.push(c);
   }
 
+  /**
+   * A named trigger volume: emits zone:entered / zone:exited when the player
+   * crosses it (chatter, stealth rules, music, quest objectives).
+   */
+  protected addZone(id: string, center: Vector3, halfExtents: Vector3): void {
+    const g = this.game;
+    const isPlayer = (o: { entityId?: number }) => o.entityId !== undefined && o.entityId === g.player?.entity.id;
+    const c = g.physics.addTriggerBox(center, halfExtents, null, {
+      kind: 'trigger',
+      onEnter: (other) => {
+        if (isPlayer(other)) g.events.emit('zone:entered', { zoneId: id, areaId: this.id });
+      },
+      onExit: (other) => {
+        if (isPlayer(other)) g.events.emit('zone:exited', { zoneId: id, areaId: this.id });
+      },
+    });
+    this.trackCollider(c);
+  }
+
   protected addSpawn(id: string, x: number, y: number, z: number, yawDeg: number): void {
     this.spawns.set(id, { position: new Vector3(x, y, z), yaw: (yawDeg * Math.PI) / 180 });
   }

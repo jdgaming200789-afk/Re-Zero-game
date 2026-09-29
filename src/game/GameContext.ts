@@ -19,6 +19,7 @@ import type { VfxSystem } from '../vfx/VfxSystem';
 import type { CharacterFactory } from '../characters/CharacterFactory';
 import type { ActorManager } from '../actors/ActorManager';
 import type { PartyManager } from '../party/PartyManager';
+import type { ChatterSystem } from '../party/Chatter';
 
 /**
  * The composition root's public surface. Systems receive this instead of
@@ -45,6 +46,7 @@ export interface GameContext {
   readonly characters: CharacterFactory;
   readonly actors: ActorManager;
   readonly party: PartyManager;
+  readonly chatter: ChatterSystem;
 
   readonly mode: GameMode;
   setMode(mode: GameMode): void;

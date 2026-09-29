@@ -2,6 +2,9 @@ import { Vector3 } from 'three';
 import { createLogger } from '../core/Log';
 import type { Scheduler } from '../core/Scheduler';
 import { characterDef } from '../data/characters';
+import { isCreature } from '../data/actors';
+import { creatureDef } from '../data/creatures';
+import { CreatureVisual } from '../creatures/CreatureVisual';
 import { Masks, type Physics } from '../physics/Physics';
 import { AnimeCharacter } from './AnimeCharacter';
 import type { CharacterVisual } from './CharacterVisual';
@@ -22,7 +25,7 @@ export class CharacterFactory {
 
   async create(id: string): Promise<CharacterVisual> {
     try {
-      const c = await AnimeCharacter.create(characterDef(id), this.scheduler);
+      const c = isCreature(id) ? await CreatureVisual.create(creatureDef(id), this.scheduler) : await AnimeCharacter.create(characterDef(id), this.scheduler);
       const down = new Vector3(0, -1, 0);
       const from = new Vector3();
       c.groundQuery = (x, y, z) => {
@@ -39,6 +42,6 @@ export class CharacterFactory {
 
   /** Warm the model cache so later spawns don't hitch. */
   async preload(ids: string[]): Promise<void> {
-    await Promise.all(ids.map((id) => AnimeCharacter.preload(characterDef(id))));
+    await Promise.all(ids.map((id) => (isCreature(id) ? CreatureVisual.preload(creatureDef(id)) : AnimeCharacter.preload(characterDef(id)))));
   }
 }

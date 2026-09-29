@@ -29,6 +29,8 @@ import { CharacterFactory } from '../characters/CharacterFactory';
 import { CharacterLighting } from '../characters/render/AnimeMaterial';
 import { ActorManager } from '../actors/ActorManager';
 import { PartyManager } from '../party/PartyManager';
+import { ChatterSystem } from '../party/Chatter';
+import { CHATTER } from '../data/chatter';
 
 const log = createLogger('Game');
 
@@ -71,6 +73,7 @@ export class Game implements GameContext {
   readonly characters: CharacterFactory;
   readonly actors: ActorManager;
   readonly party: PartyManager;
+  readonly chatter: ChatterSystem;
   readonly devMode: boolean;
   dev: DevConsole | null = null;
   player: PlayerController | null = null;
@@ -116,6 +119,9 @@ export class Game implements GameContext {
     this.addSystem(this.actors);
     this.party = new PartyManager(this);
     this.addSystem(this.party);
+    this.chatter = new ChatterSystem(this);
+    this.chatter.register(CHATTER);
+    this.addSystem(this.chatter);
 
     this.events.on('settings:changed', ({ key }) => {
       if (key.startsWith('graphics') || key === '*') {

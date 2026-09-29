@@ -31,10 +31,10 @@ try {
     g.player.placeAt(new g.player.entity.object3D.position.constructor(-14, 0, 12), Math.PI);
   });
   await step(page, 0.1, false);
-  console.log(await devCommand(page, 'party join emilia beatrice julius'));
+  console.log(await devCommand(page, 'party join emilia beatrice julius patrasche'));
   await step(page, 0.5, false);
   let s = await partyState();
-  check('three companions spawned', s.length === 3, s.map((x) => x.id).join(','));
+  check('four companions spawned (incl. Patrasche)', s.length === 4, s.map((x) => x.id).join(','));
   check('spawned near the player', s.every((x) => x.dist < 5), s.map((x) => x.dist).join(' '));
 
   // Run forward (towards -Z) for 4 s.
@@ -79,7 +79,27 @@ try {
   await devCommand(page, 'tp 10 0 10');
   await step(page, 0.3, false);
   s = await partyState();
-  check('companions are placed with the player on teleport', s.every((x) => x.dist < 5), s.map((x) => x.dist).join(' '));
+  check('companions are placed with the player on teleport', s.every((x) => x.dist < 6), s.map((x) => x.dist).join(' '));
+
+  // Chatter: an interaction triggers an exchange between Beatrice and Subaru.
+  await step(page, 1, false);
+  await page.evaluate(() => window.__game.events.emit('interaction:completed', { interactableId: 'gym.book', kind: 'inspect' }));
+  await step(page, 0.3, false);
+  const bark1 = await page.evaluate(() => [...document.querySelectorAll('.rz-bark')].map((n) => n.dataset.speaker + ':' + n.textContent));
+  const speaking = await page.evaluate(() => window.__game.chatter.current);
+  check('interaction chatter starts with Beatrice', bark1.some((b) => b.startsWith('beatrice:')) && speaking === 'gym.book', bark1.join(' | '));
+  await page.evaluate(() => window.__game.camera.follow.snapBehind(window.__game.player.followTarget));
+  await shot(page, 'party_chatter');
+  await step(page, 5, false);
+  const bark2 = await page.evaluate(() => [...document.querySelectorAll('.rz-bark')].map((n) => n.dataset.speaker));
+  check('Subaru answers', bark2.includes('subaru'), bark2.join(','));
+  await step(page, 4, false);
+  const flag = await page.evaluate(() => window.__game.state.get('chatter.gym.book'));
+  const after = await page.evaluate(() => window.__game.chatter.current);
+  check('exchange finishes and is remembered for this loop', flag === true && after === null, `flag=${flag} current=${after}`);
+  await page.evaluate(() => window.__game.events.emit('interaction:completed', { interactableId: 'gym.book', kind: 'inspect' }));
+  await step(page, 0.2, false);
+  check('a played exchange does not repeat', (await page.evaluate(() => window.__game.chatter.current)) === null);
 
   console.log(await devCommand(page, 'party leave all'));
   await step(page, 0.2, false);

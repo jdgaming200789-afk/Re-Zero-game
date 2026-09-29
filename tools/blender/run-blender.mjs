@@ -20,8 +20,9 @@ const scripts = {
   kit: join(here, 'build_kit.py'),
   tower: join(here, 'build_tower.py'),
   characters: join(here, 'build_characters.py'),
+  creatures: join(here, 'build_creatures.py'),
 };
-const order = target === 'all' ? ['textures', 'kit', 'tower', 'characters'] : [target];
+const order = target === 'all' ? ['textures', 'kit', 'tower', 'characters', 'creatures'] : [target];
 
 function runner(script) {
   const py = process.env.BLENDER_PYTHON;

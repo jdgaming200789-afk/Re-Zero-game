@@ -74,6 +74,17 @@ export const PARTY_MEMBERS: Record<string, PartyMemberDef> = {
     combatRole: 'beast_tamer',
     role: 'Beast tamer — turns witchbeasts, calms the Sand Earthworm',
   },
+  patrasche: {
+    id: 'patrasche',
+    // Keeps to the flank, where there's room for a land dragon.
+    followDistance: 3.6,
+    lateral: 2.3,
+    curiosity: 0.4,
+    eagerness: 0.9,
+    personalSpace: 1.6,
+    combatRole: 'land_dragon',
+    role: 'Land dragon — carries Subaru, outruns anything on the sand',
+  },
   anastasia: {
     id: 'anastasia',
     followDistance: 3.4,
@@ -86,4 +97,4 @@ export const PARTY_MEMBERS: Record<string, PartyMemberDef> = {
   },
 };
 
-export const PARTY_ORDER = ['beatrice', 'emilia', 'julius', 'ram', 'meili', 'anastasia'];
+export const PARTY_ORDER = ['beatrice', 'emilia', 'julius', 'ram', 'meili', 'anastasia', 'patrasche'];

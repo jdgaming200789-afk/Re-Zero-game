@@ -2,7 +2,7 @@ import { Vector3 } from 'three';
 import { CharacterMotor } from '../characters/CharacterMotor';
 import type { CharacterFactory } from '../characters/CharacterFactory';
 import { createLogger } from '../core/Log';
-import { characterDef } from '../data/characters';
+import { actorDef } from '../data/actors';
 import type { GameContext, GameSystem } from '../game/GameContext';
 import { Layer } from '../physics/Physics';
 import { ActorController, DEFAULT_ACTOR_MOVEMENT, type ActorMovement } from './ActorController';
@@ -52,7 +52,7 @@ export class ActorManager implements GameSystem {
   }
 
   private async create(id: string, opts: SpawnActorOptions): Promise<ActorController> {
-    const def = characterDef(id);
+    const def = actorDef(id);
     const visual = await this.factory.create(id);
     const scope = opts.scope ?? this.game.scenes.current?.scope ?? 'persistent';
     const entity = this.game.world.spawn(`actor:${id}`, scope, { tags: ['actor', 'character', ...(opts.tags ?? [])] });
@@ -64,7 +64,7 @@ export class ActorManager implements GameSystem {
         new CharacterMotor(
           this.game.physics,
           {
-            radius: Math.max(0.2, 0.26 * s),
+            radius: def.radius ?? Math.max(0.2, 0.26 * s),
             height: def.height,
             stepHeight: 0.38 * Math.max(0.8, s),
             membership: Layer.Party,
@@ -78,7 +78,7 @@ export class ActorManager implements GameSystem {
     const actor = entity.add(new ActorController(this.game, def, visual, motor, movement));
     actor.placeAt(opts.position, opts.yaw ?? 0);
     this.actors.set(id, actor);
-    this.game.ui.registerSpeakerName(id, def.shortName);
+    this.game.ui.registerSpeakerName(id, def.shortName, def.nameColor);
     log.info(`Spawned ${id} in ${scope}`);
     return actor;
   }

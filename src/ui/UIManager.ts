@@ -148,14 +148,20 @@ export class UIManager {
   }
 
   private readonly speakerNames: Record<string, string> = {};
-  registerSpeakerName(id: string, name: string): void {
+  private readonly speakerColors: Record<string, string> = {};
+  registerSpeakerName(id: string, name: string, color?: string): void {
     this.speakerNames[id] = name;
+    if (color) this.speakerColors[id] = color;
   }
 
   /** Ambient line of speech during gameplay (party chatter, Subaru's asides). */
   bark(speakerId: string, text: string, seconds = 3): void {
     const name = this.speakerNames[speakerId] ?? speakerId;
-    const node = el('div', { class: 'rz-bark' }, [el('span', { class: 'who', text: name }), text]);
+    const who = el('span', { class: 'who', text: name });
+    const color = this.speakerColors[speakerId];
+    if (color) who.style.color = color;
+    const node = el('div', { class: 'rz-bark' }, [who, text]);
+    node.dataset.speaker = speakerId;
     this.barks.appendChild(node);
     while (this.barks.children.length > 3) this.barks.firstElementChild?.remove();
     window.setTimeout(() => {

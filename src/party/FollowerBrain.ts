@@ -121,7 +121,7 @@ export class FollowerBrain implements ActorBrain {
   private updateAttention(actor: ActorController, dt: number, leaderDist: number): void {
     const party = this.party;
     const moving = actor.velocity.lengthSq() > 0.05;
-    const focus = party.attentionPoint();
+    const focus = party.attentionPoint(actor.id);
     if (focus) {
       actor.lookAt(focus, 0.9);
       if (!moving) actor.faceTarget = focus;

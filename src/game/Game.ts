@@ -31,6 +31,8 @@ import { ActorManager } from '../actors/ActorManager';
 import { PartyManager } from '../party/PartyManager';
 import { ChatterSystem } from '../party/Chatter';
 import { CHATTER } from '../data/chatter';
+import { CombatManager } from '../combat/CombatManager';
+import { CombatHud } from '../ui/hud/CombatHud';
 
 const log = createLogger('Game');
 
@@ -74,6 +76,8 @@ export class Game implements GameContext {
   readonly actors: ActorManager;
   readonly party: PartyManager;
   readonly chatter: ChatterSystem;
+  readonly combat: CombatManager;
+  private combatHud: CombatHud | null = null;
   readonly devMode: boolean;
   dev: DevConsole | null = null;
   player: PlayerController | null = null;
@@ -122,6 +126,9 @@ export class Game implements GameContext {
     this.chatter = new ChatterSystem(this);
     this.chatter.register(CHATTER);
     this.addSystem(this.chatter);
+    this.combat = new CombatManager(this);
+    this.addSystem(this.combat);
+    this.combatHud = new CombatHud(this);
 
     this.events.on('settings:changed', ({ key }) => {
       if (key.startsWith('graphics') || key === '*') {
@@ -271,6 +278,7 @@ export class Game implements GameContext {
     const player = this.player;
     this.camera.update(t.dt, t.unscaledDt, player ? player.followTarget : null, this.input.look);
     CharacterLighting.viewPosition.copy(this.render.camera.position);
+    this.combatHud?.update(t.unscaledDt, this.render.camera);
     // Effects update after the camera so billboards face this frame's view.
     this.vfx.update(t.dt);
     this.ui.updatePrompt(

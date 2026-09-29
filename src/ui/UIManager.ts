@@ -7,6 +7,7 @@ import type { ButtonAction } from '../input/Actions';
 import type { Interactable } from '../interaction/Interactable';
 import { el, ICONS } from './dom';
 import './styles/base.css';
+import './styles/hud.css';
 
 type ToastKind = 'info' | 'item' | 'quest' | 'knowledge' | 'warning';
 

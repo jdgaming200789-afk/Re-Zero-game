@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke": "node tools/browser/smoke.mjs && node tools/browser/areas.mjs && node tools/browser/party.mjs",
+    "smoke": "node tools/browser/smoke.mjs && node tools/browser/areas.mjs && node tools/browser/party.mjs && node tools/browser/combat.mjs",
     "assets:blender": "node tools/blender/run-blender.mjs",
     "assets:textures": "node tools/blender/run-blender.mjs textures",
     "assets:kit": "node tools/blender/run-blender.mjs kit",

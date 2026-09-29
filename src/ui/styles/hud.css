@@ -1,0 +1,344 @@
+/* ---------------------------------------------------------------- combat HUD */
+.rz-combat-hud {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Bars: a dark trough, a pale "lag" that trails damage, the bright fill,
+   and a violet shield overlay. Fills scale from the left. */
+.rz-bar {
+  position: relative;
+  height: 0.5em;
+  background: rgba(4, 6, 12, 0.85);
+  border: 1px solid rgba(217, 196, 143, 0.35);
+  overflow: hidden;
+}
+.rz-bar > i {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform: scaleX(1);
+}
+.rz-bar > .lag {
+  background: rgba(255, 236, 214, 0.55);
+}
+.rz-bar > .fill {
+  background: linear-gradient(180deg, #f2cf86, #c9953f);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.rz-bar > .shield {
+  background: repeating-linear-gradient(135deg, rgba(182, 156, 255, 0.85) 0 6px, rgba(140, 110, 230, 0.85) 6px 12px);
+  transform: scaleX(0);
+  mix-blend-mode: screen;
+}
+.rz-bar.hp {
+  height: 0.8em;
+}
+.rz-bar.hp > .fill {
+  background: linear-gradient(180deg, #ff9f88, #d8463f 60%, #a5282f);
+}
+.rz-bar.stamina > .fill {
+  background: linear-gradient(180deg, #fff1c4, #d9b863);
+}
+.rz-bar.mana > .fill {
+  background: linear-gradient(180deg, #e4d4ff, #9b77f0);
+}
+.rz-bar.ally {
+  height: 0.38em;
+}
+.rz-bar.ally > .fill {
+  background: linear-gradient(180deg, #b7f0c9, #4fb07a);
+}
+.rz-bar.enemy > .fill {
+  background: linear-gradient(180deg, #ff8b7d, #c23c3c);
+}
+
+/* Subaru's panel, bottom left */
+.rz-self {
+  position: absolute;
+  left: 2.2em;
+  bottom: 2.2em;
+  width: 19em;
+  padding: 0.7em 0.95em 0.8em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.42em;
+}
+.rz-self .name {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45em;
+  font-family: var(--font-display);
+  font-size: 0.95em;
+  letter-spacing: 0.08em;
+  color: var(--gold-bright);
+}
+.rz-self .name .star {
+  color: #f0a060;
+  font-size: 0.8em;
+}
+.rz-self .name .num {
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-size: 0.78em;
+  color: var(--text-dim);
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.rz-self .row {
+  display: grid;
+  grid-template-columns: 4.8em 1fr;
+  align-items: center;
+  gap: 0.5em;
+}
+.rz-self .lbl {
+  font-family: var(--font-serif);
+  font-size: 0.82em;
+  color: var(--text-dim);
+}
+.rz-self.no-bea .mana-row {
+  opacity: 0.35;
+}
+.rz-self.low .rz-bar.hp {
+  animation: rz-low 0.9s ease-in-out infinite;
+}
+@keyframes rz-low {
+  50% {
+    box-shadow: 0 0 12px rgba(224, 82, 90, 0.9);
+    border-color: rgba(224, 82, 90, 0.9);
+  }
+}
+
+/* Party roster above it */
+.rz-party {
+  position: absolute;
+  left: 2.2em;
+  bottom: 10.6em;
+  width: 12em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+}
+.rz-party .member {
+  display: grid;
+  grid-template-columns: 5.4em 1fr;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.18em 0.5em;
+  background: linear-gradient(90deg, rgba(9, 13, 24, 0.7), rgba(9, 13, 24, 0));
+  border-left: 2px solid var(--gold-dim);
+}
+.rz-party .member .nm {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 0.9em;
+  text-shadow: 0 1px 2px #000;
+}
+.rz-party .member.down {
+  opacity: 0.45;
+  border-left-color: var(--crimson);
+}
+.rz-party .member.down .nm::after {
+  content: '  down';
+  color: var(--crimson);
+  font-size: 0.8em;
+}
+
+/* Ability bar, bottom right */
+.rz-abilities {
+  position: absolute;
+  right: 2.2em;
+  bottom: 2.2em;
+  display: flex;
+  gap: 0.55em;
+}
+.rz-abilities .ab {
+  position: relative;
+  width: 4.6em;
+  height: 4.6em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+  background: radial-gradient(circle at 50% 35%, rgba(40, 46, 70, 0.9), rgba(9, 13, 24, 0.92));
+  border: 1px solid var(--panel-edge);
+  transform: rotate(0deg);
+  overflow: hidden;
+  transition: opacity 0.2s, filter 0.2s;
+}
+.rz-abilities .ab::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(217, 196, 143, 0.18);
+  pointer-events: none;
+}
+.rz-abilities .ab .nm {
+  font-family: var(--font-display);
+  font-size: 0.66em;
+  letter-spacing: 0.06em;
+  color: var(--gold-bright);
+  z-index: 1;
+}
+.rz-abilities .ab .rz-key {
+  z-index: 1;
+}
+.rz-abilities .ab .sweep {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  transform-origin: bottom center;
+  transform: scaleY(0);
+}
+.rz-abilities .ab .count {
+  position: absolute;
+  right: 0.35em;
+  top: 0.2em;
+  font-size: 0.78em;
+  color: var(--text);
+  z-index: 1;
+}
+.rz-abilities .ab.disabled {
+  opacity: 0.4;
+  filter: grayscale(0.7);
+}
+.rz-abilities .ab.active {
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 14px rgba(243, 226, 176, 0.35);
+}
+.rz-abilities .ab-shamak .nm,
+.rz-abilities .ab-barrier .nm {
+  color: #d6c2ff;
+}
+
+/* Lock-on: four gold chevrons around the target, gently breathing. */
+.rz-reticle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.rz-reticle.visible {
+  opacity: 1;
+}
+.rz-reticle > i {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid var(--gold-bright);
+  border-left: 2px solid var(--gold-bright);
+  filter: drop-shadow(0 0 4px rgba(243, 226, 176, 0.8));
+  animation: rz-breathe 1.4s ease-in-out infinite;
+}
+.rz-reticle > i:nth-child(1) {
+  --r: -45deg;
+  transform: translate(-50%, -50%) rotate(var(--r)) translate(0, -22px);
+}
+.rz-reticle > i:nth-child(2) {
+  --r: 45deg;
+  transform: translate(-50%, -50%) rotate(var(--r)) translate(0, -22px);
+}
+.rz-reticle > i:nth-child(3) {
+  --r: 135deg;
+  transform: translate(-50%, -50%) rotate(var(--r)) translate(0, -22px);
+}
+.rz-reticle > i:nth-child(4) {
+  --r: 225deg;
+  transform: translate(-50%, -50%) rotate(var(--r)) translate(0, -22px);
+}
+@keyframes rz-breathe {
+  50% {
+    transform: translate(-50%, -50%) rotate(var(--r)) translate(0, -18px);
+  }
+}
+
+/* Target plate, top centre */
+.rz-target {
+  position: absolute;
+  left: 50%;
+  top: 2.4em;
+  width: 26em;
+  transform: translateX(-50%);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.rz-target.visible {
+  opacity: 1;
+}
+.rz-target .tname {
+  font-family: var(--font-display);
+  letter-spacing: 0.12em;
+  font-size: 0.95em;
+  color: var(--text);
+  text-shadow: 0 1px 3px #000;
+  margin-bottom: 0.35em;
+}
+.rz-target .rz-bar {
+  height: 0.55em;
+}
+.rz-target .tstatus {
+  margin-top: 0.3em;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.85em;
+  color: var(--violet);
+  min-height: 1.2em;
+}
+
+/* Floating enemy plates */
+.rz-plate {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4.5em;
+  margin-left: -2.25em;
+}
+.rz-plate .rz-bar {
+  height: 0.3em;
+}
+
+/* Damage numbers */
+.rz-numbers {
+  position: absolute;
+  inset: 0;
+}
+.rz-numbers .dmg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: -0.6em 0 0 -1em;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.15em;
+  color: #fff3dc;
+  text-shadow:
+    0 0 6px rgba(0, 0, 0, 0.9),
+    0 1px 0 #000;
+  white-space: nowrap;
+}
+.rz-numbers .dmg.crit {
+  font-size: 1.6em;
+  color: #ffd66b;
+}
+.rz-numbers .dmg.crit::after {
+  content: '!';
+}
+.rz-numbers .dmg.ice {
+  color: #bfe6ff;
+}
+.rz-numbers .dmg.yin {
+  color: #d9b8ff;
+}
+.rz-numbers .dmg.wind {
+  color: #c6ffe0;
+}
+.rz-numbers .dmg.hurt {
+  color: #ff8e84;
+}

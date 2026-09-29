@@ -6,6 +6,7 @@ import { clamp, damp, DEG, Easing } from '../core/math/MathUtil';
 import type { Scheduler } from '../core/Scheduler';
 import type { CharacterDefinition } from '../data/characters';
 import { CLIPS, sampleClip, STANCES, type ActionClip } from './anim/Clips';
+import './anim/CombatClips';
 import { DEFAULT_GAIT, GaitGenerator, IdleGenerator } from './anim/Gait';
 import { alignFoot, solveTwoBone } from './anim/IK';
 import { Pose, UPPER_BODY } from './anim/Pose';
@@ -240,6 +241,28 @@ export class AnimeCharacter implements CharacterVisual {
   /** External lip-sync feed (e.g. from voiced audio analysis). */
   setViseme(v: MouthShape | null): void {
     this.face?.setViseme(v);
+  }
+
+  /**
+   * Parent a prop to a bone. `restRotation` is the prop's orientation in
+   * character space when the rig is at its (arms-down) rest pose, so props
+   * are authored once regardless of each model's bone axes.
+   */
+  attach(obj: Object3D, socket: string, restRotation?: Quaternion, offsetAlongBone = 0): void {
+    const bone = HUMAN_BONES.includes(socket as HumanBone) ? this.rig.bone(socket as HumanBone) : this.rig.extra.get(socket);
+    if (!bone) {
+      this.root.add(obj);
+      return;
+    }
+    bone.add(obj);
+    if (restRotation) obj.quaternion.copy(this.rig.restWorldOf(bone)).invert().multiply(restRotation);
+    obj.position.set(0, offsetAlongBone, 0);
+  }
+
+  setPartVisible(prefix: string, visible: boolean): void {
+    this.root.traverse((o) => {
+      if ((o as SkinnedMesh).isSkinnedMesh && o.name.startsWith(prefix)) o.visible = visible;
+    });
   }
 
   setOccluding(occluding: boolean): void {

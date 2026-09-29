@@ -16,6 +16,7 @@ import { gridTexture } from '../../render/textures/DevTextures';
 import { Interactable } from '../../interaction/Interactable';
 import { NEUTRAL_GRADE } from '../../render/effects/ColorGradeEffect';
 import { SHADOW_MAP_SIZE } from '../../settings/Settings';
+import { TrainingDummy } from '../../combat/TrainingDummy';
 
 /**
  * Developer test gym: measured geometry for tuning the controller, camera
@@ -216,6 +217,22 @@ class DevGymArea extends Area {
     const pmrem = new PMREMGenerator(g.render.renderer);
     this.envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     pmrem.dispose();
+
+    // ---- Practice ring: three dummies; stepping in starts a practice fight.
+    const dummies: TrainingDummy[] = [];
+    for (const [x, z, yaw] of [[-3, 20, 0.35], [0, 21.5, 0], [3, 20, -0.35]] as const) {
+      const e = g.world.spawn('gym.dummy', this.scope, { tags: ['dummy'] });
+      e.object3D.position.set(x, 0, z);
+      e.object3D.rotation.y = Math.PI + yaw;
+      dummies.push(e.add(new TrainingDummy(g)));
+      this.root.add(e.object3D);
+      this.trackCollider(g.physics.addCylinder(new Vector3(x, 0.85, z), 0.85, 0.3));
+    }
+    this.addZone('gym.arena', new Vector3(0, 1, 20), new Vector3(7, 2, 5));
+    this.listen('zone:entered', ({ zoneId }) => {
+      if (zoneId === 'gym.arena') g.combat.startEncounter('gym.practice', { enemies: dummies.map((d) => d.health), arena: { center: new Vector3(0, 0, 20), radius: 11 } });
+    });
+    this.addSpawn('arena', 0, 0, 13, 0);
 
     this.addSpawn('default', 0, 0, 4, 180);
     this.addSpawn('stairs', -8, 0, -1, 0);

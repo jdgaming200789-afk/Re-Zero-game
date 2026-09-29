@@ -1,10 +1,10 @@
 # Re:Zero - Pleiades — Development Status
 
-_Last updated: end of Phase 3._
+_Last updated: end of Phase 4._
 
 ## Current phase
 
-**Phase 3 complete → starting Phase 4** (combat foundation: Subaru's support kit, party combat identities, hit/hurt boxes, lock-on flow).
+**Phase 4 complete → starting Phase 5** (enemy AI: dune jackal witchbeasts, the Sand Earthworm elite, perception and threat).
 
 Vertical-slice design: [docs/VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) — "The Watchtower in the Sand".
 
@@ -128,13 +128,42 @@ built for the **browser**, with every original requirement kept:
 - `Conditions`: shared condition language (`"flag"`, `"!flag"`, `"meta.loop >= 2"`, `"$party.emilia"`, `{all|any|not}`) for chatter now and dialogue/quests next.
 - Area trigger zones (`Area.addZone` → `zone:entered/exited`).
 
+### Phase 4 — Combat foundation
+
+**Core (`src/combat`)**
+- `Damage`: damage types (physical, ice, fire, wind, yin, yang, light, miasma), factions, statuses (frozen, stopped, blinded, charmed, marked, burning, slowed), pure `computeDamage` (resistances, frozen-shatter bonus, weak-point bonus, criticals, shield absorption).
+- `Health` component: HP, poise/stagger with regeneration, timed and held invulnerability, shields, statuses with expiry, effective faction (charmed witchbeasts change sides), `canAct`.
+- `CombatManager`: registry of damageable bodies; the damage pipeline (friendly-fire rules, events, hit-stop scaled by weight, camera shake when Subaru is involved, typed impact sparks, hit reactions, deaths); target queries (sphere, melee arc, nearest; line of sight that ignores the target's own collider); projectiles with homing and wall hits; lingering area effects; transient VFX; encounters (combat mode, camera profile, music state, victory when enemies fall, escape when leaving the arena).
+- `TrainingDummy`: straw practice targets that wobble on a spring, topple and stand back up. The dev gym has a practice ring that starts an encounter when entered.
+
+**Subaru (`SubaruCombat`)** — deliberately not a warrior:
+- Whip: a three-crack combo with queued inputs and cancel windows, and a long-reach snare that staggers; the procedural lash winds back over the shoulder and snaps onto the target exactly at the animation's contact beat.
+- Dive dodge with invulnerability frames (costs stamina; direction from input, hop back without input; keeps facing while locked on).
+- Lock-on with target switching (left/right by screen position), strafing, camera framing.
+- Through Beatrice (only when she is present; costs her lent mana): **Shamak** (a darkness cloud that blinds enemies inside) and **E·M·M** (a brief absolute barrier; weathering a blow inside it sets up a critical counter).
+- Tonics (world-state inventory, so they rewind with Return by Death), party orders (focus Subaru's target / regroup around him), hit/stagger reactions, collapse on defeat (Return by Death takes over in Phase 8; a plain recovery stands in until then).
+
+**Companions (`src/combat/companions`)** — each fights like themselves:
+- `CompanionCombat` swaps the follower brain for a combat brain during encounters: target choice (Subaru's orders first; guards protect Subaru), positioning in a style-specific range band with flanking drift and separation, ability selection by situational score and cooldown, commitment to the animation, effects on the contact beat, stagger and knock-out (revived after the fight).
+- **Emilia**: ice blade up close, a volley of homing ice spears (slow), El Huma ice eruption when enemies cluster (freezes).
+- **Beatrice**: stays at Subaru's side; shields him when he's hurt or threatened; Minya crystals (stop).
+- **Julius**: draws his sword (sheathed blade hidden), six coloured quasi-spirits orbit him, three-step sword combo, **Al Clauzeria** rainbow finisher.
+- **Patrasche**: guards Subaru, tail sweep, ramming charge.
+- **Ram**: Fula wind blades. **Echidna/Anastasia**: analysis marks a weak point. **Meili**: holds back until her beast-taming arrives with the witchbeasts.
+- VFX: slash arcs (rainbow for Al Clauzeria), ice spikes, homing crystals and crescents, barrier bubble, darkness cloud.
+
+**Animation**: whip combo, snare, dive, stagger, collapse, cast (Shamak), barrier stance, drinking, pointing orders; Emilia's casts and ice blade; Beatrice's point and ward; Julius's slashes, thrust and overhead finisher. Props attach to hand bones with rest-pose alignment.
+
+**HUD (`src/ui/hud/CombatHud.ts`)**: Subaru's panel (HP with trailing damage and a striped shield overlay, stamina, Beatrice's mana), party roster with knock-out state, ability bar with cooldown sweeps and availability, lock-on chevrons, target plate with status effects, floating plates over hurt enemies, rising damage numbers coloured by element (criticals larger). Fades in for combat or when hurt; hidden in dialogue/cinematics.
+
 ## Testing
 - `npm run typecheck` — strict TypeScript.
-- `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation). **25/25 passing.**
+- `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation). combat damage model and Health. **32/32 passing.**
 - `npm run smoke` — Playwright drives the real game in Chromium and asserts on state:
   - `tools/browser/smoke.mjs` (dev gym): **13/13** — walk, sprint/stamina, stairs, jump/land, slope limit, corridor camera, focus + read, hold lever → gate, door → walk through.
   - `tools/browser/areas.mjs`: **7/7** — tower_foot loads grounded, dune walking, gate prompt, gate → Celaeno, Celaeno gate → back outside, no VFX leaks across unloads. 0 console errors.
   - `tools/browser/party.mjs`: **16/16** — four companions (incl. Patrasche) spawn near Subaru, keep up while sprinting, settle and give him room, climb stairs, follow him down a ledge, are placed with him on teleport; an interaction triggers Beatrice → Subaru chatter that finishes, is remembered and does not repeat; leaving despawns cleanly.
+  - `tools/browser/combat.mjs`: **12/12** — entering the ring starts the encounter, lock-on, the whip combo damages dummies, the dive dodge moves Subaru with i-frames, Shamak blinds, E·M·M nullifies a hit, a tonic heals, every companion lands hits with their own kit, brains swap to combat and back, leaving the ring ends the fight.
 - `npm run cast` — lineup review: every character spawned side by side plus face close-ups (`test-results/cast_*.png`).
   - Celaeno's helical stair verified climbable from floor to the 12 m gallery.
   - The container has no GPU, so the harness steps the simulation at a fixed 60 Hz and renders only for screenshots (`game.advanceAsync`). Screenshots go to `test-results/`.
@@ -151,12 +180,14 @@ built for the **browser**, with every original requirement kept:
 - Belly/throat colour zones on Patrasche follow face boundaries and look slightly blocky up close.
 - Party slots are path-based; in very cluttered rooms a companion may briefly take the breadcrumb route before a direct line opens. Warps only happen out of view.
 - `PlaceholderVisual` remains as the fallback if a character model fails to load.
+- Combat against practice dummies only until Phase 5's enemies; companion dodging of telegraphed attacks arrives with them.
+- Julius's in-hand sword is a procedural prop and the sheathed sword mesh (hilt + scabbard) is hidden while it's drawn.
 - Real-time frame rate cannot be measured in this container (software rendering). Performance numbers must be taken on real hardware.
 
 ## Next tasks
-1. Phase 4 — combat foundation: health/stamina/status components, hit/hurt boxes and damage events, lock-on flow, Subaru's kit (dodge, command party, items, Shamak-style support via Beatrice), companion combat identities (Emilia ice arts, Beatrice shields/slows, Julius spirit swordplay, Ram wind, Meili taming, Echidna analysis, Patrasche mount/charge), hit-stop and camera feedback.
-2. Phase 5 — enemy AI: dune jackals (quadruped creature spec + pack behaviour), the Sand Earthworm elite (vibration hunting, knowledge-based defeat), perception, threat, spawners.
-3. Phase 6 — dialogue & cinematics (branching data, conditions, history, auto/skip/text speed, voice-ready), story flags and quests.
+1. Phase 5 — enemy AI: dune jackals (quadruped creature spec + pack behaviour: circling, feints, lunges, flanking, retreat), the Sand Earthworm elite (hunts by vibration through sand, surfacing attacks, lured onto the Glass Flats), perception (sight cones, hearing/vibration), threat tables, telegraphed attacks companions can dodge, spawners; Meili's beast-taming (charm).
+2. Phase 6 — dialogue & cinematics (branching data, conditions, history, auto/skip/text speed, voice-ready), story flags and quests.
+3. Phase 7 — Return by Death, checkpoints and saves.
 
 ## Technical decisions
 - **Textures generated in Python (numpy) rather than baked from Blender nodes** — periodic noise guarantees seamless tiling and is fully deterministic; Blender is used where it is strongest (modelling with modifiers, booleans, decimation, UVs, glTF export).

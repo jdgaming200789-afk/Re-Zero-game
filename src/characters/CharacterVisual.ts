@@ -1,4 +1,4 @@
-import type { Object3D, Vector3 } from 'three';
+import type { Object3D, Quaternion, Vector3 } from 'three';
 
 /** Locomotion parameters the animation layer derives its gait from. */
 export interface LocomotionState {
@@ -65,6 +65,10 @@ export interface CharacterVisual {
   setExpression(expression: string, intensity?: number, holdSeconds?: number): void;
   /** Mouth movement driver for dialogue (0..1 openness or viseme id). */
   setSpeaking(speaking: boolean): void;
+  /** Parent an object to a bone socket (hand props: swords, lanterns). */
+  attach?(obj: Object3D, socket: string, restRotation?: Quaternion, offsetAlongBone?: number): void;
+  /** Show/hide authored mesh parts by name prefix (sheathed sword, cloak). */
+  setPartVisible?(prefix: string, visible: boolean): void;
   /** Partially dissolve (e.g. while standing between the camera and the player). */
   setOccluding?(occluding: boolean): void;
   /** World position of a named socket (hand_R, head, chest...). */

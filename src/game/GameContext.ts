@@ -20,6 +20,7 @@ import type { CharacterFactory } from '../characters/CharacterFactory';
 import type { ActorManager } from '../actors/ActorManager';
 import type { PartyManager } from '../party/PartyManager';
 import type { ChatterSystem } from '../party/Chatter';
+import type { CombatManager } from '../combat/CombatManager';
 
 /**
  * The composition root's public surface. Systems receive this instead of
@@ -47,10 +48,13 @@ export interface GameContext {
   readonly actors: ActorManager;
   readonly party: PartyManager;
   readonly chatter: ChatterSystem;
+  readonly combat: CombatManager;
 
   readonly mode: GameMode;
   setMode(mode: GameMode): void;
   player: PlayerController | null;
+
+  getSystem<T extends GameSystem>(name: string): T | undefined;
 
   /** True when developer tools are enabled (dev server or ?dev=1). */
   readonly devMode: boolean;

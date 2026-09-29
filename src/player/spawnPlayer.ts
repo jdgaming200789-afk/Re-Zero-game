@@ -3,6 +3,7 @@ import { CharacterMotor } from '../characters/CharacterMotor';
 import { PlayerController } from './PlayerController';
 import type { CharacterVisual } from '../characters/CharacterVisual';
 import { Layer } from '../physics/Physics';
+import { SubaruCombat } from '../combat/SubaruCombat';
 
 /** Creates the persistent player entity (survives area changes). */
 export function spawnPlayer(game: Game, visual: CharacterVisual, characterId = 'subaru'): PlayerController {
@@ -12,6 +13,7 @@ export function spawnPlayer(game: Game, visual: CharacterVisual, characterId = '
   );
   const controller = entity.add(new PlayerController(game, characterId, motor, visual));
   game.player = controller;
+  entity.add(new SubaruCombat(game, controller));
   game.events.emit('player:spawned', { characterId });
   return controller;
 }

@@ -3,9 +3,12 @@ import type { ActorController } from '../actors/ActorController';
 import { createLogger } from '../core/Log';
 import { PARTY_MEMBERS, PARTY_ORDER } from '../data/party';
 import type { GameContext, GameSystem } from '../game/GameContext';
+import type { PartyOrder } from '../core/events/GameEvents';
 import { Masks } from '../physics/Physics';
 import { Breadcrumbs } from './Breadcrumbs';
 import { FollowerBrain } from './FollowerBrain';
+import { CompanionCombat } from '../combat/companions/CompanionCombat';
+import { COMBAT_STYLES } from '../combat/companions/CombatStyles';
 
 const log = createLogger('Party');
 
@@ -35,6 +38,9 @@ export class PartyManager implements GameSystem {
   private reconciling: Promise<void> | null = null;
   private reconcileAgain = false;
   private held = false;
+  /** Subaru's current combat order and its target (entity id). */
+  order: PartyOrder = 'free';
+  orderTarget: number | null = null;
 
   constructor(private readonly game: GameContext) {
     const ev = game.events;
@@ -86,6 +92,13 @@ export class PartyManager implements GameSystem {
   /** Resolves once spawning/despawning has caught up with membership. */
   async settled(): Promise<void> {
     while (this.reconciling) await this.reconciling;
+  }
+
+  /** Issue a combat order (focus Subaru's target / regroup around him / free). */
+  command(kind: PartyOrder, targetId: number | null = null): void {
+    this.order = kind;
+    this.orderTarget = targetId;
+    this.game.events.emit('party:command', { kind, targetId });
   }
 
   // ------------------------------------------------------------------ attention
@@ -192,6 +205,7 @@ export class PartyManager implements GameSystem {
         continue;
       }
       actor.brain = brain;
+      if (COMBAT_STYLES[id] && !actor.entity.get(CompanionCombat)) actor.entity.add(new CompanionCombat(this.game, actor));
       if (this.held) actor.hold();
       this.followers.set(id, { actor, brain });
     }

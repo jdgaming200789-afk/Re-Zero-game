@@ -4,7 +4,7 @@ import type { HeightFogParams } from '../render/effects/HeightFogEffect';
 import type { GameContext } from '../game/GameContext';
 import type { ColorGrade } from '../render/effects/ColorGradeEffect';
 import { disposeObject } from '../assets/AssetManager';
-import type { MusicState } from '../core/events/GameEvents';
+import type { GameEvents, MusicState } from '../core/events/GameEvents';
 
 export interface AreaSpawn {
   position: Vector3;
@@ -88,12 +88,20 @@ export abstract class Area {
     this.trackCollider(c);
   }
 
+  private readonly subscriptions: Array<() => void> = [];
+
+  /** Subscribe to a game event for the lifetime of this area. */
+  protected listen<K extends keyof GameEvents>(type: K, fn: (payload: GameEvents[K]) => void): void {
+    this.subscriptions.push(this.game.events.on(type, fn));
+  }
+
   protected addSpawn(id: string, x: number, y: number, z: number, yawDeg: number): void {
     this.spawns.set(id, { position: new Vector3(x, y, z), yaw: (yawDeg * Math.PI) / 180 });
   }
 
   dispose(): void {
     this.onExit?.();
+    for (const off of this.subscriptions.splice(0)) off();
     this.game.world.destroyScope(this.scope);
     this.game.vfx.clearScope(this.scope);
     for (const c of this.colliders) this.game.physics.removeCollider(c);

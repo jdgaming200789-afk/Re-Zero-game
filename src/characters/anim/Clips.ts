@@ -22,11 +22,11 @@ export interface ActionClip {
   additiveLegs?: boolean;
 }
 
-function clip(id: string, duration: number, keys: ClipKey[], opts: Partial<Omit<ActionClip, 'id' | 'duration' | 'keys'>> = {}): ActionClip {
+export function clip(id: string, duration: number, keys: ClipKey[], opts: Partial<Omit<ActionClip, 'id' | 'duration' | 'keys'>> = {}): ActionClip {
   return { id, duration, keys, mask: opts.mask ?? FULL_BODY, fadeIn: opts.fadeIn ?? 0.15, fadeOut: opts.fadeOut ?? 0.2, contact: opts.contact, additiveLegs: opts.additiveLegs };
 }
 
-const stand: PoseSpec = symmetric({ upperArmL: [2, 0, 4], lowerArmL: [-10, 0, 0] });
+export const stand: PoseSpec = symmetric({ upperArmL: [2, 0, 4], lowerArmL: [-10, 0, 0] });
 
 /** Interaction / reaction clips shared by all humanoids. */
 export const CLIPS: Record<string, ActionClip> = {};

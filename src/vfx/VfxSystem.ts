@@ -37,6 +37,13 @@ export class VfxSystem implements GameSystem {
     return e;
   }
 
+  /** Stop updating and free one emitter. */
+  removeEmitter(e: ParticleEmitter): void {
+    if (!this.emitters.delete(e)) return;
+    e.removeFromParent();
+    e.dispose();
+  }
+
   clearScope(scope: string): void {
     for (const i of Array.from(this.items)) {
       if (i.scope !== scope) continue;

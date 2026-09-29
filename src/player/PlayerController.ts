@@ -66,6 +66,7 @@ export class PlayerController extends Component {
   private scripted: ScriptedMove | null = null;
   private faceTarget: { yaw: number; resolve: () => void; rate: number } | null = null;
   private lastYaw = 0;
+  private dashState: { vel: Vector3; t: number; duration: number } | null = null;
   private jumpBuffered = 0;
   /** Target to strafe around in lock-on (set by combat). */
   strafeTarget: Vector3 | null = null;
@@ -153,12 +154,43 @@ export class PlayerController extends Component {
   }
 
   // ------------------------------------------------------------------ frame
+  /**
+   * Burst movement (dodges, lunges): travels `distance` along `dir` over
+   * `duration`, front-loaded, ignoring input. Facing is kept when strafing.
+   */
+  dash(dir: Vector3, distance: number, duration: number, face = true): void {
+    const d = _to.set(dir.x, 0, dir.z);
+    if (d.lengthSq() < 1e-6) d.set(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
+    d.normalize();
+    this.dashState = { vel: d.clone().multiplyScalar(distance / duration), t: 0, duration };
+    if (face) {
+      this.yaw = Math.atan2(d.x, d.z);
+      this.lastYaw = this.yaw;
+    }
+  }
+
+  get dashing(): boolean {
+    return this.dashState !== null;
+  }
+
   override update(dt: number): void {
     const input = this.game.input;
     const mv = this.movement;
     const desired = _desired.set(0, 0, 0);
     let wantSprint = false;
     let strafing = false;
+
+    if (this.dashState) {
+      const d = this.dashState;
+      d.t += dt;
+      const u = Math.min(1, d.t / d.duration);
+      // Integral of 1.6·(1-u)^0.6 over [0,1] = 1: covers exactly `distance`.
+      this.planarVelocity.copy(d.vel).multiplyScalar(1.6 * Math.pow(1 - u, 0.6));
+      this.motor.desiredVelocity.copy(this.planarVelocity);
+      if (u >= 1) this.dashState = null;
+      this.updateLocomotion(dt, false);
+      return;
+    }
 
     if (this.scripted) {
       const s = this.scripted;
@@ -285,7 +317,12 @@ export class PlayerController extends Component {
     }
     if (this.exhausted && this.stamina >= mv.maxStamina * 0.35) this.exhausted = false;
 
+    this.updateLocomotion(dt, sprinting);
+  }
+
+  private updateLocomotion(dt: number, sprinting: boolean): void {
     // ---- Locomotion state for animation
+    const grounded = this.motor.grounded;
     const yawRate = angleDelta(this.lastYaw, this.yaw) / Math.max(dt, 1e-4);
     this.lastYaw = this.yaw;
     const l = this.loco;

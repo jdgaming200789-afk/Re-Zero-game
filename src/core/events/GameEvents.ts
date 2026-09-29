@@ -36,6 +36,8 @@ export interface GameEvents {
   'player:placed': { position: Vector3; yaw: number };
   'party:joined': { characterId: string };
   'party:left': { characterId: string };
+  /** Subaru's orders in combat. */
+  'party:command': { kind: PartyOrder; targetId: number | null };
   'player:landed': { fallHeight: number };
   'player:footstep': { position: Vector3; surface: string; intensity: number };
   'character:damaged': { entityId: number; amount: number; sourceId: number | null; stagger: boolean };
@@ -67,7 +69,7 @@ export interface GameEvents {
   // ---- Combat --------------------------------------------------------------
   'combat:started': { encounterId: string };
   'combat:ended': { encounterId: string; victory: boolean };
-  'combat:hit': { attackerId: number; targetId: number; position: Vector3; amount: number; critical: boolean };
+  'combat:hit': { attackerId: number; targetId: number; position: Vector3; amount: number; critical: boolean; damageType: string };
   'combat:lockOnChanged': { targetId: number | null };
 
   // ---- Return by Death / checkpoints --------------------------------------
@@ -86,6 +88,8 @@ export interface GameEvents {
 }
 
 export type FlagValue = boolean | number | string;
+
+export type PartyOrder = 'free' | 'focus' | 'regroup';
 
 export type GameMode =
   | 'boot'

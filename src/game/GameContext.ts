@@ -22,6 +22,11 @@ import type { PartyManager } from '../party/PartyManager';
 import type { ChatterSystem } from '../party/Chatter';
 import type { CombatManager } from '../combat/CombatManager';
 import type { EnemyManager } from '../enemies/EnemyManager';
+import type { DialogueSystem } from '../story/dialogue/DialogueSystem';
+import type { CinematicPlayer } from '../story/cinematic/CinematicPlayer';
+import type { QuestSystem } from '../story/quests/QuestSystem';
+import type { StoryDirector } from '../story/StoryDirector';
+import type { ScreenManager } from '../ui/screens/Screen';
 
 /**
  * The composition root's public surface. Systems receive this instead of
@@ -51,6 +56,11 @@ export interface GameContext {
   readonly chatter: ChatterSystem;
   readonly combat: CombatManager;
   readonly enemies: EnemyManager;
+  readonly dialogue: DialogueSystem;
+  readonly cinematics: CinematicPlayer;
+  readonly quests: QuestSystem;
+  readonly story: StoryDirector;
+  readonly screens: ScreenManager;
 
   readonly mode: GameMode;
   setMode(mode: GameMode): void;

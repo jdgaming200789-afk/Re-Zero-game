@@ -93,7 +93,8 @@ def subaru() -> CharacterSpec:
         ("orange", lambda c: c.on_arm() and c.arm_s() > c.arm_len() - 0.03 * c.H),  # cuffs
         ("orange", lambda c: c.on_arm() and c.arm_up_dot() > 0.9),  # sleeve stripe
         ("grey", lambda c: c.on_arm()),
-        ("grey", lambda c: c.p.z > c.j.upper_chest.z - 0.005 * c.H and abs(c.p.x) > 0.045 * c.H),  # shoulders
+        # Open tracksuit jacket over a white shirt: the shirt shows in a clean strip down the front.
+        ("grey", lambda c: c.p.z > c.j.waist.z - 0.03 * c.H and (abs(c.p.x) > 0.05 * c.H or c.p.y > c.j.chest.y + 0.01 * c.H)),
         ("orange", lambda c: below_waist(c, -0.02) and c.leg_side_dot() > 0.93 and abs(c.p.x) > 0.035 * c.H),  # trouser stripe
         ("trousers", lambda c: below_waist(c, -0.02)),
         ("jacket", lambda c: True),
@@ -119,6 +120,12 @@ def subaru() -> CharacterSpec:
         face={"iris": "#2a2530", "irisLight": "#5b4f63", "eyeShape": "sanpaku", "brow": "#1d1f29", "lash": "#15151c", "eyeSize": 0.82},
         garments=subaru_garments,
         meta={"name": "Natsuki Subaru"},
+        cuts=lambda j: [
+            (Vector((0.05 * j.H, 0, 0)), Vector((1, 0, 0))),
+            (Vector((-0.05 * j.H, 0, 0)), Vector((1, 0, 0))),
+            (Vector((0, j.chest.y + 0.01 * j.H, 0)), Vector((0, 1, 0))),
+            (Vector((0, 0, j.waist.z - 0.03 * j.H)), Vector((0, 0, 1))),
+        ],
     )
 
 

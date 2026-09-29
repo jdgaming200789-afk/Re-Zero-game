@@ -8,6 +8,7 @@ import type { Interactable } from '../interaction/Interactable';
 import { el, ICONS } from './dom';
 import './styles/base.css';
 import './styles/hud.css';
+import './styles/dialogue.css';
 
 type ToastKind = 'info' | 'item' | 'quest' | 'knowledge' | 'warning';
 
@@ -49,6 +50,10 @@ export class UIManager {
   private readonly barks: HTMLElement;
   private readonly inspect: HTMLElement;
   private readonly fps: HTMLElement;
+  private readonly letterboxBars: HTMLElement[];
+  private readonly titleCard: HTMLElement;
+  private readonly skipHoldEl: HTMLElement;
+  private readonly skipHoldFill: SVGCircleElement;
   private fadeToken = 0;
   private readonly screenPos = new Vector3();
 
@@ -88,6 +93,25 @@ export class UIManager {
     this.prompt = el('div', { class: 'rz-prompt' }, [glyph, el('div', { class: 'text' }, [el('div', { style: { display: 'flex', gap: '0.45em', alignItems: 'center' } }, [this.promptIcon, this.promptVerb]), this.promptLabel])]);
     this.layers.world.appendChild(this.prompt);
 
+    this.letterboxBars = [
+      this.layers.dialogue.appendChild(el('div', { class: 'rz-letterbox top' })),
+      this.layers.dialogue.appendChild(el('div', { class: 'rz-letterbox bottom' })),
+    ];
+    const skipSvg = document.createElementNS(ns, 'svg');
+    skipSvg.setAttribute('viewBox', '0 0 40 40');
+    const track = document.createElementNS(ns, 'circle');
+    this.skipHoldFill = document.createElementNS(ns, 'circle');
+    for (const c of [track, this.skipHoldFill]) {
+      c.setAttribute('cx', '20');
+      c.setAttribute('cy', '20');
+      c.setAttribute('r', '16');
+      c.setAttribute('pathLength', '100');
+      skipSvg.appendChild(c);
+    }
+    track.setAttribute('class', 'track');
+    this.skipHoldFill.setAttribute('class', 'fill');
+    this.skipHoldFill.setAttribute('stroke-dasharray', '0 100');
+    this.skipHoldEl = this.layers.dialogue.appendChild(el('div', { class: 'rz-skiphold' }, [skipSvg as unknown as HTMLElement, el('span', { class: 'lbl' })]));
     this.barks = this.layers.hud.appendChild(el('div', { class: 'rz-barks' }));
     this.toasts = this.layers.hud.appendChild(el('div', { class: 'rz-toasts' }));
     this.inspect = this.layers.dialogue.appendChild(el('div', { class: 'rz-inspect rz-panel' }));
@@ -99,6 +123,7 @@ export class UIManager {
     this.loading = this.layers.overlay.appendChild(
       el('div', { class: 'rz-loading' }, [this.loadingTitle, this.loadingSub, el('div', { class: 'bar' }, [this.loadingBar])]),
     );
+    this.titleCard = this.layers.overlay.appendChild(el('div', { class: 'rz-titlecard' }));
     this.fps = this.layers.debug.appendChild(el('div', { class: 'rz-fps' }));
 
     events.on('ui:notify', ({ text, kind }) => this.notify(text, kind ?? 'info'));
@@ -146,6 +171,11 @@ export class UIManager {
       toast.classList.add('out');
       window.setTimeout(() => toast.remove(), 520);
     }, seconds * 1000);
+  }
+
+  /** Display name and colour for a speaker id. */
+  speaker(id: string): { name: string; color?: string } {
+    return { name: this.speakerNames[id] ?? id.charAt(0).toUpperCase() + id.slice(1), color: this.speakerColors[id] };
   }
 
   private readonly speakerNames: Record<string, string> = {};
@@ -231,6 +261,43 @@ export class UIManager {
       },
       { scaled: false, ease: 'inOutSine' },
     );
+  }
+
+  // ---------------------------------------------------------------- cinematic chrome
+  letterbox(on: boolean): void {
+    for (const b of this.letterboxBars) b.classList.toggle('on', on);
+  }
+
+  get letterboxed(): boolean {
+    return this.letterboxBars[0]!.classList.contains('on');
+  }
+
+  /** "Hold to skip" ring (null hides it). */
+  skipHold(fraction: number | null): void {
+    if (fraction === null) {
+      this.skipHoldEl.classList.remove('visible');
+      return;
+    }
+    this.skipHoldEl.querySelector('.lbl')!.textContent = `Hold ${this.actionGlyph('skip')} to skip`;
+    this.skipHoldFill.setAttribute('stroke-dasharray', `${(fraction * 100).toFixed(1)} 100`);
+    this.skipHoldEl.classList.add('visible');
+  }
+
+  /** Chapter card over the scene. Resolves when it has faded out again. */
+  async titleCardShow(title: string, sub = '', kicker = '', seconds = 3.2): Promise<void> {
+    this.titleCard.textContent = '';
+    if (kicker) this.titleCard.appendChild(el('div', { class: 'kicker', text: kicker }));
+    this.titleCard.appendChild(el('div', { class: 'title', text: title }));
+    this.titleCard.appendChild(el('div', { class: 'rz-rule' }));
+    if (sub) this.titleCard.appendChild(el('div', { class: 'sub', text: sub }));
+    this.titleCard.classList.add('visible');
+    await this.scheduler.wait(1.2 + seconds, false);
+    this.titleCard.classList.remove('visible');
+    await this.scheduler.wait(1.2, false);
+  }
+
+  titleCardHide(): void {
+    this.titleCard.classList.remove('visible');
   }
 
   // ---------------------------------------------------------------- loading

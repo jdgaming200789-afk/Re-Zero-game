@@ -1,0 +1,492 @@
+/* ---------------------------------------------------------------- dialogue window */
+.rz-dialogue {
+  position: absolute;
+  left: 50%;
+  bottom: 4.2%;
+  width: min(62em, 92vw);
+  transform: translate(-50%, 14px);
+  opacity: 0;
+  transition:
+    opacity 0.28s var(--ease-out),
+    transform 0.38s var(--ease-out);
+}
+.rz-dialogue.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.rz-dlg-box {
+  --speaker: var(--gold-bright);
+  position: relative;
+  min-height: 6.4em;
+  padding: 1.35em 2.2em 1.45em;
+  background:
+    radial-gradient(ellipse 60% 120% at 50% 0%, rgba(140, 170, 255, 0.07), transparent 70%),
+    linear-gradient(180deg, rgba(10, 14, 28, 0.9), rgba(7, 10, 20, 0.8));
+  border: 1px solid rgba(215, 196, 146, 0.28);
+  border-top-color: rgba(243, 226, 176, 0.55);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(5px);
+}
+/* Star-points at the ends of the top rule. */
+.rz-dlg-box::before,
+.rz-dlg-box::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--gold);
+  background: var(--ink);
+  transform: rotate(45deg);
+}
+.rz-dlg-box::before {
+  left: -5px;
+}
+.rz-dlg-box::after {
+  right: -5px;
+}
+.rz-dlg-box.pop .text {
+  animation: rz-dlg-in 0.25s var(--ease-out) both;
+}
+@keyframes rz-dlg-in {
+  from {
+    opacity: 0.4;
+    transform: translateY(3px);
+  }
+}
+
+.rz-dlg-box .plate {
+  --speaker: var(--gold-bright);
+  position: absolute;
+  left: 1.7em;
+  top: 0;
+  transform: translateY(-62%);
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  padding: 0.18em 1.3em 0.22em 0.8em;
+  background: linear-gradient(90deg, rgba(8, 11, 22, 0.96), rgba(8, 11, 22, 0.85) 70%, rgba(8, 11, 22, 0));
+  border-bottom: 2px solid var(--speaker);
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.32em;
+  letter-spacing: 0.05em;
+  color: var(--speaker);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--speaker) 45%, transparent);
+}
+.rz-dlg-box .plate .gem {
+  width: 0.42em;
+  height: 0.42em;
+  background: var(--speaker);
+  transform: rotate(45deg);
+  box-shadow: 0 0 8px var(--speaker);
+}
+.rz-dlg-box.narration .plate {
+  display: none;
+}
+
+.rz-dlg-box .text {
+  font-family: var(--font-body);
+  font-size: 1.12em;
+  line-height: 1.62;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  min-height: 3.2em;
+}
+.rz-dlg-box .text .c {
+  opacity: 0;
+  transition: opacity 0.14s linear;
+}
+.rz-dlg-box .text .c.on {
+  opacity: 1;
+}
+.rz-dlg-box .text em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--gold-bright);
+}
+.rz-dlg-box.thought .text {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.34em;
+  line-height: 1.45;
+  color: #c7d2f4;
+}
+.rz-dlg-box.thought .plate {
+  font-style: italic;
+  opacity: 0.8;
+}
+.rz-dlg-box.thought .plate .nm::after {
+  content: ' · thinking';
+  font-size: 0.7em;
+  color: var(--text-dim);
+}
+.rz-dlg-box.narration .text {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.3em;
+  text-align: center;
+  color: var(--silver);
+}
+
+.rz-dlg-box .next {
+  position: absolute;
+  right: 1.3em;
+  bottom: 0.9em;
+  width: 0.7em;
+  height: 0.7em;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.rz-dlg-box .next i {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--gold-bright);
+  background: rgba(243, 226, 176, 0.25);
+  transform: rotate(45deg);
+  box-shadow: 0 0 10px rgba(243, 226, 176, 0.6);
+}
+.rz-dlg-box .next.ready {
+  opacity: 1;
+  animation: rz-next 1.1s ease-in-out infinite;
+}
+@keyframes rz-next {
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+/* ---------------------------------------------------------------- choices */
+.rz-dlg-choices {
+  position: absolute;
+  right: 1.2em;
+  bottom: calc(100% + 1.6em);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.42em;
+  pointer-events: none;
+}
+.rz-dlg-choices .opt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+  min-width: 22em;
+  max-width: 36em;
+  padding: 0.55em 1.5em 0.55em 1em;
+  background: linear-gradient(90deg, rgba(9, 13, 26, 0.9), rgba(9, 13, 26, 0.76));
+  border: 1px solid rgba(215, 196, 146, 0.22);
+  font-size: 1.04em;
+  color: var(--text);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateX(18px);
+  transition:
+    translate 0.22s var(--ease-out),
+    border-color 0.2s,
+    background 0.2s,
+    color 0.2s;
+}
+.rz-dlg-choices.visible .opt {
+  pointer-events: auto;
+  animation: rz-opt-in 0.34s var(--ease-out) forwards;
+  animation-delay: calc(var(--i) * 60ms);
+}
+@keyframes rz-opt-in {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.rz-dlg-choices .opt .mark {
+  flex: none;
+  width: 0.55em;
+  height: 0.55em;
+  border: 1px solid var(--gold-dim);
+  transform: rotate(45deg);
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.rz-dlg-choices .opt.selected {
+  border-color: rgba(243, 226, 176, 0.75);
+  background: linear-gradient(90deg, rgba(90, 76, 40, 0.55), rgba(20, 22, 36, 0.9) 70%);
+  color: var(--gold-bright);
+  box-shadow: 0 0 18px rgba(243, 226, 176, 0.14);
+}
+.rz-dlg-choices .opt.selected {
+  translate: -8px 0;
+}
+.rz-dlg-choices .opt.selected .mark {
+  background: var(--gold-bright);
+  box-shadow: 0 0 8px var(--gold-bright);
+}
+.rz-dlg-choices .opt.chosen:not(.selected) {
+  color: var(--text-dim);
+}
+.rz-dlg-choices .opt.disabled {
+  cursor: default;
+  color: rgba(233, 236, 244, 0.38);
+  border-style: dashed;
+}
+.rz-dlg-choices .opt .hint {
+  margin-left: auto;
+  padding-left: 1em;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.86em;
+  color: rgba(182, 156, 255, 0.7);
+}
+/* Knowledge from another loop: a violet-gold shimmer. */
+.rz-dlg-choices .opt.insight {
+  border-color: rgba(182, 156, 255, 0.55);
+  background: linear-gradient(90deg, rgba(40, 26, 70, 0.9), rgba(12, 12, 30, 0.82));
+}
+.rz-dlg-choices .opt.insight .txt {
+  background: linear-gradient(90deg, #f3e2b0, #d9c4ff, #f3e2b0);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rz-shimmer 3.5s linear infinite;
+}
+.rz-dlg-choices .opt.insight .mark {
+  border-color: var(--violet);
+}
+.rz-dlg-choices .opt.insight.selected .mark {
+  background: var(--violet);
+  box-shadow: 0 0 10px var(--violet);
+}
+.rz-dlg-choices .opt .badge {
+  margin-left: auto;
+  padding-left: 1em;
+  font-family: var(--font-display);
+  font-size: 0.62em;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--violet);
+  text-shadow: 0 0 8px rgba(182, 156, 255, 0.8);
+}
+@keyframes rz-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ---------------------------------------------------------------- controls */
+.rz-dlg-controls {
+  position: absolute;
+  right: 0.4em;
+  top: calc(100% + 0.45em);
+  display: flex;
+  gap: 1.1em;
+}
+.rz-dlg-controls .ctl {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0;
+  background: none;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 0.68em;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.rz-dlg-controls .ctl .rz-key {
+  font-size: 0.95em;
+}
+.rz-dlg-controls .ctl.on {
+  color: var(--gold-bright);
+  text-shadow: 0 0 8px rgba(243, 226, 176, 0.7);
+}
+.rz-dlg-controls .ctl.skip.on {
+  animation: pulse 0.8s ease-in-out infinite;
+}
+
+/* ---------------------------------------------------------------- log */
+.rz-dlg-log {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 5, 10, 0.72);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.25s,
+    visibility 0s 0.25s;
+}
+.rz-dlg-log.visible {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.25s;
+}
+.rz-dlg-log .frame {
+  width: min(50em, 92vw);
+  height: 74vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.3em 1.8em 1em;
+}
+.rz-dlg-log h2 {
+  margin: 0 0 0.6em;
+  font-size: 1em;
+  text-align: center;
+}
+.rz-dlg-log .list {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 0.8em;
+  padding-right: 0.6em;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-dim) transparent;
+  pointer-events: auto;
+}
+.rz-dlg-log .entry {
+  display: grid;
+  grid-template-columns: 7.5em 1fr;
+  gap: 1em;
+  padding: 0.45em 0;
+  border-bottom: 1px solid rgba(215, 196, 146, 0.08);
+  line-height: 1.5;
+}
+.rz-dlg-log .entry .who {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.08em;
+  text-align: right;
+  color: var(--gold-bright);
+}
+.rz-dlg-log .entry.thought .say {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.12em;
+  color: #c7d2f4;
+}
+.rz-dlg-log .entry.narration .say {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--silver);
+}
+.rz-dlg-log .entry.choice .say {
+  color: var(--gold);
+  font-style: italic;
+}
+.rz-dlg-log .foot {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.45em;
+  padding-top: 0.7em;
+  font-size: 0.8em;
+  color: var(--text-dim);
+}
+
+/* ---------------------------------------------------------------- letterbox */
+.rz-letterbox {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 10.5vh;
+  background: #000;
+  transition: transform 0.7s var(--ease-in-out);
+}
+.rz-letterbox.top {
+  top: 0;
+  transform: translateY(-100%);
+}
+.rz-letterbox.bottom {
+  bottom: 0;
+  transform: translateY(100%);
+}
+.rz-letterbox.on {
+  transform: translateY(0);
+}
+
+/* ---------------------------------------------------------------- title card */
+.rz-titlecard {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9em;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease-in-out);
+  pointer-events: none;
+}
+.rz-titlecard.visible {
+  opacity: 1;
+}
+.rz-titlecard .kicker {
+  font-family: var(--font-display);
+  font-size: 0.85em;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+.rz-titlecard .title {
+  font-family: var(--font-display);
+  font-size: 2.6em;
+  letter-spacing: 0.16em;
+  color: var(--gold-bright);
+  text-shadow: 0 0 30px rgba(243, 226, 176, 0.35);
+}
+.rz-titlecard .rz-rule {
+  width: 22em;
+}
+.rz-titlecard .sub {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.25em;
+  color: var(--silver);
+}
+
+/* ---------------------------------------------------------------- hold to skip */
+.rz-skiphold {
+  position: absolute;
+  right: 2.2em;
+  top: 12.5vh;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  font-family: var(--font-display);
+  font-size: 0.7em;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.rz-skiphold.visible {
+  opacity: 1;
+}
+.rz-skiphold svg {
+  width: 1.9em;
+  height: 1.9em;
+  transform: rotate(-90deg);
+}
+.rz-skiphold circle {
+  fill: none;
+  stroke-width: 2.5;
+}
+.rz-skiphold circle.track {
+  stroke: rgba(215, 196, 146, 0.25);
+}
+.rz-skiphold circle.fill {
+  stroke: var(--gold-bright);
+}

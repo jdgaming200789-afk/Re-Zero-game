@@ -45,6 +45,9 @@ class CharacterSpec:
     garments: Callable[[Joints, dict], Garments] | None = None
     accessories: Callable[[Joints, dict, object], list] | None = None
     meta: dict = field(default_factory=dict)
+    # Planes (point, normal) the body is cut along before zoning, so colour
+    # boundaries follow clean lines instead of the stair-step of whole faces.
+    cuts: Callable[[Joints], list] | None = None
 
 
 def reset():
@@ -130,6 +133,17 @@ def weight_by_chain(obj, arm, base_bone: str, chain_bones: list[str], guide: lis
             groups[chain_bones[i0 + 1]].add([v.index], frac * 0.5, "ADD")
 
 
+def cut_planes(obj, planes) -> None:
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    for co, no in planes:
+        geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+        bmesh.ops.bisect_plane(bm, geom=geom, plane_co=co, plane_no=no)
+    bm.to_mesh(obj.data)
+    bm.free()
+    obj.data.update()
+
+
 def build(spec: CharacterSpec) -> str:
     reset()
     j = Joints(spec.body)
@@ -137,6 +151,8 @@ def build(spec: CharacterSpec) -> str:
 
     arm = build_armature(spec.id, j)
     body = build_body(f"{spec.id}_body", spec.body, j)
+    if spec.cuts:
+        cut_planes(body, spec.cuts(j))
     zone(body, j, spec.zones, mats, spec.default_zone)
     # Auto (heat) weights for the body against the humanoid bones only.
     select_only(body, arm)

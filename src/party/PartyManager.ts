@@ -132,6 +132,12 @@ export class PartyManager implements GameSystem {
 
   /** Companions standing between the camera and Subaru dissolve partially. */
   private updateOcclusion(): void {
+    // Conversations and cutscenes frame people deliberately (over-the-shoulder shots).
+    const staged = this.game.mode === 'dialogue' || this.game.mode === 'cinematic';
+    if (staged) {
+      for (const f of this.followers.values()) f.actor.visual.setOccluding?.(false);
+      return;
+    }
     const cam = this.game.render.camera.position;
     const seg = _seg.subVectors(this.leaderHead, cam);
     const segLen = seg.length();

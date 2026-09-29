@@ -7,6 +7,7 @@ import type { Scheduler } from '../core/Scheduler';
 import type { CharacterDefinition } from '../data/characters';
 import { CLIPS, sampleClip, STANCES, type ActionClip } from './anim/Clips';
 import './anim/CombatClips';
+import './anim/GestureClips';
 import { DEFAULT_GAIT, GaitGenerator, IdleGenerator } from './anim/Gait';
 import { alignFoot, solveTwoBone } from './anim/IK';
 import { Pose, UPPER_BODY } from './anim/Pose';

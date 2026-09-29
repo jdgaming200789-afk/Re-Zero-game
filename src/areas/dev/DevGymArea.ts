@@ -232,6 +232,9 @@ class DevGymArea extends Area {
     this.listen('zone:entered', ({ zoneId }) => {
       if (zoneId === 'gym.arena') g.combat.startEncounter('gym.practice', { enemies: dummies.map((d) => d.health), arena: { center: new Vector3(0, 0, 20), radius: 11 } });
     });
+    this.listen('combat:ended', ({ encounterId, victory }) => {
+      if (encounterId === 'gym.practice' && victory) g.state.set('gym.practice_won', true);
+    });
     this.addSpawn('arena', 0, 0, 13, 0);
 
     this.addSpawn('default', 0, 0, 4, 180);

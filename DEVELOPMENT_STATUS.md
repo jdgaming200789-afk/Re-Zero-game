@@ -1,10 +1,10 @@
 # Re:Zero - Pleiades — Development Status
 
-_Last updated: end of Phase 5._
+_Last updated: end of Phase 6._
 
 ## Current phase
 
-**Phase 5 complete → starting Phase 6** (dialogue & cinematics: branching conversations, conditions, history, auto/skip/text speed, voice-ready lines; story flags and quests).
+**Phase 6 complete → starting Phase 7** (Return by Death: the Witch's miasma, the rewind sequence, checkpoints, save/load).
 
 Vertical-slice design: [docs/VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) — "The Watchtower in the Sand".
 
@@ -185,9 +185,44 @@ built for the **browser**, with every original requirement kept:
 
 **Dev**: `spawn <enemy|sand_earthworm> [count] [distance]` console command.
 
+### Phase 6 — Dialogue, cinematics, quests
+
+**Story effects & knowledge (`src/story/Effects.ts`, `src/data/knowledge.ts`)**
+- One effect language shared by dialogue, cinematics and quests: set/add/clear flags, story events, learn knowledge, items, start/complete/fail quests, party join/leave, notifications. Everything changes world flags (rewinds with Return by Death) except `learn`, which writes `know.*` (Subaru keeps it).
+- Knowledge entries (dangers, lore, people) with titles and texts; learning one shows a "Subaru remembers" notice.
+
+**Dialogue (`src/story/dialogue`, `src/ui/dialogue`, `src/data/dialogues`)**
+- Data: nodes with lines, choices and jumps; conditional lines, conditional redirects (branch on story state or knowledge), effects on lines/nodes/choices; choices can be hidden, shown locked with a hint, once-only, or marked **Insight** (only possible because of a previous loop — violet-gold shimmer). Every line has a voice id (`dialogue.node.index`).
+- `DialogueRunner`: pure graph walker (unit-tested); `validateDialogue` checks jumps, reachability, speakers, conditions, effects and ids for all data.
+- `DialogueSystem`: typewriter reveal with punctuation pauses at the player's text speed, advance (complete line → next), **Auto** (reading-time based), **Skip** (fast-forward to the next choice), **Log** (backlog of everything said and chosen), mouse and keyboard/gamepad choice selection, a voice-provider hook (recorded lines or procedural blips later), seen-line tracking.
+- Staging: speakers play gestures and hold expressions, lip-flap while their line types, look at whom they address; everyone else looks at the speaker; Subaru and the partner turn to face each other.
+- `ConversationCamera`: over-the-shoulder / reverse shots, singles on repeated lines, two-shots and a wide frame; the 180° rule is kept for the whole conversation; shots pull in front of walls or swing to the other side; if another character blocks the view the next coverage is tried; depth of field on the speaker.
+- Conversation gestures: nod, shake head, shrug, bow, hand on chest, think, facepalm, wave, sigh, look down, laugh, fist, explain.
+- `TalkSystem`: "Talk" prompts on characters, conversation chosen by story state; camp talks with every companion (Emilia, Beatrice, Julius — who unknowingly points Subaru at Orion, Ram — about the sister she doesn't remember, Echidna, Meili — who explains the worm hunts by vibration, Patrasche) with first-time and follow-up lines.
+
+**Cinematics (`src/story/cinematic`, `src/data/cinematics.ts`)**
+- Steps: fades, letterbox, chapter title cards, camera shots and blends (from/at can be coordinates, area markers or points relative to a character), follow-camera release, waits, place / walk / turn / look / gesture / expression for any character, inline lines, full conversations, effects, waiting for party spawns, music state, camera shake, conditionals and parallel groups.
+- Hold Skip to fast-forward: remaining steps resolve instantly (characters land where they were going, effects still apply, choices still wait for the player), then a quick fade in — skipping never changes the story state.
+- **The camp opening** (`tf.opening`): the party around the fire at the tower's foot, silhouettes against the Watchtower, title card, Subaru's thoughts, and the first-night conversation — motives (Rem asleep, Julius's lost name, the Sage), a choice of plan, and a loop-2 **Insight** option to warn everyone about the glass. Starts *The Watchtower in the Sand*.
+- `NewGame`: party, story flags, the camp, then the opening revealed from black (`reveal: false` scene transitions).
+- `StoryDirector`: data-driven beats (on area enter, story event, flag, interaction, zone, end of a scene) that queue instead of colliding; records visited zones as `visited.<zone>` flags.
+
+**Quests (`src/story/quests`, `src/data/quests.ts`)**
+- Quests and objectives stored in world flags (rewind with Return by Death); objectives complete themselves when their condition holds, appear in order (optional ones never block), quests can auto-start and fail; completion effects; tracked quest.
+- HUD tracker (top right) with ticking/striking objectives and a centre banner for new and completed quests (waits for scenes to finish).
+- **Journal** (J): Quests (in progress / completed / failed, details, objectives, hints, track), **Subaru Remembers** (knowledge by category) and the conversation log. First screen of a `ScreenManager` that pauses the game (inventory, map, settings and saves plug in next).
+- *The Watchtower in the Sand*: scout the ruins → (read the obelisk) → cross the Glass Flats → enter the tower. Zones on the tower foot drive it.
+
+**Characters**
+- Hair "angel ring" now follows the crown's curvature (view-space normal) with a cool sheen — no more stripe across the fringe in close-ups.
+- Blender builder: optional **zone cuts** bisect the body along planes before colour zoning so boundaries are clean lines; Subaru's jacket is now an open grey tracksuit over a white shirt without stair-stepped patches.
+- Companions no longer dissolve during conversations and cutscenes (the occlusion fade is for gameplay only).
+
+**Dev**: `newgame [skip]`, `dialogue [id]`, `cine [id]`, `quest [id] [start|complete|fail|track]`, `learn [id|all]`.
+
 ## Testing
 - `npm run typecheck` — strict TypeScript.
-- `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data. **40/40 passing.**
+- `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data, dialogue runner (lines, conditions, effects, hidden/locked/once/insight choices, branching), quest evaluation, and validation of every dialogue, quest, cinematic, story trigger and talk entry. **55/55 passing.**
 - `npm run smoke` — Playwright drives the real game in Chromium and asserts on state:
   - `tools/browser/smoke.mjs` (dev gym): **13/13** — walk, sprint/stamina, stairs, jump/land, slope limit, corridor camera, focus + read, hold lever → gate, door → walk through.
   - `tools/browser/areas.mjs`: **7/7** — tower_foot loads grounded, dune walking, gate prompt, gate → Celaeno, Celaeno gate → back outside, no VFX leaks across unloads. 0 console errors.
@@ -195,6 +230,7 @@ built for the **browser**, with every original requirement kept:
   - `tools/browser/combat.mjs`: **12/12** — entering the ring starts the encounter, lock-on, the whip combo damages dummies, the dive dodge moves Subaru with i-frames, Shamak blinds, E·M·M nullifies a hit, a tonic heals, every companion lands hits with their own kit, brains swap to combat and back, leaving the ring ends the fight.
   - `tools/browser/enemies.mjs`: **10/10** — jackals start unaware, the pack notices Subaru and alerts together, attacks are telegraphed on the ground, never more than two attack at once, Shamak blinds them, they press their attacks, the party wins and the encounter ends, the fallen are cleaned up, 0 console errors.
   - `tools/browser/earthworm.mjs`: **8/8** — invulnerable underground, standing still hides Subaru, running draws it in and it telegraphs an eruption, surfacing starts an elite encounter with the boss bar, it can be hurt (resistant) while surfaced, the Heliosphere kills it, it sinks away and the encounter ends, 0 console errors.
+  - `tools/browser/dialogue.mjs`: **25/25** — a conversation takes over (mode, window, camera), letter-by-letter reveal, advance completes then continues, the log, auto mode to the choice, hidden/locked options, a choice's effect, skip to the end with control and camera returned, a quest starting itself and showing on the tracker, objectives from zones and a won fight, the completion banner, an Insight option unlocked by knowledge and picked with the mouse, thought styling, the journal (quests, Subaru Remembers, pause/resume), a new game's camp opening (letterbox, party staged), reading through the conversation choosing the Insight option, quest/knowledge/control after the scene, talking to Emilia and her follow-up line, hold-to-skip reaching the same end state, 0 console errors.
 - `npm run cast` — lineup review: every character spawned side by side plus face close-ups (`test-results/cast_*.png`).
   - Celaeno's helical stair verified climbable from floor to the 12 m gallery.
   - The container has no GPU, so the harness steps the simulation at a fixed 60 Hz and renders only for screenshots (`game.advanceAsync`). Screenshots go to `test-results/`.
@@ -216,9 +252,9 @@ built for the **browser**, with every original requirement kept:
 - Real-time frame rate cannot be measured in this container (software rendering). Performance numbers must be taken on real hardware.
 
 ## Next tasks
-1. Phase 6 — dialogue & cinematics: branching dialogue data with conditions and effects, history log, auto/skip/text speed, voice-ready lines, camera shots and staging for conversations; story flags and quests (journal, objectives, markers).
-2. Phase 7 — Return by Death (the Witch's miasma, the rewind sequence, checkpoints as "save points" of fate), save/load slots.
-3. Phase 8+ — Taygeta star-pillar puzzle, Alcyone and Taygeta interiors, the Heliosphere on the Glass Flats (stealth), inventory items (Carriage Bell lure → `EnemyManager.noise`), menus/map/journal/settings UI, procedural dynamic music and voice blips.
+1. Phase 7 — Return by Death: the Witch's miasma and the rewind sequence, checkpoints (camp, Celaeno) as world snapshots, knowledge carried back, loop counter; save/load slots (settings stay separate); the Heliosphere death on the Glass Flats as the first loop.
+2. Phase 8 — puzzles and interiors: Taygeta star-pillar trial (Orion → Rigel), Alcyone living quarters and the Green Room (carry Rem), Taygeta white room → library transition.
+3. Phase 9 — stealth on the Glass Flats (the summit glint, cover), inventory screen and items (Carriage Bell lure → `EnemyManager.noise`), pause menu, map, settings and save screens, procedural dynamic music and voice blips.
 
 ## Technical decisions
 - **Textures generated in Python (numpy) rather than baked from Blender nodes** — periodic noise guarantees seamless tiling and is fully deterministic; Blender is used where it is strongest (modelling with modifiers, booleans, decimation, UVs, glTF export).
@@ -235,6 +271,8 @@ built for the **browser**, with every original requirement kept:
 - **Party membership as flags** — the party rewinds with the world on Return by Death; spawning is a reconcile of flags → actors.
 - **Creatures share the actor stack** — a land dragon is just another `CharacterVisual`, so party, chatter, dialogue and cinematics address it like any character.
 - **Telegraphs are data the AI reads** — the same warning the player sees is what companions query to dodge and what the attack resolves against, so what you see is what hits.
+- **Story state is flags, all the way down** — quests, dialogue memory, visited places and story beats all live in world flags, so saving is a snapshot and Return by Death rewinds everything except `know.*`.
+- **Skipping resolves, it doesn't jump** — a skipped cinematic runs every remaining step instantly, so the world ends up identical whether the scene was watched or not.
 - **Attack tokens over per-enemy aggression** — a pack director hands out attack slots, which keeps fights readable and lets difficulty scale by token count rather than by damage.
 
 ## Performance concerns

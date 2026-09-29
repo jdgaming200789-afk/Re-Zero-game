@@ -25,6 +25,7 @@ import type { GameContext, GameSystem } from './GameContext';
 import { DevConsole } from '../debug/DevConsole';
 import { registerCoreDevCommands } from '../debug/coreCommands';
 import { registerCastDevCommands } from '../debug/castCommands';
+import { registerStoryDevCommands } from '../debug/storyCommands';
 import { CharacterFactory } from '../characters/CharacterFactory';
 import { CharacterLighting } from '../characters/render/AnimeMaterial';
 import { ActorManager } from '../actors/ActorManager';
@@ -34,6 +35,19 @@ import { CHATTER } from '../data/chatter';
 import { CombatManager } from '../combat/CombatManager';
 import { CombatHud } from '../ui/hud/CombatHud';
 import { EnemyManager } from '../enemies/EnemyManager';
+import { DialogueSystem } from '../story/dialogue/DialogueSystem';
+import { CinematicPlayer } from '../story/cinematic/CinematicPlayer';
+import { QuestSystem } from '../story/quests/QuestSystem';
+import { StoryDirector } from '../story/StoryDirector';
+import { TalkSystem } from '../story/dialogue/TalkSystem';
+import { TALK } from '../data/talk';
+import { ScreenManager } from '../ui/screens/Screen';
+import { JournalScreen } from '../ui/screens/JournalScreen';
+import { QuestTracker } from '../ui/hud/QuestTracker';
+import { DIALOGUES } from '../data/dialogues';
+import { CINEMATICS } from '../data/cinematics';
+import { QUESTS } from '../data/quests';
+import { STORY_TRIGGERS } from '../data/story';
 
 const log = createLogger('Game');
 
@@ -79,6 +93,11 @@ export class Game implements GameContext {
   readonly chatter: ChatterSystem;
   readonly combat: CombatManager;
   readonly enemies: EnemyManager;
+  readonly dialogue: DialogueSystem;
+  readonly cinematics: CinematicPlayer;
+  readonly quests: QuestSystem;
+  readonly story: StoryDirector;
+  readonly screens: ScreenManager;
   private combatHud: CombatHud | null = null;
   readonly devMode: boolean;
   dev: DevConsole | null = null;
@@ -134,6 +153,27 @@ export class Game implements GameContext {
     this.enemies = new EnemyManager(this);
     this.addSystem(this.enemies);
 
+    // Story: conversations, cutscenes, quests and the beats that start them.
+    this.quests = new QuestSystem(this);
+    this.quests.register(QUESTS);
+    this.addSystem(this.quests);
+    this.dialogue = new DialogueSystem(this);
+    this.dialogue.register(DIALOGUES);
+    this.addSystem(this.dialogue);
+    this.cinematics = new CinematicPlayer(this);
+    this.cinematics.register(CINEMATICS);
+    this.addSystem(this.cinematics);
+    this.story = new StoryDirector(this);
+    this.story.register(STORY_TRIGGERS);
+    this.addSystem(this.story);
+    const talk = new TalkSystem(this);
+    talk.register(TALK);
+    this.addSystem(talk);
+    new QuestTracker(this, this.quests);
+    this.screens = new ScreenManager(this);
+    this.screens.register(new JournalScreen(this));
+    this.addSystem(this.screens);
+
     this.events.on('settings:changed', ({ key }) => {
       if (key.startsWith('graphics') || key === '*') {
         this.render.applySettings(this.settings.graphics);
@@ -154,6 +194,7 @@ export class Game implements GameContext {
       this.dev = new DevConsole(this);
       registerCoreDevCommands(this.dev, this);
       registerCastDevCommands(this.dev, this);
+      registerStoryDevCommands(this.dev, this);
     }
   }
 

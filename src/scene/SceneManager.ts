@@ -15,6 +15,8 @@ export interface TransitionOptions {
   fadeColor?: string;
   /** Called after the area is built and the player placed, before fade-in. */
   beforeReveal?: () => Promise<void> | void;
+  /** Fade back in at the end (default true). False leaves the screen black for a cutscene to reveal. */
+  reveal?: boolean;
 }
 
 /**
@@ -95,7 +97,7 @@ export class SceneManager implements GameSystem {
       await opts.beforeReveal?.();
       g.events.emit('area:entered', { areaId, spawnId });
       g.setMode(prevMode === 'boot' || prevMode === 'title' ? 'exploration' : prevMode);
-      await g.ui.fade(0, fadeSeconds * 1.3);
+      if (opts.reveal !== false) await g.ui.fade(0, fadeSeconds * 1.3);
     } finally {
       g.player?.unlock('transition');
       this.transitioning = false;

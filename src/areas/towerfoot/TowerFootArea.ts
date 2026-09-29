@@ -114,6 +114,12 @@ class TowerFootArea extends Area {
     this.addBoundary();
     this.addInteractables();
 
+    this.addCampMarkers();
+    // Story zones: quest objectives read `visited.<zone>`.
+    this.addZone('tf.ruins', new Vector3(0, 2, 3), new Vector3(60, 12, 27));
+    this.addZone('tf.flats', new Vector3(0, 2, -55), new Vector3(56, 12, 29));
+    this.addZone('tf.plaza', new Vector3(0, 4, -110), new Vector3(60, 14, 16));
+
     this.addSpawn('default', CAMP.x - 1, heightAt(CAMP.x - 1, CAMP.z - 2), CAMP.z - 2, 200);
     this.addSpawn('camp', CAMP.x - 1, heightAt(CAMP.x - 1, CAMP.z - 2), CAMP.z - 2, 200);
     this.addSpawn('ruins', 0, heightAt(0, 10), 10, 180);
@@ -145,6 +151,32 @@ class TowerFootArea extends Area {
     b.place('Bench', cx - 5.6, this.ground(cx - 5.6, cz - 4.4), cz - 4.4, { rotY: 1.2 });
     b.place('Rock_C', cx - 7, this.ground(cx - 7, cz - 9, 0.2), cz - 9, { rotY: 2 });
     b.place('Rock_A', cx + 14, this.ground(cx + 14, cz - 6, 0.3), cz - 6, { rotY: 0.6 });
+  }
+
+  /** Where everyone stands around the fire, and the camera spots of the opening scene. */
+  private addCampMarkers(): void {
+    const fx = CAMP.x - 3;
+    const fz = CAMP.z - 6;
+    const mark = (id: string, dx: number, dz: number) => {
+      const x = fx + dx;
+      const z = fz + dz;
+      this.addSpawn(id, x, this.ground(x, z), z, (Math.atan2(-dx, -dz) * 180) / Math.PI);
+    };
+    mark('camp.fire', 0, 0.001);
+    mark('camp.subaru', 1.2, 2.1);
+    mark('camp.emilia', -0.6, 2.3);
+    mark('camp.beatrice', 2.4, 1.1);
+    mark('camp.meili', -2.2, 1.4);
+    mark('camp.julius', -2.4, -0.4);
+    mark('camp.anastasia', 0.2, -2.4);
+    mark('camp.ram', 3.1, 2.9);
+    mark('camp.patrasche', 4.3, -1.4);
+    const cam = (id: string, dx: number, dz: number, h: number) => this.addSpawn(id, fx + dx, this.ground(fx + dx, fz + dz) + h, fz + dz, 0);
+    // Behind the party, over the fire, towards the tower.
+    cam('camp.cam_est', 0.6, 6.5, 1.25);
+    cam('camp.cam_fire', -4.2, 6.4, 2.0);
+    cam('camp.fire_look', 0.3, 0.6, 0.9);
+    cam('camp.cam_end', 2.5, 7.5, 2.6);
   }
 
   private placeRuins(b: KitBatch): void {

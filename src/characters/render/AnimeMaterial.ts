@@ -131,10 +131,13 @@ export function createAnimeMaterial(o: AnimeMaterialOptions): MeshToonMaterial {
            float rim = smoothstep( 0.55, 0.85, 1.0 - ndv );
            outgoingLight += uRimColor * rim * uRimStrength * diffuseColor.rgb;
            if ( uIsHair > 0.5 ) {
-             // Angel ring: a soft specular band that slides with the view.
-             float band = 1.0 - smoothstep( 0.015, 0.05, abs( vAnimeUv.y - ( 0.22 + 0.06 * ( 1.0 - ndv ) ) ) );
-             float spec = band * smoothstep( 0.35, 0.9, ndv ) * uEnvShadow;
-             outgoingLight += ( diffuseColor.rgb * 0.35 + vec3( 0.05 ) ) * spec;
+             // Angel ring: a sheen band where the (smoothed) hair surface
+             // curves over the crown towards the viewer, so it arcs with the
+             // head's shape and slides as the view changes. Cool-tinted so
+             // black hair gets a blue sheen rather than a grey stripe.
+             float arc = 1.0 - smoothstep( 0.06, 0.13, abs( normal.y - 0.5 ) );
+             float spec = arc * smoothstep( 0.45, 0.85, ndv ) * uEnvShadow;
+             outgoingLight += ( diffuseColor.rgb * 0.45 + vec3( 0.035, 0.045, 0.07 ) ) * spec;
            }
            if ( uIsFace > 0.5 ) {
              // Keep faces readable in darkness.

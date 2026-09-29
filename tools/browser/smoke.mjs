@@ -1,7 +1,7 @@
 // Phase 1 smoke test: boots the dev gym, walks, sprints, climbs stairs,
 // jumps, looks around, interacts with objects; reports errors + screenshots.
 //   node tools/browser/smoke.mjs [baseUrl]
-import { launch, waitReady, hold, press, look, shot, state, devCommand, step, down, up, setYaw } from './harness.mjs';
+import { launch, waitReady, hold, press, look, shot, state, devCommand, step, down, up, setYaw, stepUntil } from './harness.mjs';
 
 const base = process.argv[2] ?? 'http://127.0.0.1:5173/';
 const { browser, page, errors, logs } = await launch({ url: `${base}?area=dev_gym&dev=1` });
@@ -77,12 +77,13 @@ try {
   expect(s.focused === 'gym.book', 'book gets interaction focus');
   await shot(page, 'gym-05-prompt');
   await press(page, 'Key:KeyE');
-  await step(page, 1.5);
+  const inspectVisible = await stepUntil(page, () => document.querySelector('.rz-inspect')?.classList.contains('visible'), 8);
+  await step(page, 0.5);
   await shot(page, 'gym-06-inspect');
-  const inspectVisible = await page.evaluate(() => document.querySelector('.rz-inspect')?.classList.contains('visible'));
   expect(inspectVisible, 'examine card opens');
   await press(page, 'Key:KeyE');
-  await step(page, 0.5);
+  const done = await stepUntil(page, () => !window.__game.interaction.busy, 6);
+  expect(done, 'interaction completes after dismissing the card');
 
   // Hold-to-use lever at (-4, 1, -4)
   await devCommand(page, 'tp -4 0 -2.9');

@@ -118,3 +118,13 @@ export async function setYaw(page, yaw) {
     g.camera.follow.snapBehind(g.player.followTarget);
   }, yaw);
 }
+
+/** Step the simulation until `predicate` (evaluated in the page) is true, or time out. */
+export async function stepUntil(page, predicate, maxSeconds = 10, arg = null) {
+  const steps = Math.ceil(maxSeconds / 0.1);
+  for (let i = 0; i < steps; i++) {
+    if (await page.evaluate(predicate, arg)) return true;
+    await step(page, 0.1, false);
+  }
+  return page.evaluate(predicate, arg);
+}

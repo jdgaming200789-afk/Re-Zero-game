@@ -90,6 +90,8 @@ export class MenuList {
           this.refresh();
         });
         row.appendChild(el('div', { class: 'value' }, [left, el('span', { class: 'v' }), right]));
+      } else if (kind === 'action' && r.value) {
+        row.appendChild(el('div', { class: 'value compact' }, [el('span', { class: 'v' })]));
       } else if (kind === 'slider') {
         const bar = el('div', { class: 'bar' }, [el('i')]);
         bar.addEventListener('click', (e) => {

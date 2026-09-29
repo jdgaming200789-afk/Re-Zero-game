@@ -394,3 +394,36 @@
   font-size: 0.75em;
   color: var(--text-dim);
 }
+
+.rz-map .empty {
+  padding: 4em 0;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.2em;
+  color: var(--text-dim);
+}
+.rz-settings .tabs-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.2em;
+  margin-bottom: 0.6em;
+}
+.rz-settings .tabs-wrap .tabs {
+  margin: 0;
+}
+.rz-settings .hint-line {
+  min-height: 1.3em;
+  padding-top: 0.5em;
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--text-dim);
+}
+
+.rz-menu .value.compact {
+  min-width: 3em;
+}
+.rz-inventory .body {
+  margin-top: 1em;
+}

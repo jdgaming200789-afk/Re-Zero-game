@@ -1,15 +1,8 @@
 import type { StoryTrigger } from '../story/StoryDirector';
 
 /**
- * Story beats: what plays when. New games start the opening directly
- * (see NewGame.ts); the trigger here covers resuming a save made before it.
+ * Story beats that start themselves: what plays when. (The camp opening is
+ * played by the new-game flow directly; no save can exist before it, since
+ * its end sets the first return point.)
  */
-export const STORY_TRIGGERS: StoryTrigger[] = [
-  {
-    id: 'tf.opening',
-    on: { areaEnter: 'tower_foot' },
-    if: { all: ['story.started', '!story.opening_done'] },
-    play: { cinematic: 'tf.opening' },
-    delay: 0.2,
-  },
-];
+export const STORY_TRIGGERS: StoryTrigger[] = [];

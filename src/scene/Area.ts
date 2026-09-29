@@ -29,6 +29,14 @@ export interface AtmosphereProfile {
   rim?: { color: Color; strength: number };
 }
 
+/** A top-down map of an area (map screen). World +x is right, +z is down (the tower's side is up). */
+export interface AreaMap {
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
+  /** Paint the ground; the context is already transformed to world metres. */
+  paint(ctx: CanvasRenderingContext2D): void;
+  labels?: Array<{ text: string; x: number; z: number; size?: number }>;
+}
+
 /**
  * A loadable section of the world (the Unity-scene analogue).
  *
@@ -56,6 +64,8 @@ export abstract class Area {
   abstract atmosphere(): AtmosphereProfile;
 
   onEnter?(spawnId: string): void;
+  /** Top-down map for the map screen, if the area has one. */
+  map?(): AreaMap;
   onExit?(): void;
   update?(dt: number): void;
 

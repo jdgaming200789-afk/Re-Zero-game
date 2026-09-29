@@ -4,7 +4,7 @@ _Last updated: end of Phase 7._
 
 ## Current phase
 
-**Phase 7 complete → Phases 8–9 in progress** (menus and screens, audio, puzzles and tower interiors).
+**Phase 7 complete; Phase 9 part 1 (menus, title, screens) complete → next: Phase 8** (Taygeta trial, Alcyone and the Green Room, Shaula in Celaeno).
 
 Vertical-slice design: [docs/VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) — "The Watchtower in the Sand".
 
@@ -252,6 +252,17 @@ built for the **browser**, with every original requirement kept:
 - The exposure pass clamps HDR values below half-float range, so an extreme flash can never become Inf/NaN and blank the frame through the bloom blur.
 - **Audio (`src/audio`)** — first version, all synthesized with WebAudio (no assets): mixer buses bound to the audio settings; an adaptive score (`MusicDirector`) that reshapes one continuous piece per mood — exploration, safe, mystery, tension, combat, boss, cinematic — with pads, arpeggios, bells, bass, drums and a combat motif, crossfading layers; stingers for Return by Death, the Witch, the glint and the strike, the worm's tremor, witchbeast howls, return points; hit sounds by element; UI chimes (quests, knowledge, items); footsteps by surface; desert wind and stone-hall ambience; and per-character **voice blips** from each character's voice data, driven letter by letter from the dialogue window (Subaru's thoughts stay silent). Runs in every browser test without errors; how it *sounds* still needs a pass on real hardware with speakers.
 
+### Phase 9 (part 1) — Menus, title and screens
+
+- **Title screen**: a living night sky over the dunes (twinkling stars, the Pleiades overhead, shooting stars) and the Watchtower's silhouette with the star at its summit glinting now and then. Continue (latest save), New Game, Load, Settings. The simulation is held still behind it. Developer and test URLs (`?area=`) skip it.
+- **Pause** (Esc, also mid-fight): where Subaru is, the current objective, the return point, and — from the second loop on — "This is the Nth time." Leads to every other screen; "back" returns to it.
+- **Inventory** (I/Tab): items from story state grouped as consumables, key items and documents, with details. Drinking a tonic; ringing the **Carriage Bell** — a loud noise the Sand Earthworm (and anything else under the sand) can hear, the lure for the Glass Flats. The **Faded Journal Page** from the half-buried pack is now a real document: another traveller's warning not to run on the glass.
+- **Map** (M): the tower's foot rasterised from the same functions that shape the terrain (dunes shaded by slope, the glass, the plaza and road), the tower and gate, the ruins with their cover radii, the camp, labels, Subaru's arrow, companions, and diamonds for the tracked quest's objectives. Celaeno has a plan of its hall; places without a map say so.
+- **Settings**: Graphics (preset, resolution scale, anti-aliasing, field of view, shadows, textures, effects, view distance, post-processing, ambient occlusion, bloom, light shafts, performance overlay), Audio (six volumes), Gameplay (text speed, auto-advance and its pause, chatter subtitles, difficulty, camera sensitivity/invert/shake, toggle sprint, button hints), **Controls** (every rebindable action; select and press the new key or mouse button; reset). Everything applies live and persists separately from saves.
+- **Save / Load**: the four slots with area, quest, loop, playtime and date; overwriting and loading ask again; saving is refused mid-fight or mid-scene.
+- `MenuList`: one navigable list for keyboard, gamepad and mouse (headers, disabled rows, options, sliders, toggles, value rows); `ScreenManager` with a back-stack, pausing, and a short input settle when screens change so one key press is one action.
+- Fixes: pause/unpause restores the previous time scale (the title and the Witch's frozen moment are no longer undone by a menu); a redundant story trigger that could race the new-game flow and request the opening twice is gone (a duplicate cinematic request is now a warning).
+
 ## Testing
 - `npm run typecheck` — strict TypeScript.
 - `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data, dialogue runner (lines, conditions, effects, hidden/locked/once/insight choices, branching), quest evaluation, validation of every dialogue, quest, cinematic, story trigger and talk entry, the Return-by-Death rewind semantics, death/return-point data, save validation (corrupt/tampered/future saves rejected) and the flats cover. **61/61 passing.**
@@ -264,6 +275,7 @@ built for the **browser**, with every original requirement kept:
   - `tools/browser/earthworm.mjs`: **8/8** — invulnerable underground, standing still hides Subaru, running draws it in and it telegraphs an eruption, surfacing starts an elite encounter with the boss bar, it can be hurt (resistant) while surfaced, the Heliosphere kills it, it sinks away and the encounter ends, 0 console errors.
   - `tools/browser/dialogue.mjs`: **25/25** — a conversation takes over (mode, window, camera), letter-by-letter reveal, advance completes then continues, the log, auto mode to the choice, hidden/locked options, a choice's effect, skip to the end with control and camera returned, a quest starting itself and showing on the tracker, objectives from zones and a won fight, the completion banner, an Insight option unlocked by knowledge and picked with the mouse, thought styling, the journal (quests, Subaru Remembers, pause/resume), a new game's camp opening (letterbox, party staged), reading through the conversation choosing the Insight option, quest/knowledge/control after the scene, talking to Emilia and her follow-up line, hold-to-skip reaching the same end state, 0 console errors.
   - `tools/browser/rbd.mjs`: **13/13** — the story starts with a return point and an autosave; no HUD before Subaru knows the rules; running on the open glass draws the glint and the light kills him; Return by Death to the camp in loop 2; the world rewound (ruins visited and objectives undone) while knowledge and the loop count survive; the party back whole; trying to tell brings the Witch and time resumes after; in loop 2 the detection meter appears, the glint warning shows, hiding behind the ruins makes the strike miss and teaches cover; the worm breaching on the glass is struck down; save/load restores flags, knowledge, return point and position; 0 console errors.
+  - `tools/browser/menus.mjs`: **13/13** — the game opens on the title (time held, Continue disabled without saves); Settings from the title changes a volume live and returns; New Game hides the title and starts the story; Esc pauses with location/objective/return point; the inventory lists tonics and the Carriage Bell; ringing the bell closes the menus and makes the noise; the map opens drawn; saving to a slot from the pause menu; back returns to pause; rebinding Interact to G; Esc closes everything and play resumes; 0 console errors.
 - `npm run cast` — lineup review: every character spawned side by side plus face close-ups (`test-results/cast_*.png`).
   - Celaeno's helical stair verified climbable from floor to the 12 m gallery.
   - The container has no GPU, so the harness steps the simulation at a fixed 60 Hz and renders only for screenshots (`game.advanceAsync`). Screenshots go to `test-results/`.
@@ -285,8 +297,8 @@ built for the **browser**, with every original requirement kept:
 - Real-time frame rate cannot be measured in this container (software rendering). Performance numbers must be taken on real hardware.
 
 ## Next tasks
-1. Phase 9 (in progress) — menus: pause, inventory (tonics, the Carriage Bell lure, documents), map, settings (graphics/audio/gameplay/controls), save/load screens, title screen; the menu list component and item data are written.
-2. Phase 8 — puzzles and interiors: Taygeta star-pillar trial (Orion → Rigel), Alcyone living quarters and the Green Room (carry Rem), the white room → library transition; Shaula's arrival in Celaeno and its return point.
+1. Phase 8 — puzzles and interiors: Taygeta star-pillar trial (Orion → Rigel), Alcyone living quarters and the Green Room (carry Rem), the white room → library transition; Shaula's arrival in Celaeno and its return point.
+2. Phase 9 (part 2) — gamepad glyphs on prompts, stealth feedback polish on the flats, audio mix pass on real hardware.
 3. Phase 10 — assemble the vertical slice end to end (camp → ruins → flats loop → gate plaza jackals → the worm lured into the light → Celaeno → Alcyone → Taygeta), then polish.
 
 ## Technical decisions

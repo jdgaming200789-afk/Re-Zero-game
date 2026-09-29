@@ -72,6 +72,10 @@ export class CinematicPlayer implements GameSystem {
   async play(id: string): Promise<{ skipped: boolean }> {
     const def = this.defs.get(id);
     if (!def) throw new Error(`Unknown cinematic "${id}"`);
+    if (this.running?.def.id === id) {
+      log.warn(`Cinematic "${id}" is already playing`);
+      return { skipped: false };
+    }
     if (this.running) throw new Error(`Cinematic "${id}" requested while "${this.running.def.id}" plays`);
     const g = this.game;
     // Let an open conversation finish first.

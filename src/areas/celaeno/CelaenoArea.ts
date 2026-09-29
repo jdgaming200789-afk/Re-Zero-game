@@ -15,7 +15,7 @@ import {
   type Texture,
 } from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { Area, type AtmosphereProfile } from '../../scene/Area';
+import { Area, type AreaMap, type AtmosphereProfile } from '../../scene/Area';
 import type { GameContext } from '../../game/GameContext';
 import { KitBatch } from '../../scene/kit/KitBatch';
 import { colonnade, dome, galleryRing, helicalStair, polar, ringWalls, tiledFloor } from '../../scene/procedural/RoundHall';
@@ -371,6 +371,40 @@ class CelaenoArea extends Area {
 
   override update(dt: number): void {
     this.batch.update(dt, this.game.render.camera.position);
+  }
+
+  override map(): AreaMap {
+    return {
+      bounds: { minX: -26, maxX: 26, minZ: -26, maxZ: 26 },
+      paint(ctx) {
+        ctx.fillStyle = '#12151f';
+        ctx.fillRect(-26, -26, 52, 52);
+        ctx.fillStyle = '#5c5648';
+        ctx.beginPath();
+        ctx.arc(0, 0, R, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(243, 226, 176, 0.75)';
+        ctx.lineWidth = 0.35;
+        ctx.stroke();
+        // The helical stair up to the gallery.
+        ctx.strokeStyle = 'rgba(200, 190, 170, 0.6)';
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.arc(0, 0, 18, STAIR.start - Math.PI / 2, STAIR.start + STAIR.sweep - Math.PI / 2);
+        ctx.stroke();
+        // The dais and the great gate.
+        ctx.fillStyle = '#8a8272';
+        ctx.beginPath();
+        ctx.arc(0, 3, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(243, 226, 176, 0.9)';
+        ctx.fillRect(-3, R - 0.6, 6, 1.4);
+      },
+      labels: [
+        { text: 'Celaeno', x: 0, z: -8, size: 1.2 },
+        { text: 'Gate', x: 0, z: R + 3 },
+      ],
+    };
   }
 
   atmosphere(): AtmosphereProfile {

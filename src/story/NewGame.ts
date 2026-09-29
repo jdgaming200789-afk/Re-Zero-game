@@ -13,6 +13,8 @@ export async function startNewGame(game: GameContext, opts: { skipOpening?: bool
   for (const id of STARTING_PARTY) game.party.join(id);
   s.set('story.started', true);
   if (!s.has('meta.loop')) s.set('meta.loop', 1);
+  // The carriage's harness bell: loud enough to carry over the dunes.
+  if (!s.has('inv.carriage_bell')) s.set('inv.carriage_bell', 1);
   if (opts.skipOpening) s.set('story.opening_done', true);
   await game.scenes.goto('tower_foot', 'camp', { loadingScreen: true, fadeSeconds: 0.01, reveal: !!opts.skipOpening });
   await game.party.settled();

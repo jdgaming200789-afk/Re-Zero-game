@@ -47,6 +47,11 @@ import { ReturnByDeath } from '../story/rbd/ReturnByDeath';
 import { SaveSystem } from '../save/SaveSystem';
 import { AudioManager } from '../audio/AudioManager';
 import { JournalScreen } from '../ui/screens/JournalScreen';
+import { PauseScreen } from '../ui/screens/PauseScreen';
+import { InventoryScreen } from '../ui/screens/InventoryScreen';
+import { MapScreen } from '../ui/screens/MapScreen';
+import { SettingsScreen } from '../ui/screens/SettingsScreen';
+import { SaveScreen } from '../ui/screens/SaveScreen';
 import { QuestTracker } from '../ui/hud/QuestTracker';
 import { DIALOGUES } from '../data/dialogues';
 import { CINEMATICS } from '../data/cinematics';
@@ -119,6 +124,7 @@ export class Game implements GameContext {
   private rafId = 0;
   private fpsTimer = 0;
   private modeBeforePause: GameMode | null = null;
+  private scaleBeforePause = 1;
 
   constructor(readonly canvas: HTMLCanvasElement) {
     const params = new URLSearchParams(location.search);
@@ -187,7 +193,12 @@ export class Game implements GameContext {
     this.rbd = new ReturnByDeath(this);
     this.addSystem(this.rbd);
     this.screens = new ScreenManager(this);
+    this.screens.register(new PauseScreen(this));
     this.screens.register(new JournalScreen(this));
+    this.screens.register(new InventoryScreen(this));
+    this.screens.register(new MapScreen(this));
+    this.screens.register(new SettingsScreen(this));
+    this.screens.register(new SaveScreen(this));
     this.addSystem(this.screens);
 
     this.events.on('settings:changed', ({ key }) => {
@@ -240,11 +251,12 @@ export class Game implements GameContext {
     if (paused) {
       if (this.modeBeforePause !== null) return;
       this.modeBeforePause = this._mode;
+      this.scaleBeforePause = this.time.timeScale > 0 ? 1 : 0;
       this.time.setBaseScale(0);
       this.setMode('menu');
     } else {
       if (this.modeBeforePause === null) return;
-      this.time.setBaseScale(1);
+      this.time.setBaseScale(this.scaleBeforePause);
       this.setMode(this.modeBeforePause);
       this.modeBeforePause = null;
     }

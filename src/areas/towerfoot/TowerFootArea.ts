@@ -1,5 +1,5 @@
 import { Color, HemisphereLight, PointLight, Quaternion, Vector3, type Texture } from 'three';
-import { Area, type AtmosphereProfile } from '../../scene/Area';
+import { Area, type AreaMap, type AtmosphereProfile } from '../../scene/Area';
 import type { GameContext } from '../../game/GameContext';
 import { KitBatch } from '../../scene/kit/KitBatch';
 import { NightSky } from '../../render/sky/NightSky';
@@ -15,6 +15,7 @@ import { SHADOW_MAP_SIZE } from '../../settings/Settings';
 import { Interactable } from '../../interaction/Interactable';
 import { CAMP, FLATS, FLATS_COVER, GATE_FRONT_Z, STAIRS_FOOT_Z, TOWER_CENTER, flatsMask, heightAt, plazaMask, splatAt } from './TowerFootLayout';
 import { Heliosphere } from './Heliosphere';
+import { towerFootMap } from './TowerFootMap';
 import type { ColorGrade } from '../../render/effects/ColorGradeEffect';
 
 export const NIGHT_GRADE: ColorGrade = {
@@ -377,6 +378,8 @@ class TowerFootArea extends Area {
           'Someone Else’s Journey',
           'A leather pack, cracked with age. A water skin, dry. A compass that spins without stopping. Whoever carried this got as far as we did... and no farther.',
         );
+        ctx.game.state.set('inv.journal_page', 1);
+        ctx.game.events.emit('inventory:changed', { itemId: 'journal_page', delta: 1, total: 1 });
         ctx.game.ui.notify('Faded Journal Page', 'item');
         ctx.game.state.set('tf.found_pack', true);
       },
@@ -390,6 +393,10 @@ class TowerFootArea extends Area {
     this.moon.update(focus);
     for (const b of this.batches) b.update(dt, cam.position);
     this.heliosphere.update(dt);
+  }
+
+  override map(): AreaMap {
+    return towerFootMap();
   }
 
   atmosphere(): AtmosphereProfile {

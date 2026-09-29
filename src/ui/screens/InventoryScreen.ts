@@ -58,7 +58,7 @@ export class InventoryScreen extends Screen {
             ...list.map((i) => ({
               id: i.id,
               label: i.name,
-              kind: 'option' as const,
+              kind: 'action' as const,
               value: () => (i.kind === 'consumable' ? `×${this.game.state.num(`inv.${i.id}`)}` : ''),
               focus: () => this.show(i),
               activate: i.use ? () => this.use(i) : undefined,

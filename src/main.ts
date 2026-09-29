@@ -3,6 +3,7 @@ import { Game } from './game/Game';
 import { registerAreas } from './areas';
 import { spawnPlayer } from './player/spawnPlayer';
 import { createLogger } from './core/Log';
+import { TitleScreen } from './ui/screens/TitleScreen';
 
 const log = createLogger('Boot');
 
@@ -24,8 +25,16 @@ async function boot(): Promise<void> {
   game.start();
 
   const params = new URLSearchParams(location.search);
-  const area = params.get('area') ?? 'dev_gym';
-  await game.scenes.goto(area, params.get('spawn') ?? 'default', { loadingScreen: true, fadeSeconds: 0.01 });
+  const area = params.get('area');
+  if (area) {
+    // Developer / test entry: straight into an area.
+    await game.scenes.goto(area, params.get('spawn') ?? 'default', { loadingScreen: true, fadeSeconds: 0.01 });
+  } else {
+    const title = new TitleScreen(game);
+    game.addSystem(title);
+    title.show();
+    await game.ui.fade(0, 1.6);
+  }
   game.events.emit('game:ready', { firstBoot: true });
   document.body.dataset.ready = '1';
   log.info('Ready');

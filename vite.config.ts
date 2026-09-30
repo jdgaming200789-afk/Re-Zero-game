@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
+  // GitHub Pages serves the site under /<repo>/ (the deploy workflow sets it).
+  base: process.env.BASE_PATH ?? '/',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

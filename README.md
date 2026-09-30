@@ -7,6 +7,9 @@ asset pipeline.
 > Fan project. *Re:Zero − Starting Life in Another World* and its characters
 > belong to Tappei Nagatsuki, Shinichirou Otsuka and Kadokawa.
 
+**▶ Play it in your browser: https://jdgaming200789-afk.github.io/Re-Zero-game/**
+(desktop Chrome, Edge or Firefox; keyboard and mouse or a gamepad — click the page once for sound and mouse look)
+
 ![The Watchtower in the Sand](docs/screenshots/chapter-card.jpg)
 
 ## What's in it
@@ -47,7 +50,7 @@ prompts for keyboard, Xbox and PlayStation pads; graphics presets.
 | ![The camp at the tower's foot](docs/screenshots/camp.jpg) | ![Shaula in Celaeno](docs/screenshots/celaeno.jpg) |
 | ![Carrying Rem into Alcyone](docs/screenshots/alcyone.jpg) | ![The trial of Taygeta](docs/screenshots/taygeta.jpg) |
 
-## Running
+## Running locally
 
 ```bash
 npm install

@@ -91,6 +91,31 @@ export const KNOWLEDGE: Record<string, KnowledgeDef> = {
     text: 'Gluttony ate Julius’s name. The whole world forgot him. He walks with us anyway, and he never complains about it — which is somehow worse.',
     category: 'people',
   },
+  'flats.hadrian': {
+    title: 'Someone crossed before us',
+    text: 'A pack half-buried by the ruins, and a journal page: two travellers reached the tower before us. “Hadrian says we cross the glass at first light.” The page ends in the middle of a warning.',
+    category: 'people',
+  },
+  'library.books': {
+    title: 'The Books of the Dead',
+    text: 'Every book in Taygeta’s library is somebody’s life — somebody dead. Open one and you don’t read it: you live it, their memories pouring into yours until you forget where you end.',
+    category: 'lore',
+  },
+  'library.rem_alive': {
+    title: 'No book for Rem',
+    text: 'I looked for Rem’s book. There isn’t one. The library only keeps the dead — so Rem, asleep in the Green Room, is still alive. Still waiting. I’ve never been so glad to fail at something.',
+    category: 'people',
+  },
+  'library.hadrian': {
+    title: 'Hadrian’s last morning',
+    text: 'I read Hadrian’s book. He crossed the glass at first light, running, laughing at the star that blinked. The light found him halfway. He wasn’t afraid until the very end — and then he thought of Maren.',
+    category: 'people',
+  },
+  'library.rule': {
+    title: 'Not in the library',
+    text: 'Swinging a whip between the shelves of the dead counts as “damaging the books.” Shaula doesn’t care about intentions. Neither does her light.',
+    category: 'danger',
+  },
   'people.rem': {
     title: 'Rem',
     text: 'Rem has been asleep since Gluttony took her name and memories. Nobody but me remembers her. Not even her sister. I came here to wake her up.',

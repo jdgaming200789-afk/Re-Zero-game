@@ -71,6 +71,8 @@ export interface GameEvents {
   'combat:ended': { encounterId: string; victory: boolean };
   'combat:hit': { attackerId: number; targetId: number; position: Vector3; amount: number; critical: boolean; damageType: string };
   'combat:lockOnChanged': { targetId: number | null };
+  /** Subaru swung the whip or cast (areas with rules about violence listen). */
+  'combat:playerAction': { kind: 'whip' | 'shamak' | 'barrier' };
 
   // ---- Return by Death / checkpoints --------------------------------------
   'checkpoint:reached': { checkpointId: string };

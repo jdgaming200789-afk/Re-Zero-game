@@ -103,7 +103,51 @@ export const CINEMATICS: CinematicDef[] = [
       { do: 'title', kicker: 'Re:Zero · Pleiades', title: 'The Watchtower in the Sand', sub: 'End of the chapter — the Taygeta Library is open.', seconds: 3.6 },
       { do: 'follow', blend: 1.5 },
     ],
-    onEnd: [{ set: 'tay.trial_cleared' }, { event: 'tay.library' }, { set: 'story.chapter_done' }],
+    onEnd: [{ set: 'tay.trial_cleared' }, { event: 'tay.library' }, { set: 'story.chapter_done' }, { checkpoint: 'library' }],
+  },
+  {
+    // A Book of the Dead: Hadrian's last morning, lived. The library dreams
+    // away into the night before the crossing; his thoughts, in his words.
+    id: 'lib.hadrian',
+    letterbox: true,
+    steps: [
+      { do: 'fade', to: 1, seconds: 0.9, color: '#e8dcc0' },
+      { do: 'effects', effects: [{ event: 'lib.memory_begin' }] },
+      { do: 'music', state: 'cinematic' },
+      { do: 'shot', shot: { from: '@lib.mem_cam', at: '@lib.mem_look', fov: 50, drift: [0, 0.03, -0.1] } },
+      { do: 'fade', to: 0, seconds: 2.2, color: '#e8dcc0', wait: false },
+      { do: 'wait', seconds: 1.4 },
+      {
+        do: 'say',
+        lines: [
+          { speaker: null, text: 'Third morning. The sand has stopped moving in circles. Maren is still asleep against the pack, her hat over her face.' },
+          { speaker: null, text: 'The tower is right there. Close enough to touch. There’s a star at the very top that blinks when you move — Maren says it’s watching us. I told her stars don’t watch anybody.' },
+        ],
+      },
+      { do: 'shot', shot: { from: '@lib.mem_cam_up', at: '@lib.mem_up', fov: 58, drift: [0, 0.02, -0.05] }, blend: 3, ease: 'inOutSine' },
+      {
+        do: 'say',
+        lines: [
+          { speaker: null, text: 'First light. The glass goes gold under my boots. I run — I can’t help it, it’s right there — and I’m laughing.' },
+          { speaker: null, text: 'The star blinks.' },
+          { speaker: null, text: 'Maren is shouting something behind me. I turn around to hear what it is.' },
+        ],
+      },
+      { do: 'effects', effects: [{ event: 'lib.memory_light' }] },
+      { do: 'fade', to: 1, seconds: 0.12, color: '#ffffff' },
+      { do: 'shake', strength: 0.6, seconds: 0.4 },
+      { do: 'wait', seconds: 1.2 },
+      { do: 'effects', effects: [{ event: 'lib.memory_end' }] },
+      { do: 'place', who: 'subaru', at: '@lib.hadrian_read' },
+      { do: 'shot', shot: { from: { of: 'subaru', offset: [0.45, 0.05, 1.25], socket: 'head' }, at: { of: 'subaru', socket: 'head' }, fov: 32 } },
+      { do: 'anim', who: 'subaru', clip: 'gasp' },
+      { do: 'expr', who: 'subaru', expression: 'fear' },
+      { do: 'fade', to: 0, seconds: 1.4, color: '#ffffff' },
+      { do: 'music', state: 'safe' },
+      { do: 'dialogue', id: 'lib.after_hadrian', camera: 'auto' },
+      { do: 'follow', blend: 1.2 },
+    ],
+    onEnd: [{ set: 'lib.read_hadrian' }, { learn: 'library.hadrian' }, { event: 'lib.memory_end' }],
   },
   {
     // Up the stair into Alcyone, Rem in Subaru's arms: the first warm room in days.

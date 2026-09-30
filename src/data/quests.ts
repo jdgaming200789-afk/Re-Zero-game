@@ -50,6 +50,24 @@ export const QUESTS: QuestDef[] = [
     epilogue: 'Rigel. The brightest star of Orion — the hunter the scorpion killed. Only someone from my world could have known.',
   },
   {
+    id: 'the_library',
+    title: 'The Books of the Dead',
+    kind: 'side',
+    summary: 'Every book in Taygeta’s library is someone’s life — someone dead. Open one and you live it. There’s a name I have to look for, even if I’m afraid of finding it.',
+    objectives: [
+      { id: 'rem', text: 'Look for Rem’s book', done: 'lib.searched_rem' },
+      {
+        id: 'hadrian',
+        text: 'Read the book of the man from the flats',
+        done: 'lib.read_hadrian',
+        optional: true,
+        show: 'know.flats.hadrian',
+        hint: 'The journal page in the pack by the ruins had a name on it.',
+      },
+    ],
+    epilogue: 'There is no book for Rem. Whatever else this tower does to me, I get to keep that.',
+  },
+  {
     id: 'gym_training',
     title: 'Practice Makes Perfect',
     kind: 'side',

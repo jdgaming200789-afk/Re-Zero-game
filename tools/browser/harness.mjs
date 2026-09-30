@@ -83,7 +83,10 @@ export async function shot(page, name) {
   // Give the compositor a moment to present the software-rendered frame.
   await page.waitForTimeout(150);
   const path = join(OUT_DIR, `${name}.png`);
-  await page.screenshot({ path });
+  // Software rendering does first-use GPU work (uploads for newly spawned
+  // things) when the frame is presented; that can take far longer than
+  // Playwright's default 30 s.
+  await page.screenshot({ path, timeout: 150000 });
   return path;
 }
 

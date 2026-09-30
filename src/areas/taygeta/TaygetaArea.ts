@@ -26,6 +26,7 @@ import type { GameContext } from '../../game/GameContext';
 import { KitBatch } from '../../scene/kit/KitBatch';
 import type { KitLibrary } from '../../scene/kit/KitLibrary';
 import { doorRecess, polar } from '../../scene/procedural/RoundHall';
+import { Library } from './Library';
 import { NightSky } from '../../render/sky/NightSky';
 import { Interactable, type InteractableOptions } from '../../interaction/Interactable';
 import type { ColorGrade } from '../../render/effects/ColorGradeEffect';
@@ -44,12 +45,15 @@ const DOOR_HALF = Math.asin(1.3 / R);
 /** Damage a wrong star does (Subaru has 100): the fourth guess kills. */
 const BURN = 30;
 
-type Look = 'white' | 'sky' | 'library';
+/** 'memory': a Book of the Dead is being lived — the library dreams away into night. */
+type Look = 'white' | 'sky' | 'library' | 'memory';
 
 const GRADES: Record<Look, ColorGrade> = {
   white: { lift: [0.04, 0.04, 0.045], gamma: [1, 1, 1], gain: [1, 1, 1.02], saturation: 0.7, contrast: 0.92, temperature: -0.05, tint: 0 },
   sky: { lift: [0.0, 0.004, 0.012], gamma: [1, 1, 1.03], gain: [0.98, 1, 1.05], saturation: 0.95, contrast: 1.12, temperature: -0.25, tint: 0.02 },
   library: { lift: [0.02, 0.014, 0.008], gamma: [1, 1, 1], gain: [1.04, 1.0, 0.94], saturation: 1.0, contrast: 1.06, temperature: 0.15, tint: 0 },
+  // Someone else's memory: faded, warm at the edges, like an old photograph.
+  memory: { lift: [0.012, 0.009, 0.004], gamma: [1.02, 1, 0.98], gain: [1.04, 0.99, 0.9], saturation: 0.5, contrast: 1.02, temperature: 0.3, tint: 0.02 },
 };
 
 /** Surface colours per look: [floor, walls]. */
@@ -57,6 +61,7 @@ const SURFACES: Record<Look, { floor: Color; floorEmissive: number; wall: Color;
   white: { floor: new Color(0xf1f3f7), floorEmissive: 0.5, wall: new Color(0xf4f6fa), wallEmissive: 0.62, wallOpacity: 1, rough: 0.6, metal: 0 },
   sky: { floor: new Color(0x070a12), floorEmissive: 0, wall: new Color(0x070a12), wallEmissive: 0, wallOpacity: 0, rough: 0.14, metal: 0.55 },
   library: { floor: new Color(0x5a3f2b), floorEmissive: 0, wall: new Color(0x3b2a1e), wallEmissive: 0, wallOpacity: 1, rough: 0.55, metal: 0.05 },
+  memory: { floor: new Color(0x0d0b08), floorEmissive: 0, wall: new Color(0x0d0b08), wallEmissive: 0, wallOpacity: 0, rough: 0.2, metal: 0.5 },
 };
 
 /**
@@ -84,6 +89,7 @@ class TaygetaArea extends Area {
   private library: Group | null = null;
   private libraryBatch: KitBatch | null = null;
   private libraryRise = 1;
+  private books: Library | null = null;
   private busy = false;
   private readonly owned: Array<{ dispose(): void }> = [];
 
@@ -153,7 +159,8 @@ class TaygetaArea extends Area {
       else if (id === 'tay.library' && !this.library) {
         this.raiseLibrary(false);
         this.setLook('library', 0);
-      }
+      } else if (id === 'lib.memory_begin') this.setLook('memory', 0);
+      else if (id === 'lib.memory_end') this.setLook(this.library ? 'library' : 'white', 0);
     });
     const rigel = this.trial.star(TRIAL_ANSWER)!;
     this.addSpawn('tay.rigel', rigel.home.x, rigel.home.y, rigel.home.z, 0);
@@ -187,6 +194,14 @@ class TaygetaArea extends Area {
     mark('tay.sky_look', 0, 7, -14);
     mark('tay.cam_high', 9, 7.5, 9);
     mark('tay.center', 0, 1.2, 0);
+    // Hadrian's book: the reader stands before the shelf by the stair.
+    const hb = polar(17.6, 10.4 * DEG);
+    mark('lib.hadrian_read', hb.x, 0, hb.z, 10.4);
+    // His memory: low over the dark mirror of a floor, towards Orion.
+    mark('lib.mem_cam', 0, 0.9, 4);
+    mark('lib.mem_look', 0, 6.5, -14);
+    mark('lib.mem_cam_up', 0, 0.5, -2);
+    mark('lib.mem_up', 0, 12, -10);
     const party: Array<[string, number, number]> = [
       ['emilia', -1.4, 3.1],
       ['beatrice', 1.2, 2.9],
@@ -207,6 +222,7 @@ class TaygetaArea extends Area {
     this.trial.live = look === 'sky';
     if (seconds <= 0) this.trial.presence = this.trial.targetPresence;
     this.lookBlend = seconds;
+    if (this.library) this.library.visible = look !== 'memory';
     if (seconds <= 0) this.applySurfaces(1);
     this.game.scenes.applyAtmosphere(this, seconds);
   }
@@ -223,12 +239,13 @@ class TaygetaArea extends Area {
     this.wallMat.emissiveIntensity += (s.wallEmissive - this.wallMat.emissiveIntensity) * k;
     this.wallMat.opacity += (s.wallOpacity - this.wallMat.opacity) * k;
     this.wallMat.depthWrite = this.wallMat.opacity > 0.98;
-    this.sky.mesh.visible = this.look === 'sky' || this.wallMat.opacity < 0.99;
+    this.sky.mesh.visible = this.look === 'sky' || this.look === 'memory' || this.wallMat.opacity < 0.99;
     // Under the stars, a cool starlight fill keeps faces readable.
-    const hemiTarget = this.look === 'white' ? 1.6 : this.look === 'sky' ? 0.4 : 0.55;
+    const night = this.look === 'sky' || this.look === 'memory';
+    const hemiTarget = this.look === 'white' ? 1.6 : night ? 0.4 : 0.55;
     this.hemi.intensity += (hemiTarget - this.hemi.intensity) * k;
-    this.hemi.color.lerp(this.look === 'library' ? _warm : this.look === 'sky' ? _blue : _white, k);
-    this.fill.intensity += ((this.look === 'sky' ? 1.3 : 0) - this.fill.intensity) * k;
+    this.hemi.color.lerp(this.look === 'library' ? _warm : night ? _blue : _white, k);
+    this.fill.intensity += ((night ? 1.3 : 0) - this.fill.intensity) * k;
   }
 
   override onEnter(): void {
@@ -358,6 +375,8 @@ class TaygetaArea extends Area {
     // Colliders exist at their final places from the start (the scene is a cinematic).
     this.trackCollider(b.colliders);
     this.addLibraryInteractables();
+    this.books = new Library(g, this.scope, this.root, () => this.library !== null && this.look === 'library');
+    this.books.populate();
   }
 
   // ------------------------------------------------------------------ interactions
@@ -428,11 +447,9 @@ class TaygetaArea extends Area {
         range: 2.4,
         handler: async (ctx) => {
           await ctx.contact;
-          await ctx.game.ui.showInspect(
-            'A Black Book',
-            'No title. No author. The first page is blank — and then, the moment my fingers touch it, it isn’t: a whole life pours up out of the paper, someone else’s morning, someone else’s hands. I slam it shut. ...Later. When I’m ready. If I’m ever ready.',
-          );
           ctx.game.state.set('tay.touched_book', true);
+          // What these books are, and a name to look for.
+          await ctx.game.dialogue.play('lib.lectern');
         },
       }),
     );
@@ -452,12 +469,13 @@ class TaygetaArea extends Area {
       if (u >= 1) g.camera.shake.add(0.15);
     }
     this.libraryBatch?.update(dt, g.render.camera.position);
+    this.books?.update(dt);
     void damp;
   }
 
   override surfaceAt(): 'soft' | 'glass' | 'wood' {
     // The white room swallows sound; the night sky's floor is a mirror.
-    return this.look === 'white' ? 'soft' : this.look === 'sky' ? 'glass' : 'wood';
+    return this.look === 'white' ? 'soft' : this.look === 'library' ? 'wood' : 'glass';
   }
 
   override map(): AreaMap {
@@ -483,15 +501,15 @@ class TaygetaArea extends Area {
 
   atmosphere(): AtmosphereProfile {
     const look = this.look;
-    if (look === 'sky') {
+    if (look === 'sky' || look === 'memory') {
       return {
         background: new Color(0x02030a),
         environment: this.skyEnv,
         environmentIntensity: 0.6,
         fog: { density: 0 },
-        grade: GRADES.sky,
+        grade: GRADES[look],
         exposure: 1.45,
-        music: 'mystery',
+        music: look === 'memory' ? 'cinematic' : 'mystery',
         tension: 0.25,
         keyLight: new Vector3(0.2, 0.9, 0.3),
         rim: { color: new Color(0.6, 0.72, 1.0), strength: 0.7 },
@@ -527,6 +545,7 @@ class TaygetaArea extends Area {
 
   override dispose(): void {
     this.trial?.dispose();
+    this.books?.dispose();
     this.libraryBatch?.dispose();
     this.sky?.dispose();
     this.skyEnv?.dispose();

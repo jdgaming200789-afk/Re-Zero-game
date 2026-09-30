@@ -150,6 +150,7 @@ export class SubaruCombat extends Component {
     void this.player.visual.play(step.clip, { fadeIn: 0.05 });
     this.whip.strike(point, step.duration * step.contact, step.duration, step.side);
     this.player.stamina = Math.max(0, this.player.stamina - 5);
+    this.game.events.emit('combat:playerAction', { kind: 'whip' });
   }
 
   private resolveWhipHit(): void {
@@ -203,6 +204,7 @@ export class SubaruCombat extends Component {
     this.faceTowards(point);
     this.enter('cast', 0.9, () => void this.player.visual.play('castShamak', { fadeIn: 0.05 }));
     this.game.events.emit('bark:play', { speakerId: 'subaru', text: 'Shamak!', duration: 1.4 });
+    this.game.events.emit('combat:playerAction', { kind: 'shamak' });
     // On the ground under the target (or where Subaru points).
     const center = target ? target.entity.object3D.position.clone() : point.clone().setY(this.entity.object3D.position.y);
     void this.game.scheduler.wait(0.38).then(() => {
@@ -240,6 +242,7 @@ export class SubaruCombat extends Component {
     this.barrierVfx.show(true);
     this.enter('barrier', 1.25, () => void this.player.visual.play('barrier', { fadeIn: 0.03 }));
     this.game.events.emit('bark:play', { speakerId: 'subaru', text: 'E·M·M!', duration: 1.2 });
+    this.game.events.emit('combat:playerAction', { kind: 'barrier' });
   }
 
   private endBarrier(): void {

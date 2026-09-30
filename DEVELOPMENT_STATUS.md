@@ -1,10 +1,10 @@
 # Re:Zero - Pleiades — Development Status
 
-_Last updated: Phase 10 (the vertical slice assembled end to end)._
+_Last updated: Phase 11 part 1 (the Books of the Dead)._
 
 ## Current phase
 
-**Phases 1–9 complete; Phase 10 in progress** — the vertical slice now plays end to end from the title screen to the chapter card (`tools/browser/playthrough.mjs`). Remaining Phase 10 work is polish: pacing, music per scene, and review on real hardware.
+**Phases 1–10 complete; Phase 11 (content expansion) in progress.** The vertical slice plays end to end from the title screen to the chapter card (`tools/browser/playthrough.mjs`). Phase 11 part 1 made Taygeta's library a place: the Books of the Dead. Next: more of the tower (Electra and the Sword Saint's trial), then Phase 12 (optimization, bug fixing, final presentation).
 
 Vertical-slice design: [docs/VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) — "The Watchtower in the Sand".
 
@@ -329,6 +329,17 @@ built for the **browser**, with every original requirement kept:
 
 **The slice as one run (`tools/browser/playthrough.mjs`)** — from the title screen: New Game and the camp opening → the ruins → running onto the glass and dying to the light → Return by Death, knowledge kept → the plaza and the pack → the worm, the plan, the bell → the gate and Shaula (choosing the Insight answer) → Alcyone with Rem in his arms → the Green Room → Taygeta's monolith, the sky and Rigel → the library and the chapter card. Travel between beats is by teleport; every beat plays through the real triggers, zones, interactables, cinematics and dialogue.
 
+### Phase 11 (part 1) — Content: the Books of the Dead
+
+Taygeta's library was a destination; now it's the heart of the tower (`src/areas/taygeta/Library.ts`, `src/data/dialogues/library.ts`).
+- **The black book on the lectern** opens a conversation: Beatrice — who kept a library of her own for four hundred years — names the Books of the Dead (one for every soul that has died; open one and you live it) and starts the side quest *The Books of the Dead*. Then Subaru can look for a name:
+  - **Rem** — Beatrice runs her fingers along the shelves faster than he can read and finds nothing. There couldn't be a book: this is a library of the dead. *Rem is alive.* (Ram's line changes if Subaru told her in the Green Room that the sleeping girl matters to both of them.)
+  - **Hadrian** — an Insight option only if Subaru found the half-buried pack by the ruins, whose journal page ("Hadrian says we cross the glass at first light") now also teaches the name. Julius finds his book on a low shelf by the stair; it glows there, breathing warm light, until read.
+- **Reading Hadrian's book** is his last morning, lived: the library dreams away into night (a new `memory` look — the shelves vanish, the floor becomes a dark mirror, the colour grade fades to an old photograph), his thoughts in his own words, the star that blinks, Maren shouting behind him — and the white light. Subaru comes back gasping; Beatrice warns him not to open another lightly.
+- **Shaula's rule has teeth**: a crack of the whip (or a spell) between the shelves gets a warning from Beatrice; do it again in the same loop and Shaula's light finds him even here (a new death, *Not in the library*). Subaru's kit now announces actions (`combat:playerAction`) so areas can react to violence.
+- Solving Taygeta now sets a **return point in the library** (the trial stays solved when he dies there).
+- Sound: a descending shimmer into a memory, the light's crack, a bell when a book is found.
+
 ## Testing
 - `npm run typecheck` — strict TypeScript.
 - `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data, dialogue runner (lines, conditions, effects, hidden/locked/once/insight choices, branching), quest evaluation, validation of every dialogue, quest, cinematic, story trigger and talk entry, the Return-by-Death rewind semantics, death/return-point data, save validation (corrupt/tampered/future saves rejected), the flats cover, Taygeta's constellations (the answer exists and is Orion's brightest star, lines are valid, every figure within reach and clear of the stair, the sky's Orion matches the trial's), and the button glyph mapping and pad detection. **72/72 passing.**
@@ -344,6 +355,7 @@ built for the **browser**, with every original requirement kept:
   - `tools/browser/menus.mjs`: **14/14** — the game opens on the title (time held, Continue disabled without saves); Settings from the title changes a volume live and returns; New Game hides the title and starts the story; Esc pauses with location/objective/return point; the inventory lists tonics and the Carriage Bell; ringing the bell closes the menus and makes the noise; the map opens drawn; saving to a slot from the pause menu; back returns to pause; rebinding Interact to G; button prompts switching live between keycaps, Xbox and PlayStation (and the style setting overriding the device); Esc closes everything and play resumes; 0 console errors.
   - `tools/browser/tower.mjs`: **22/22** — Shaula's arrival (rules, quest, Celaeno return point); leaving through the gate is a Return by Death, and in the next loop the fatal answer is gone; the gallery stair to Alcyone, arriving with Rem in Subaru's arms (wooden footsteps, a close room, music ducking under dialogue); the Green Room scene (Rem lying in bed, return point at her side); up to Taygeta; the monolith turns the room to night; aiming at Betelgeuse by looking and touching it burns; two more wrong stars and Subaru remembers; the fourth kills him and he wakes beside Rem knowing; the next climb answers the riddle at once; Rigel raises the library and completes the quest; the gate then opens; the balcony scene with Emilia; 0 console errors.
   - `tools/browser/plaza.mjs`: **10/10** — the pack waits on the plaza and the gate won't open; walking on starts the fight and moves the return point off the flats; the second wave arrives as the first falls and the fight holds until it does; beating it starts the worm's reveal and the plan (with the Insight option); the return point moves to the plaza; dying to the worm returns Subaru to the plaza with the pack still dead; the bell on the glass draws the worm into the light; the gate opens; 0 console errors.
+  - `tools/browser/library.mjs`: **LIBRARY_COUNT** — the lectern names the Books of the Dead and starts the quest; there is no book for Rem (the quest completes); Hadrian's name finds his book; reading it dreams the library away into his memory and back; a whip crack draws Beatrice's warning, a second one Shaula's light, and he wakes in the library knowing the rule — and still knowing Rem is alive; 0 console errors.
   - `tools/browser/playthrough.mjs`: **PLAYTHROUGH_COUNT** — the whole slice as above, beat by beat, 0 console errors.
 - Every browser test takes `GAME_URL` (default: the dev server on 5173). Editing sources hot-reloads the dev server's page under a running test, so long runs are best pointed at a production build: `npx vite build --minify false --outDir /tmp/rz-build && npx vite preview --outDir /tmp/rz-build --port 4173` (unminified: some tests find components by class name), then `GAME_URL=http://127.0.0.1:4173/ npm run smoke`.
 - `node tools/browser/sheet.mjs <prefix> <out.png> [cols]` — contact sheet of test screenshots for review.
@@ -352,7 +364,6 @@ built for the **browser**, with every original requirement kept:
   - The container has no GPU, so the harness steps the simulation at a fixed 60 Hz and renders only for screenshots (`game.advanceAsync`). Screenshots go to `test-results/`.
 
 ## Systems in progress
-- The library is a destination for now: the black book (Books of the Dead) is a teaser, and Shaula's "don't damage the books" rule has no enforcement yet.
 - The carry into Alcyone is a staged pose, not a walk: Subaru doesn't climb the stair with Rem in his arms in gameplay.
 
 ## Known issues
@@ -370,8 +381,9 @@ built for the **browser**, with every original requirement kept:
 - Rem's apron can press into the quilt from below at some angles.
 
 ## Next tasks
-1. Phase 10 polish — per-scene music cues, pacing between beats (walk times, chatter density), a full playthrough by hand on real hardware.
-2. On real hardware: an audio mix pass with speakers (levels, reverb amounts, the heartbeat), and frame-rate measurements per area and preset.
+1. Phase 11 — Electra: the second trial, the Sword Saint Reid Astrea (needs a new character model: Blender isn't installed in a fresh container — `pip install bpy==4.2.0` into Python 3.11, then `node tools/blender/run-blender.mjs characters`).
+2. Phase 12 — optimization, bug fixing, final presentation; a full playthrough by hand on real hardware (pacing, walk times, chatter density).
+3. On real hardware: an audio mix pass with speakers (levels, reverb amounts, the heartbeat), and frame-rate measurements per area and preset.
 
 ## Technical decisions
 - **Textures generated in Python (numpy) rather than baked from Blender nodes** — periodic noise guarantees seamless tiling and is fully deterministic; Blender is used where it is strongest (modelling with modifiers, booleans, decimation, UVs, glTF export).

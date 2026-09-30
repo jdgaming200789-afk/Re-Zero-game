@@ -7,6 +7,7 @@ import type { CharacterVisual, LocomotionState, PlayActionOptions } from '../cha
 import { loadModel } from '../characters/ModelCache';
 import { CharacterLighting, createAnimeMaterial, type AnimeRole } from '../characters/render/AnimeMaterial';
 import { buildOutlines } from '../characters/render/Outlines';
+import { mergeSkinnedByMaterial } from '../characters/render/MergeSkinned';
 import { createLogger } from '../core/Log';
 import { clamp, damp, DEG, Easing } from '../core/math/MathUtil';
 import type { Scheduler } from '../core/Scheduler';
@@ -14,6 +15,24 @@ import type { CreatureDefinition, CreatureLegDef } from '../data/creatures';
 import { creatureClip, sampleCreatureClip, type CreatureClip, type SampledCreatureKey } from './CreatureClips';
 
 const log = createLogger('Creature');
+
+/**
+ * Creatures are modelled as many parts; draw them as one mesh per look.
+ * Done once on the cached source, so every clone shares the merged geometry.
+ */
+function mergeParts(id: string, scene: Object3D): void {
+  if (scene.userData.partsMerged) return;
+  scene.userData.partsMerged = true;
+  const parts: SkinnedMesh[] = [];
+  scene.traverse((o) => {
+    if ((o as SkinnedMesh).isSkinnedMesh) parts.push(o as SkinnedMesh);
+  });
+  const merged = mergeSkinnedByMaterial(parts, (m) => {
+    const src = m as MeshStandardMaterial;
+    return `${(src.userData.role as string) ?? 'cloth'}:${src.color.getHexString()}`;
+  });
+  if (merged.length < parts.length) log.info(`${id}: ${parts.length} parts → ${merged.length} meshes`);
+}
 const TAU = Math.PI * 2;
 
 interface Leg {
@@ -96,6 +115,7 @@ export class CreatureVisual implements CharacterVisual {
   static async create(def: CreatureDefinition, scheduler: Scheduler): Promise<CreatureVisual> {
     const c = new CreatureVisual(def, scheduler);
     const gltf = await loadModel(def.model);
+    mergeParts(def.id, gltf.scene);
     c.model = SkeletonUtils.clone(gltf.scene) as Object3D;
     c.root.add(c.model);
     c.setup();

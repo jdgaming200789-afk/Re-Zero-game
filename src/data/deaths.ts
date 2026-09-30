@@ -16,6 +16,8 @@ export const DEATHS: Record<string, DeathDef> = {
   shaula: { style: 'light', learn: ['people.shaula_rules'] },
   /** Guessed wrong once too often in Taygeta: the stars burn. */
   taygeta: { style: 'light', learn: ['tower.taygeta_burns'] },
+  /** Violence among the Books of the Dead, after Beatrice's warning: Shaula keeps the rule. */
+  library: { style: 'light', learn: ['library.rule'] },
   'combat.sand_earthworm': { style: 'wound', learn: ['earthworm.vibration'] },
   combat: { style: 'wound', learn: [] },
   fall: { style: 'wound', learn: [] },
@@ -41,5 +43,6 @@ export const CHECKPOINTS: Record<string, CheckpointDef> = {
   plaza: { id: 'plaza', area: 'tower_foot', spawn: 'tf.plaza_subaru', name: 'The gate plaza, the witchbeasts dead' },
   celaeno: { id: 'celaeno', area: 'celaeno', spawn: 'gate', name: 'Celaeno, inside the tower' },
   alcyone: { id: 'alcyone', area: 'alcyone', spawn: 'green_room', name: 'The Green Room, at Rem’s side' },
+  library: { id: 'library', area: 'taygeta', spawn: 'tay.read', name: 'Taygeta’s library, the first trial behind us' },
   gym: { id: 'gym', area: 'dev_gym', spawn: 'default', name: 'The practice hall' },
 };

@@ -20,7 +20,7 @@ export class LocationBanner implements GameSystem {
   private readonly kicker: HTMLElement;
   private readonly title: HTMLElement;
   private readonly sub: HTMLElement;
-  private pending: { areaId: string; t: number } | null = null;
+  private pending: { areaId: string; t: number; waited?: number } | null = null;
   private showing = 0;
   /** Last area announced (tests). */
   lastShown: string | null = null;
@@ -40,9 +40,17 @@ export class LocationBanner implements GameSystem {
 
   update(dt: number): void {
     const g = this.game;
+    // Quest banners share the top of the screen, and they matter more.
+    const questUp = (this.pending || this.showing > 0) && !!g.ui.layers.hud.querySelector('.rz-quest-banner.visible');
+    if (questUp && this.showing > 0) this.hide();
     if (this.pending) {
       this.pending.t -= dt;
-      if (this.pending.t <= 0) {
+      if (questUp) {
+        // Wait for it to clear — but not forever.
+        this.pending.waited = (this.pending.waited ?? 0) + dt;
+        this.pending.t = Math.max(this.pending.t, 0.4);
+        if (this.pending.waited > 8) this.pending = null;
+      } else if (this.pending.t <= 0) {
         const { areaId } = this.pending;
         this.pending = null;
         const area = g.scenes.current;

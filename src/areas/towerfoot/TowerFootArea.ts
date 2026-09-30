@@ -17,6 +17,7 @@ import { CAMP, FLATS, FLATS_COVER, GATE_FRONT_Z, STAIRS_FOOT_Z, TOWER_CENTER, fl
 import { Heliosphere } from './Heliosphere';
 import { GatePlaza, WORM_HOME } from './GatePlaza';
 import { towerFootMap } from './TowerFootMap';
+import { learn } from '../../story/Effects';
 import type { ColorGrade } from '../../render/effects/ColorGradeEffect';
 
 export const NIGHT_GRADE: ColorGrade = {
@@ -413,6 +414,7 @@ class TowerFootArea extends Area {
         ctx.game.events.emit('inventory:changed', { itemId: 'journal_page', delta: 1, total: 1 });
         ctx.game.ui.notify('Faded Journal Page', 'item');
         ctx.game.state.set('tf.found_pack', true);
+        learn(ctx.game, 'flats.hadrian');
       },
     });
   }

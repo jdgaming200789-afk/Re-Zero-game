@@ -126,6 +126,10 @@ export class Fire extends Group implements VfxUpdatable {
       this.light.shadow.mapSize.set(512, 512);
       this.light.shadow.bias = -0.002;
       this.light.shadow.radius = 3;
+      // Only what the fire can light can cast its shadows (three's default
+      // reaches 500 m: every face of the cube would redraw the whole scene).
+      this.light.shadow.camera.near = 0.1;
+      this.light.shadow.camera.far = this.light.distance;
     }
     this.add(this.light);
     if (opts.embers !== false) {
@@ -150,6 +154,14 @@ export class Fire extends Group implements VfxUpdatable {
     this.light.position.x = noise1D(this.t * 3 + this.seed, 2) * 0.03;
     this.light.position.z = noise1D(this.t * 3 + this.seed, 3) * 0.03;
     this.embers?.update(dt, camera.position);
+    if (this.light.castShadow) {
+      // Far from the fire its shadows can't be seen: stop redrawing the cube
+      // map (freezing it rather than turning shadows off, which would make
+      // every material recompile).
+      const near = camera.position.distanceTo(wp) < this.light.distance * 3;
+      if (near && !this.light.shadow.autoUpdate) this.light.shadow.needsUpdate = true;
+      this.light.shadow.autoUpdate = near;
+    }
   }
 
   override dispose(): void {

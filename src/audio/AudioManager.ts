@@ -294,6 +294,19 @@ export class AudioManager implements GameSystem, VoiceProvider {
       case 'alc.rem_laid':
         [79, 83, 86].forEach((n, i) => s.bell(sfx, n, t + i * 0.35, 0.03, 3.4));
         break;
+      case 'lib.memory_begin':
+        // Falling into someone else's life: a soft, descending shimmer.
+        [91, 88, 84, 79, 76].forEach((n, i) => s.bell(sfx, n, t + i * 0.28, 0.03, 3.8));
+        s.noiseHit(sfx, t, { type: 'bandpass', freq: 2400, level: 0.05, attack: 0.8, decay: 3 });
+        break;
+      case 'lib.memory_light':
+        // The same white light as on the flats.
+        s.noiseHit(sfx, t, { type: 'highpass', freq: 3000, level: 0.5, attack: 0.01, decay: 1.6 });
+        s.thump(sfx, t, 90, 30, 1.2, 0.5);
+        break;
+      case 'lib.hadrian_found':
+        s.bell(sfx, 86, t, 0.04, 3);
+        break;
       default:
         break;
     }

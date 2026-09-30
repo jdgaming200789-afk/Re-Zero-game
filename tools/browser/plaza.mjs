@@ -60,6 +60,8 @@ try {
   await waitReady(page);
   await devCommand(page, 'newgame skip');
   await stepUntil(page, () => window.__game.scenes.current?.id === 'tower_foot' && window.__game.mode === 'exploration', 120);
+  // (The camp's return point is set once the party has settled.)
+  await stepUntil(page, () => window.__game.checkpoints.current?.id === 'camp_night', 20);
   // As if he has already died once on the glass.
   await page.evaluate(() => {
     for (const k of ['movement', 'glint']) window.__game.state.set(`know.heliosphere.${k}`, true);
@@ -94,11 +96,16 @@ try {
       for (const m of g.enemies.group('tf.jackals').members) if (m.alive) g.combat.damage(m.health, { amount: 9999, type: 'physical', sourceId: g.player.entity.id });
     });
   await killPack();
-  const wave2 = await stepUntil(page, () => window.__game.state.bool('tf.pack_wave2') && window.__game.enemies.group('tf.jackals').members.filter((m) => m.alive).length === 4, 10);
+  const wave2 = await stepUntil(page, () => window.__game.state.bool('tf.pack_wave2') && window.__game.enemies.group('tf.jackals').members.length === 9, 10);
   const held = await page.evaluate(() => window.__game.combat.encounterId === 'tf.jackals' && !window.__game.state.bool('tf.plaza_cleared'));
+  const w2 = await page.evaluate(() => {
+    const g = window.__game;
+    const m = g.enemies.group('tf.jackals')?.members ?? [];
+    return { flag: g.state.bool('tf.pack_wave2'), members: m.length, alive: m.filter((x) => x.alive).length, enc: g.combat.encounterId, hostile: g.combat.enemies.length, cleared: g.state.bool('tf.plaza_cleared') };
+  });
   await step(page, 1.2, true);
   await shot(page, 'plaza-01b-wave2');
-  check('as the first jackals fall, the rest of the pack comes off the dunes — the fight holds until they arrive', wave2 && held);
+  check('as the first jackals fall, the rest of the pack comes off the dunes — the fight holds until they arrive', wave2 && held, JSON.stringify(w2));
   await killPack();
   const cleared = await stepUntil(page, () => window.__game.state.bool('tf.plaza_cleared'), 10);
   const reveal = await stepUntil(page, () => window.__game.cinematics.playing === 'tf.worm', 10);

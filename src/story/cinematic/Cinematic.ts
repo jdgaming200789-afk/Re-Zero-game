@@ -49,6 +49,8 @@ export type CineStep =
   /** Bring a character into the scene (kept by the area) / take them out. */
   | { do: 'spawn'; who: string; at: PlaceRef; face?: PlaceRef | number; lying?: boolean }
   | { do: 'despawn'; who: string }
+  /** `who` lifts `whom` in both arms (null: sets them down and lets go). */
+  | { do: 'carry'; who: string; whom: string | null }
   | { do: 'music'; state: MusicState }
   | { do: 'shake'; strength: number; seconds: number }
   | { do: 'if'; cond: Condition; then: CineStep[]; else?: CineStep[] }
@@ -107,6 +109,10 @@ export function validateCinematic(def: CinematicDef, known: { dialogues: Set<str
         case 'expr':
         case 'despawn':
           who(s.who, i);
+          break;
+        case 'carry':
+          who(s.who, i);
+          if (s.whom) who(s.whom, i);
           break;
         case 'spawn':
           who(s.who, i);

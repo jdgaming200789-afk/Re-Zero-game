@@ -10,6 +10,12 @@ export const CharacterLighting = {
   faceFloor: new Uniform(0.14),
   /** How dark a cast shadow makes a character (1 = only the tint). */
   castShadowDarken: new Uniform(0.72),
+  /**
+   * How much of a character's own palette survives coloured light (0 = the
+   * light's colour wins, 1 = only its brightness matters). Anime keeps
+   * characters' colours readable under a red hall or a blue moon.
+   */
+  paletteKeep: new Uniform(0.35),
   /** Camera position (updated by the game each frame) for LOD decisions. */
   viewPosition: new Vector3(),
   /** Direction *towards* the key light (moon/sun), world space. Areas set it. */
@@ -89,6 +95,7 @@ export function createAnimeMaterial(o: AnimeMaterialOptions): MeshToonMaterial {
     shader.uniforms.uIsHair = { value: o.role === 'hair' ? 1 : 0 };
     shader.uniforms.uIsFace = { value: o.role === 'face' || o.role === 'skin' ? 1 : 0 };
     shader.uniforms.uCastDarken = CharacterLighting.castShadowDarken;
+    shader.uniforms.uPaletteKeep = CharacterLighting.paletteKeep;
     shader.uniforms.uEnvShadow = o.envShadow ?? { value: 1 };
     shader.uniforms.uFade = o.fade ?? { value: 1 };
     shader.vertexShader = shader.vertexShader
@@ -119,6 +126,7 @@ export function createAnimeMaterial(o: AnimeMaterialOptions): MeshToonMaterial {
          uniform float uFaceFloor;
          uniform float uIsHair;
          uniform float uIsFace;
+         uniform float uPaletteKeep;
          varying vec2 vAnimeUv;
          ${DITHER_GLSL}`,
       )
@@ -138,6 +146,14 @@ export function createAnimeMaterial(o: AnimeMaterialOptions): MeshToonMaterial {
              float arc = 1.0 - smoothstep( 0.06, 0.13, abs( normal.y - 0.5 ) );
              float spec = arc * smoothstep( 0.45, 0.85, ndv ) * uEnvShadow;
              outgoingLight += ( diffuseColor.rgb * 0.45 + vec3( 0.035, 0.045, 0.07 ) ) * spec;
+           }
+           {
+             // Keep the palette: the lit colour, pulled back towards the
+             // material's own hue at the same brightness.
+             const vec3 LUMA = vec3( 0.299, 0.587, 0.114 );
+             float lumAlbedo = max( dot( diffuseColor.rgb, LUMA ), 1e-3 );
+             vec3 own = diffuseColor.rgb * ( dot( outgoingLight, LUMA ) / lumAlbedo );
+             outgoingLight = mix( outgoingLight, own, uPaletteKeep );
            }
            if ( uIsFace > 0.5 ) {
              // Keep faces readable in darkness.

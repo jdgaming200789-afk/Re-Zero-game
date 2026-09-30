@@ -285,3 +285,51 @@ add(
     { fadeIn: 0.1, fadeOut: 0.4 },
   ),
 );
+
+/**
+ * Carrying someone in both arms (the princess carry): forearms level under
+ * back and knees, leaning back a little against the weight. Played with
+ * `hold`; the one carried takes `carried`.
+ */
+const carrying: PoseSpec = {
+  // Elbows low and forward, forearms level: one under her back, one under her knees.
+  ...symmetric({ upperArmL: [-32, -14, 10], lowerArmL: [-62, 0, 0], handL: [0, 0, 18] }),
+  spine: [-5, 0, 0],
+  chest: [-3, 0, 0],
+  neck: [6, 0, 0],
+  head: [14, 0, 0],
+};
+add(
+  clip(
+    'carryBride',
+    0.9,
+    [
+      { t: 0, pose: stand },
+      { t: 1, pose: carrying, ease: 'outCubic' },
+    ],
+    { fadeIn: 0.1, fadeOut: 0.4 },
+  ),
+);
+
+/**
+ * Being carried: knees bent over one arm, head resting back, hands in the
+ * lap. Angles are relative to a body the cinematic reclines ~50° — the
+ * thighs end up about level and the shins hang.
+ */
+const carriedPose: PoseSpec = {
+  ...symmetric({ upperLegL: [-46, 0, 2], lowerLegL: [96, 0, 0], footL: [20, 0, 0], upperArmL: [-10, -12, -6], lowerArmL: [-62, 0, 0], handL: [0, 0, -10] }),
+  spine: [8, 0, 0],
+  neck: [-10, 0, 0],
+  head: [-16, 0, 14],
+};
+add(
+  clip(
+    'carried',
+    0.6,
+    [
+      { t: 0, pose: stand },
+      { t: 1, pose: carriedPose, ease: 'outCubic' },
+    ],
+    { fadeIn: 0.05, fadeOut: 0.3 },
+  ),
+);

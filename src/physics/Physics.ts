@@ -151,6 +151,35 @@ export class Physics {
     return c;
   }
 
+  /**
+   * A flat round floor at `center` (its top surface), as a triangle mesh in
+   * rings of small triangles. Prefer this to a wide, thin cylinder: against a
+   * huge flat cylinder the character controller gets imprecise contacts and
+   * can slowly slip through.
+   */
+  addDisc(center: Vector3, radius: number, membership: number = Layer.Environment, owner: ColliderOwner = { kind: 'static' }): RAPIER.Collider {
+    const rings = Math.max(1, Math.ceil(radius / 2.5));
+    const segs = Math.max(12, Math.ceil((Math.PI * 2 * radius) / 2.5));
+    const verts: number[] = [center.x, center.y, center.z];
+    for (let r = 1; r <= rings; r++) {
+      const rr = (radius * r) / rings;
+      for (let i = 0; i < segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        verts.push(center.x + Math.sin(a) * rr, center.y, center.z + Math.cos(a) * rr);
+      }
+    }
+    const at = (ring: number, i: number) => (ring === 0 ? 0 : 1 + (ring - 1) * segs + (i % segs));
+    const idx: number[] = [];
+    for (let r = 0; r < rings; r++) {
+      for (let i = 0; i < segs; i++) {
+        // Angles run clockwise seen from above; wind so normals face up.
+        if (r === 0) idx.push(0, at(1, i), at(1, i + 1));
+        else idx.push(at(r, i), at(r + 1, i + 1), at(r, i + 1), at(r, i), at(r + 1, i), at(r + 1, i + 1));
+      }
+    }
+    return this.addTrimesh(new Float32Array(verts), new Uint32Array(idx), membership, owner);
+  }
+
   /** Oriented cylinder (axis = local Y rotated by `rotation`). */
   addOrientedCylinder(
     center: Vector3,

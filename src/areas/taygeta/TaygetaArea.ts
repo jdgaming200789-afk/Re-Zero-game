@@ -104,7 +104,7 @@ class TaygetaArea extends Area {
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     this.root.add(floor);
-    this.trackCollider(g.physics.addCylinder(new Vector3(0, -0.15, 0), 0.15, R + 0.6));
+    this.trackCollider(g.physics.addDisc(new Vector3(0, 0, 0), R + 0.6));
     const wall = new Mesh(new CylinderGeometry(R, R, HEIGHT, 128, 1, true, DOOR_HALF, Math.PI * 2 - 2 * DOOR_HALF), this.wallMat);
     wall.position.y = HEIGHT / 2;
     const lintel = new Mesh(new CylinderGeometry(R, R, HEIGHT - 3.8, 8, 1, true, -DOOR_HALF, 2 * DOOR_HALF), this.wallMat);

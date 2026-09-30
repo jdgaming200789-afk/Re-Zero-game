@@ -438,6 +438,48 @@
   }
 }
 
+/* Arriving somewhere: the place's name drifts in at the top. */
+.rz-location {
+  position: absolute;
+  left: 50%;
+  top: 11%;
+  transform: translate(-50%, -0.6em);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45em;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.1s var(--ease-in-out), transform 1.4s var(--ease-out);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.85);
+}
+.rz-location.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.rz-location .kicker {
+  font-family: var(--font-display);
+  font-size: 0.7em;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+.rz-location .title {
+  font-family: var(--font-display);
+  font-size: 2em;
+  letter-spacing: 0.2em;
+  color: var(--gold-bright);
+}
+.rz-location .rz-rule {
+  width: 14em;
+}
+.rz-location .sub {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1em;
+  color: var(--silver);
+}
+
 /* The flats: the view narrows as the summit's attention settles on you. */
 .rz-helio-vignette {
   position: absolute;

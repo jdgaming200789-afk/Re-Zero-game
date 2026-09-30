@@ -3,7 +3,7 @@
 //   node tools/browser/smoke.mjs [baseUrl]
 import { launch, waitReady, hold, press, look, shot, state, devCommand, step, down, up, setYaw, stepUntil } from './harness.mjs';
 
-const base = process.argv[2] ?? 'http://127.0.0.1:5173/';
+const base = process.argv[2] ?? process.env.GAME_URL ?? 'http://127.0.0.1:5173/';
 const { browser, page, errors, logs } = await launch({ url: `${base}?area=dev_gym&dev=1` });
 const failures = [];
 const log = (...a) => console.log(a.map((x) => (typeof x === 'string' ? x : JSON.stringify(x))).join(' '));

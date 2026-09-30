@@ -245,6 +245,33 @@ export class CinematicPlayer implements GameSystem {
       case 'despawn':
         g.actors.despawn(s.who);
         return;
+      case 'carry': {
+        const v = this.visual(s.who);
+        if (!s.whom) {
+          v?.stopAction();
+          if (this.carried) g.actors.despawn(this.carried);
+          this.carried = null;
+          return;
+        }
+        void v?.play('carryBride', { holdEnd: true });
+        const feet = this.feet(s.who);
+        if (!feet) return;
+        const yaw = this.yawOf(s.who);
+        // Her hips rest on his forearms, just in front of his waist; she lies
+        // across his arms (head to his right), reclined as if sitting back.
+        const hold = new Vector3(Math.sin(yaw), 0, Math.cos(yaw)).multiplyScalar(0.34).add(feet).add(new Vector3(0, 1.04, 0));
+        const herYaw = yaw + Math.PI / 2;
+        const recline = (50 * Math.PI) / 180;
+        const hips = 0.74;
+        const off = new Vector3(-hips * Math.sin(recline) * Math.sin(herYaw), hips * Math.cos(recline), -hips * Math.sin(recline) * Math.cos(herYaw));
+        const root = hold.clone().sub(off);
+        const actor = await g.actors.spawn(s.whom, { position: root, yaw: herYaw, scope: g.scenes.current?.scope, physics: false });
+        actor.setLying(true, 0, recline);
+        actor.position.copy(root);
+        void actor.visual.play('carried', { holdEnd: true });
+        this.carried = s.whom;
+        return;
+      }
       case 'music':
         g.events.emit('audio:musicState', { state: s.state });
         return;
@@ -307,6 +334,9 @@ export class CinematicPlayer implements GameSystem {
     if (typeof ref !== 'string' || !ref.startsWith('@')) return null;
     return this.game.scenes.current?.spawns.get(ref.slice(1))?.yaw ?? null;
   }
+
+  /** Who is being carried right now (set down at the end of the scene). */
+  private carried: string | null = null;
 
   point(ref: PlaceRef, mode: 'feet' | 'head'): Vector3 {
     if (Array.isArray(ref)) return new Vector3(ref[0], ref[1], ref[2]);

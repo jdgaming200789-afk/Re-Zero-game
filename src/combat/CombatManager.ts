@@ -46,6 +46,9 @@ export class CombatManager implements GameSystem {
   private readonly bodies = new Set<Health>();
   private readonly byEntity = new Map<number, Health>();
   private encounter: Encounter | null = null;
+  private holds = 0;
+  /** Scale on companions' damage to enemies (tuning: they support, Subaru directs). */
+  companionDamageScale = 0.55;
   private readonly areas: AreaEffect[] = [];
   private readonly projectiles: Projectile[] = [];
   private readonly transients: TransientVfx[] = [];
@@ -90,6 +93,10 @@ export class CombatManager implements GameSystem {
     const source = this.get(info.sourceId);
     if (source && !hostile(source.effectiveFaction, target.effectiveFaction)) {
       return { applied: 0, absorbed: 0, killed: false, staggered: false, ignored: true };
+    }
+    // Companions support; they don't end fights before Subaru has acted.
+    if (source && source.faction === 'party' && info.sourceId !== this.game.player?.entity.id && this.companionDamageScale !== 1) {
+      info = { ...info, amount: info.amount * this.companionDamageScale };
     }
     const result = target.receive(info);
     const point = info.point ?? target.center(_p);
@@ -211,6 +218,21 @@ export class CombatManager implements GameSystem {
     return this.encounter !== null;
   }
 
+  /**
+   * Keep the current fight open while reinforcements are on their way
+   * (otherwise it could be won in the gap). Call the returned function once
+   * they've joined — or failed to.
+   */
+  holdOpen(): () => void {
+    this.holds++;
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.holds = Math.max(0, this.holds - 1);
+    };
+  }
+
   get encounterId(): string | null {
     return this.encounter?.id ?? null;
   }
@@ -232,12 +254,14 @@ export class CombatManager implements GameSystem {
     g.camera.follow.setProfile('combat');
     if (g.player) g.player.combatMode = true;
     g.events.emit('combat:started', { encounterId: id });
-    g.events.emit('audio:musicState', { state: 'combat' });
+    // An elite (the Sand Earthworm) gets the boss arrangement.
+    g.events.emit('audio:musicState', { state: opts.enemies.some((e) => e.elite) ? 'boss' : 'combat' });
     log.info(`Encounter ${id} started (${opts.enemies.length} enemies)`);
   }
 
   /** Drop every fight, projectile, lingering effect and warning (Return by Death, loads). */
   reset(): void {
+    this.holds = 0;
     if (this.encounter) this.endEncounter(false);
     for (const p of this.projectiles.splice(0)) p.dispose();
     for (const t of this.transients.splice(0)) t.dispose();
@@ -257,7 +281,7 @@ export class CombatManager implements GameSystem {
       g.player.strafeTarget = null;
     }
     g.events.emit('combat:ended', { encounterId: e.id, victory });
-    g.events.emit('audio:musicState', { state: 'exploration' });
+    g.events.emit('audio:musicState', { state: g.scenes.areaMusic() });
     log.info(`Encounter ${e.id} ended (${victory ? 'victory' : 'escape'})`);
   }
 
@@ -351,6 +375,7 @@ export class CombatManager implements GameSystem {
     const e = this.encounter;
     if (!e) return;
     if (this.enemies.length === 0) {
+      if (this.holds > 0) return;
       this.endEncounter(true);
       return;
     }

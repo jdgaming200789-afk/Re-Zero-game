@@ -1,5 +1,5 @@
 import { Euler, Quaternion, Vector3 } from 'three';
-import { clamp, damp, dampAngle, DEG, SmoothDampVec3 } from '../core/math/MathUtil';
+import { angleDelta, clamp, damp, dampAngle, DEG, SmoothDampVec3 } from '../core/math/MathUtil';
 import type { Physics } from '../physics/Physics';
 import { Masks } from '../physics/Physics';
 
@@ -103,13 +103,20 @@ export class ThirdPersonCamera {
     this.initialized = false;
   }
 
-  /** Continue from an arbitrary pose (e.g. when a dialogue shot releases control). */
-  adoptPose(position: Vector3, target: FollowTarget): void {
+  /**
+   * Continue from an arbitrary pose (e.g. when a dialogue shot releases
+   * control). A pose that looked at him from the front would leave the
+   * camera facing him, so beyond `maxOffBehind` it settles behind him instead
+   * (the release blend carries the swing).
+   */
+  adoptPose(position: Vector3, target: FollowTarget, maxOffBehind = 100 * DEG): void {
     const pivot = _v1.copy(target.position).addScaledVector(UP, target.pivotHeight);
     const d = _v2.subVectors(position, pivot);
     const len = d.length();
     if (len < 0.01) return;
-    this.yaw = Math.atan2(d.x, d.z);
+    const yaw = Math.atan2(d.x, d.z);
+    const behind = target.yaw + Math.PI;
+    this.yaw = Math.abs(angleDelta(behind, yaw)) > maxOffBehind ? behind : yaw;
     this.pitch = clamp(Math.asin(clamp(d.y / len, -1, 1)), this.minPitch, this.maxPitch);
   }
 

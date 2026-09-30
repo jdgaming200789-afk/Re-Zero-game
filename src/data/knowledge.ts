@@ -31,6 +31,11 @@ export const KNOWLEDGE: Record<string, KnowledgeDef> = {
     text: 'The Sand Earthworm can’t see. It comes for footsteps, fighting, anything that shakes the sand. Standing still, it loses you.',
     category: 'danger',
   },
+  'plaza.pack_waves': {
+    title: 'More than we could see',
+    text: 'The jackals sleeping on the plaza aren’t the whole pack. When the first of them fall, four more come howling in off the eastern dunes. Save something for them.',
+    category: 'danger',
+  },
   'earthworm.lure': {
     title: 'Lure it into the light',
     text: 'Nothing we have can hurt that worm. But the light from the tower burns anything that moves on the glass. If the worm were out there, following noise...',

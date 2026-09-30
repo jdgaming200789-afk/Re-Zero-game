@@ -64,7 +64,8 @@ try {
 
   // Let the fight play out; sample pack discipline and effects.
   let maxAtk = 0;
-  for (let i = 0; i < 90; i++) {
+  // Companions support rather than carry a fight, so give it time to play out.
+  for (let i = 0; i < 180; i++) {
     await step(page, 0.25, i === 10 || i === 30);
     if (i === 10) await shot(page, 'enemies_pack');
     if (i === 30) await shot(page, 'enemies_fight');

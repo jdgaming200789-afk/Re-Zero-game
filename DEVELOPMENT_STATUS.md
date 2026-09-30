@@ -1,10 +1,10 @@
 # Re:Zero - Pleiades — Development Status
 
-_Last updated: end of Phase 9 (part 2)._
+_Last updated: Phase 10 (the vertical slice assembled end to end)._
 
 ## Current phase
 
-**Phases 1–9 complete** (Phase 9 part 2: device-matched button prompts, stealth feedback on the flats, the audio pass) **→ next: Phase 10** (assemble and polish the vertical slice end to end).
+**Phases 1–9 complete; Phase 10 in progress** — the vertical slice now plays end to end from the title screen to the chapter card (`tools/browser/playthrough.mjs`). Remaining Phase 10 work is polish: pacing, music per scene, and review on real hardware.
 
 Vertical-slice design: [docs/VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) — "The Watchtower in the Sand".
 
@@ -303,6 +303,32 @@ built for the **browser**, with every original requirement kept:
 - **Footsteps by surface** through a new `Area.surfaceAt(x, z)`: sand, the ringing click of fused glass on the flats, stone on the plaza and in Celaeno, wood in Alcyone (stone on the balcony), muffled in Taygeta's white room, glassy under the stars, wood in the library.
 - Ambience for the new floors (a warm room tone with the hearth crackling louder as you near it; a thin, sourceless tone in the white room) and cues for the story's moments: the white room opening into night, touching Rigel, the library rising, a wrong star's burn, Rem laid down.
 
+### Phase 10 — The vertical slice, end to end
+
+**The gate plaza in the story (`src/areas/towerfoot/GatePlaza.ts`)**
+- A pack of dune jackals holds the plaza; the gate stays shut until they're beaten ("Not with witchbeasts at our backs"). The pack comes in **two waves**: when the first five are down to their last two, a howl, a bark from Ram, and four more come in off the eastern dunes (`CombatManager.holdOpen()` keeps the fight from being won in the gap while they spawn).
+- Crossing the flats sets a **return point at the plaza's edge** (its western corner — off the glass, out of the sleeping pack's sight), so losing the fight doesn't mean crossing the glass again. Dying after the second wave has shown itself teaches *More than we could see*.
+- The fight's noise wakes the **Sand Earthworm**: a reveal cinematic as it breaches out of the western dunes, then a party scene. If Subaru has died to the light, an Insight option lets him propose the plan himself; otherwise Meili works it out with him. The return point moves to the plaza.
+- The **Carriage Bell** rung out on the glass (from the inventory) draws the worm across the dunes; it surfaces on the flats and the Heliosphere takes it. The gate opens.
+- Quest objectives with a hint, wake-up thoughts for a worm death, plaza chatter.
+
+**Pacing and presentation**
+- **Location banners** (`src/ui/hud/LocationBanner.ts`): a moment after arriving on a floor its name drifts in at the top of the screen — region, name and the floor's line ("Celaeno — The Fifth Floor — where the tower begins") — unless a scene starts instead; scenes, dialogue and death clear it.
+- **Boss music**: an encounter with an elite (the Sand Earthworm) switches the score to its boss state instead of the ordinary combat cue.
+- **Carrying Rem up the stair**: a new cinematic `carry` step poses one character holding another in their arms (`carryBride` / `carried` gesture clips: his forearms level under her back and knees; she reclines ~50° across them, thighs level and shins hanging, head back against his right arm). Arriving in Alcyone plays a short scene — Subaru with Rem in his arms, Emilia offering to take a turn ("I’ve got her. ...I’ve always got her."), Ram's silence — before the party looks for the Green Room.
+- **The chapter card**: solving Taygeta ends on a title card — *Re:Zero · Pleiades — The Watchtower in the Sand* — and sets `story.chapter_done`.
+
+**Fixes found by playing it through**
+- **Sinking through round floors**: Alcyone's and Taygeta's floors were single 20 m-wide, 30 cm-thin cylinders; against such a flat, wide cylinder the character controller got imprecise contacts, and a character teleported onto it could slowly slip through (and, in a long scene, fall out of the world). Round floors are now triangle-mesh discs of small triangles (`Physics.addDisc`). `CharacterMotor.teleport` also moves the collider immediately (the controller's next move was computed from the stale collider position) and starts 2 cm above the target so it snaps down cleanly.
+- **Keeping the palette under coloured light**: the character shader now pulls lit colour part-way back to the material's own hue at the same brightness (`CharacterLighting.paletteKeep`, 0.35), so a red-lit hall or a blue moon tints characters without washing out identity colours (Rem's blue hair was going grey under the lanterns).
+- Winning a fight returns the score to the area's own music (a tower floor's mood, or the desert's unease while the worm is still out there), not always to the exploration theme.
+- **Combat balance**: the party was ending the plaza fight in ~7 s without Subaru doing anything. Companions now deal 55% of their former damage to enemies (`CombatManager.companionDamageScale`) — they support, Subaru directs — and with the second wave the fight runs about half a minute; a Subaru who just stands there gets overwhelmed.
+- After a scene, the follow camera settles **behind** Subaru when the last shot looked at him from the front (it used to continue from the shot's angle and face him).
+- The chapter card waits for the camera to finish pulling back over the library stacks.
+- Only the story's own worm counts for the plaza (a stray one struck down on the flats no longer starts the "worm is dead" conversation).
+
+**The slice as one run (`tools/browser/playthrough.mjs`)** — from the title screen: New Game and the camp opening → the ruins → running onto the glass and dying to the light → Return by Death, knowledge kept → the plaza and the pack → the worm, the plan, the bell → the gate and Shaula (choosing the Insight answer) → Alcyone with Rem in his arms → the Green Room → Taygeta's monolith, the sky and Rigel → the library and the chapter card. Travel between beats is by teleport; every beat plays through the real triggers, zones, interactables, cinematics and dialogue.
+
 ## Testing
 - `npm run typecheck` — strict TypeScript.
 - `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data, dialogue runner (lines, conditions, effects, hidden/locked/once/insight choices, branching), quest evaluation, validation of every dialogue, quest, cinematic, story trigger and talk entry, the Return-by-Death rewind semantics, death/return-point data, save validation (corrupt/tampered/future saves rejected), the flats cover, Taygeta's constellations (the answer exists and is Orion's brightest star, lines are valid, every figure within reach and clear of the stair, the sky's Orion matches the trial's), and the button glyph mapping and pad detection. **72/72 passing.**
@@ -316,7 +342,10 @@ built for the **browser**, with every original requirement kept:
   - `tools/browser/dialogue.mjs`: **25/25** — a conversation takes over (mode, window, camera), letter-by-letter reveal, advance completes then continues, the log, auto mode to the choice, hidden/locked options, a choice's effect, skip to the end with control and camera returned, a quest starting itself and showing on the tracker, objectives from zones and a won fight, the completion banner, an Insight option unlocked by knowledge and picked with the mouse, thought styling, the journal (quests, Subaru Remembers, pause/resume), a new game's camp opening (letterbox, party staged), reading through the conversation choosing the Insight option, quest/knowledge/control after the scene, talking to Emilia and her follow-up line, hold-to-skip reaching the same end state, 0 console errors.
   - `tools/browser/rbd.mjs`: **16/16** — the story starts with a return point and an autosave; no HUD before Subaru knows the rules; running on the open glass draws the glint and the light kills him; Return by Death to the camp in loop 2; the world rewound (ruins visited and objectives undone) while knowledge and the loop count survive; the party back whole; trying to tell brings the Witch and time resumes after; in loop 2 the detection meter appears, the glint warning shows, hiding behind the ruins makes the strike miss and teaches cover; the worm breaching on the glass is struck down; save/load restores flags, knowledge, return point and position; being watched is felt (vignette, pulse, posture) and the summit is pointed out; knowing cover, the nearest ruin is marked; glass footsteps, heartbeats and the desert's dry room in the audio; 0 console errors.
   - `tools/browser/menus.mjs`: **14/14** — the game opens on the title (time held, Continue disabled without saves); Settings from the title changes a volume live and returns; New Game hides the title and starts the story; Esc pauses with location/objective/return point; the inventory lists tonics and the Carriage Bell; ringing the bell closes the menus and makes the noise; the map opens drawn; saving to a slot from the pause menu; back returns to pause; rebinding Interact to G; button prompts switching live between keycaps, Xbox and PlayStation (and the style setting overriding the device); Esc closes everything and play resumes; 0 console errors.
-  - `tools/browser/tower.mjs`: **21/21** — Shaula's arrival (rules, quest, Celaeno return point); leaving through the gate is a Return by Death, and in the next loop the fatal answer is gone; the gallery stair to Alcyone (wooden footsteps, a close room, music ducking under dialogue); the Green Room scene (Rem lying in bed, return point at her side); up to Taygeta; the monolith turns the room to night; aiming at Betelgeuse by looking and touching it burns; two more wrong stars and Subaru remembers; the fourth kills him and he wakes beside Rem knowing; the next climb answers the riddle at once; Rigel raises the library and completes the quest; the gate then opens; the balcony scene with Emilia; 0 console errors.
+  - `tools/browser/tower.mjs`: **22/22** — Shaula's arrival (rules, quest, Celaeno return point); leaving through the gate is a Return by Death, and in the next loop the fatal answer is gone; the gallery stair to Alcyone, arriving with Rem in Subaru's arms (wooden footsteps, a close room, music ducking under dialogue); the Green Room scene (Rem lying in bed, return point at her side); up to Taygeta; the monolith turns the room to night; aiming at Betelgeuse by looking and touching it burns; two more wrong stars and Subaru remembers; the fourth kills him and he wakes beside Rem knowing; the next climb answers the riddle at once; Rigel raises the library and completes the quest; the gate then opens; the balcony scene with Emilia; 0 console errors.
+  - `tools/browser/plaza.mjs`: **10/10** — the pack waits on the plaza and the gate won't open; walking on starts the fight and moves the return point off the flats; the second wave arrives as the first falls and the fight holds until it does; beating it starts the worm's reveal and the plan (with the Insight option); the return point moves to the plaza; dying to the worm returns Subaru to the plaza with the pack still dead; the bell on the glass draws the worm into the light; the gate opens; 0 console errors.
+  - `tools/browser/playthrough.mjs`: **PLAYTHROUGH_COUNT** — the whole slice as above, beat by beat, 0 console errors.
+- Every browser test takes `GAME_URL` (default: the dev server on 5173). Editing sources hot-reloads the dev server's page under a running test, so long runs are best pointed at a production build: `npx vite build --minify false --outDir /tmp/rz-build && npx vite preview --outDir /tmp/rz-build --port 4173` (unminified: some tests find components by class name), then `GAME_URL=http://127.0.0.1:4173/ npm run smoke`.
 - `node tools/browser/sheet.mjs <prefix> <out.png> [cols]` — contact sheet of test screenshots for review.
 - `npm run cast` — lineup review: every character spawned side by side plus face close-ups (`test-results/cast_*.png`).
   - Celaeno's helical stair verified climbable from floor to the 12 m gallery.
@@ -324,7 +353,7 @@ built for the **browser**, with every original requirement kept:
 
 ## Systems in progress
 - The library is a destination for now: the black book (Books of the Dead) is a teaser, and Shaula's "don't damage the books" rule has no enforcement yet.
-- Getting to Taygeta skips any carrying animation: the Green Room scene opens with Rem already in bed.
+- The carry into Alcyone is a staged pose, not a walk: Subaru doesn't climb the stair with Rem in his arms in gameplay.
 
 ## Known issues
 - Kit-to-terrain placement uses the analytic height function; very large pieces on steep dune faces can float slightly at one corner.
@@ -341,7 +370,7 @@ built for the **browser**, with every original requirement kept:
 - Rem's apron can press into the quilt from below at some angles.
 
 ## Next tasks
-1. Phase 10 — assemble the vertical slice end to end (camp → ruins → flats loop → gate plaza jackals → the worm lured into the light → Celaeno and Shaula → Alcyone and Rem → Taygeta's trial → the library), then polish: pacing, a carrying scene up the stair, music cues per scene.
+1. Phase 10 polish — per-scene music cues, pacing between beats (walk times, chatter density), a full playthrough by hand on real hardware.
 2. On real hardware: an audio mix pass with speakers (levels, reverb amounts, the heartbeat), and frame-rate measurements per area and preset.
 
 ## Technical decisions

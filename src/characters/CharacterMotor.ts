@@ -4,6 +4,9 @@ import { Component } from '../core/ecs/Component';
 import { DEG } from '../core/math/MathUtil';
 import { Physics, Layer, groups, type ColliderOwner } from '../physics/Physics';
 
+/** How far above its target a teleported body starts (it snaps down). */
+const TELEPORT_LIFT = 0.02;
+
 export interface MotorConfig {
   radius: number;
   height: number;
@@ -105,9 +108,15 @@ export class CharacterMotor extends Component {
 
   /** Instantly move (spawns, checkpoints, Return by Death). */
   teleport(feet: Vector3): void {
-    const y = feet.y + this.halfHeight + this.config.radius;
+    // A hair above the target: the controller keeps a skin gap and snaps
+    // down; starting inside that gap it can slip through a floor.
+    const y = feet.y + this.halfHeight + this.config.radius + TELEPORT_LIFT;
     this.body.setTranslation({ x: feet.x, y, z: feet.z }, true);
     this.body.setNextKinematicTranslation({ x: feet.x, y, z: feet.z });
+    // Move the collider now, not at the next step: the controller's next
+    // move is computed from the collider, and a stale one (still where the
+    // body was) would apply that spot's fall to the new position.
+    this.physics.world.propagateModifiedBodyPositionsToColliders();
     this.prevFeet.copy(feet);
     this.currFeet.copy(feet);
     this.feet.copy(feet);

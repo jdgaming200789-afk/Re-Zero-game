@@ -9,6 +9,24 @@ import type { DialogueDef } from '../../story/dialogue/Dialogue';
  */
 export const ALCYONE_DIALOGUES: DialogueDef[] = [
   {
+    id: 'alc.arrive',
+    cast: ['subaru', 'emilia', 'beatrice', 'ram', 'meili', 'julius'],
+    start: 'start',
+    letterbox: true,
+    nodes: {
+      start: {
+        lines: [
+          { speaker: 'meili', text: 'It’s warm up here! And it smells like wood and old blankets!', expression: 'joy', anim: 'wave' },
+          { speaker: 'beatrice', text: 'Someone lived here. For a very long time, I suppose.', expression: 'thinking' },
+          { speaker: 'emilia', text: 'Subaru, you’ve carried her all the way up. Let me take a turn.', expression: 'sad', to: 'subaru' },
+          { speaker: 'subaru', text: 'I’ve got her. ...I’ve always got her.', expression: 'determined', to: 'emilia' },
+          { speaker: 'ram', text: '...', expression: 'thinking', to: 'subaru' },
+          { speaker: 'julius', text: 'The Green Room Shaula spoke of should be on this floor. Let us find it.', anim: 'nod' },
+        ],
+      },
+    },
+  },
+  {
     id: 'alc.rem',
     cast: ['subaru', 'emilia', 'beatrice', 'ram', 'meili', 'julius', 'anastasia'],
     start: 'start',

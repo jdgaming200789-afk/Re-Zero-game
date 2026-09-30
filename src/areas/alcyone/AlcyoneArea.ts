@@ -167,7 +167,7 @@ class AlcyoneArea extends Area {
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     this.root.add(floor);
-    this.trackCollider(g.physics.addCylinder(new Vector3(0, -0.15, 0), 0.15, R + 0.6));
+    this.trackCollider(g.physics.addDisc(new Vector3(0, 0, 0), R + 0.6));
     const ceiling = new Mesh(metreUVs(new CircleGeometry(R + 0.9, 72)), wood);
     ceiling.rotation.x = Math.PI / 2;
     ceiling.position.y = CEIL;
@@ -599,6 +599,20 @@ class AlcyoneArea extends Area {
     mark('alc.leave_1', polar(9.2, 118 * DEG), 0);
     mark('alc.leave_2', polar(9.0, 126 * DEG), 0);
     const bal = polar(OUTER + 3.4, Math.PI);
+    // Arriving up the stair from Celaeno, Rem in Subaru's arms (a few steps
+    // into the hall, out from under the doorway lantern).
+    mark('alc.arrive_subaru', new Vector3(0, 0, 13.2), 180);
+    mark('alc.arrive_emilia', new Vector3(-1.5, 0, 14.1), 180);
+    mark('alc.arrive_beatrice', new Vector3(1.3, 0, 13.9), 180);
+    mark('alc.arrive_julius', new Vector3(-2.6, 0, 15.2), 180);
+    mark('alc.arrive_ram', new Vector3(1.9, 0, 15.0), 180);
+    mark('alc.arrive_anastasia', new Vector3(-0.8, 0, 15.7), 180);
+    mark('alc.arrive_meili', new Vector3(-1.8, 0, 12.0), 150);
+    mark('alc.arrive_patrasche', new Vector3(3.4, 0, 15.8), 200);
+    mark('alc.cam_arrive', new Vector3(1.4, 1.45, 10.8), 0);
+    mark('alc.arrive_look', new Vector3(-0.1, 1.2, 13.2), 0);
+    mark('alc.cam_hall', new Vector3(-3.5, 2.6, -6.5), 0);
+    mark('alc.hall_look', new Vector3(1, 1.2, 8), 0);
     mark('alc.balcony_door', polar(R - 0.4, Math.PI), 180);
     mark('alc.balcony_subaru', new Vector3(-0.7, 0, bal.z), 180);
     mark('alc.balcony_emilia', new Vector3(0.7, 0, bal.z), 180);

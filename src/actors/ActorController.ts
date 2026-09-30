@@ -193,10 +193,10 @@ export class ActorController extends Component {
    * the feet, so place the actor where the soles should rest; `lift` raises
    * the back off the surface. Foot IK and gaze are off while lying.
    */
-  setLying(lying: boolean, lift = 0.12): void {
+  setLying(lying: boolean, lift = 0.12, recline = Math.PI / 2): void {
     this.lying = lying;
     const r = this.visual.root;
-    r.rotation.x = lying ? -Math.PI / 2 : 0;
+    r.rotation.x = lying ? -recline : 0;
     r.position.y = lying ? lift : 0;
     const v = this.visual as Partial<{ groundQuery: unknown }>;
     if (lying && 'groundQuery' in v) v.groundQuery = null;

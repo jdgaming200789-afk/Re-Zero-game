@@ -96,9 +96,34 @@ export const CINEMATICS: CinematicDef[] = [
       { do: 'fade', to: 0, seconds: 2.2, color: '#ffffff', wait: false },
       { do: 'wait', seconds: 5 },
       { do: 'dialogue', id: 'tay.solved', camera: 'auto' },
+      // End of the chapter: the library of the dead is open.
+      { do: 'shot', shot: { from: '@tay.cam_high', at: '@tay.center', fov: 60, drift: [0.04, 0.02, 0.05] }, blend: 2.5, ease: 'inOutSine' },
+      // Let the camera settle high over the stacks before the card.
+      { do: 'wait', seconds: 2.4 },
+      { do: 'title', kicker: 'Re:Zero · Pleiades', title: 'The Watchtower in the Sand', sub: 'End of the chapter — the Taygeta Library is open.', seconds: 3.6 },
       { do: 'follow', blend: 1.5 },
     ],
-    onEnd: [{ set: 'tay.trial_cleared' }, { event: 'tay.library' }],
+    onEnd: [{ set: 'tay.trial_cleared' }, { event: 'tay.library' }, { set: 'story.chapter_done' }],
+  },
+  {
+    // Up the stair into Alcyone, Rem in Subaru's arms: the first warm room in days.
+    id: 'alc.arrive',
+    letterbox: true,
+    steps: [
+      { do: 'place', who: 'subaru', at: '@alc.arrive_subaru' },
+      ...PARTY.map((id) => ({ do: 'place' as const, who: id, at: `@alc.arrive_${id}` })),
+      { do: 'carry', who: 'subaru', whom: 'rem' },
+      { do: 'music', state: 'safe' },
+      { do: 'shot', shot: { from: '@alc.cam_hall', at: '@alc.hall_look', fov: 52, drift: [0.05, 0, 0.04] } },
+      { do: 'wait', seconds: 2.2 },
+      { do: 'shot', shot: { from: '@alc.cam_arrive', at: '@alc.arrive_look', fov: 44, drift: [0, 0, -0.04] }, blend: 1.8, ease: 'inOutSine' },
+      { do: 'wait', seconds: 0.8 },
+      { do: 'dialogue', id: 'alc.arrive', camera: 'keep' },
+      { do: 'fade', to: 1, seconds: 0.6 },
+      { do: 'carry', who: 'subaru', whom: null },
+      { do: 'follow', blend: 0 },
+      { do: 'fade', to: 0, seconds: 0.8 },
+    ],
   },
   {
     // Alcyone: Rem is laid down in the Green Room.

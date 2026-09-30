@@ -85,12 +85,21 @@ try {
   await page.evaluate(() => window.__game.input.simulate('Key:KeyW', false));
   await step(page, 1.5, true);
   await shot(page, 'plaza-01-pack');
-  check('walking onto the plaza starts the fight with the pack', fight);
+  const edge = await page.evaluate(() => window.__game.checkpoints.current?.id);
+  check('walking onto the plaza starts the fight with the pack (and the return point moves off the flats)', fight && edge === 'plaza_edge', String(edge));
   // (The combat itself is covered elsewhere; end it quickly.)
-  await page.evaluate(() => {
-    const g = window.__game;
-    for (const m of g.enemies.group('tf.jackals').members) if (m.alive) g.combat.damage(m.health, { amount: 9999, type: 'physical', sourceId: g.player.entity.id });
-  });
+  const killPack = () =>
+    page.evaluate(() => {
+      const g = window.__game;
+      for (const m of g.enemies.group('tf.jackals').members) if (m.alive) g.combat.damage(m.health, { amount: 9999, type: 'physical', sourceId: g.player.entity.id });
+    });
+  await killPack();
+  const wave2 = await stepUntil(page, () => window.__game.state.bool('tf.pack_wave2') && window.__game.enemies.group('tf.jackals').members.filter((m) => m.alive).length === 4, 10);
+  const held = await page.evaluate(() => window.__game.combat.encounterId === 'tf.jackals' && !window.__game.state.bool('tf.plaza_cleared'));
+  await step(page, 1.2, true);
+  await shot(page, 'plaza-01b-wave2');
+  check('as the first jackals fall, the rest of the pack comes off the dunes — the fight holds until they arrive', wave2 && held);
+  await killPack();
   const cleared = await stepUntil(page, () => window.__game.state.bool('tf.plaza_cleared'), 10);
   const reveal = await stepUntil(page, () => window.__game.cinematics.playing === 'tf.worm', 10);
   check('beating the pack clears the plaza, and the noise wakes something bigger', cleared && reveal);

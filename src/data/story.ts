@@ -28,6 +28,13 @@ export const STORY_TRIGGERS: StoryTrigger[] = [
     delay: 0.4,
   },
   {
+    id: 'alc.arrive',
+    on: { areaEnter: 'alcyone' },
+    if: { all: ['cel.met_shaula', '!alc.rem_settled'] },
+    play: { cinematic: 'alc.arrive' },
+    delay: 0.3,
+  },
+  {
     // Stepping into the Green Room for the first time: Rem is laid to rest.
     id: 'alc.rem',
     on: { zone: 'alc.green_room' },

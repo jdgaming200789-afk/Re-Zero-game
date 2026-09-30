@@ -46,6 +46,7 @@ import { CheckpointSystem } from '../story/rbd/Checkpoints';
 import { ReturnByDeath } from '../story/rbd/ReturnByDeath';
 import { SaveSystem } from '../save/SaveSystem';
 import { AudioManager } from '../audio/AudioManager';
+import { LocationBanner } from '../ui/hud/LocationBanner';
 import { JournalScreen } from '../ui/screens/JournalScreen';
 import { PauseScreen } from '../ui/screens/PauseScreen';
 import { InventoryScreen } from '../ui/screens/InventoryScreen';
@@ -201,6 +202,7 @@ export class Game implements GameContext {
     this.screens.register(new SettingsScreen(this));
     this.screens.register(new SaveScreen(this));
     this.addSystem(this.screens);
+    this.addSystem(new LocationBanner(this));
 
     this.events.on('settings:changed', ({ key }) => {
       if (key.startsWith('graphics') || key === '*') {

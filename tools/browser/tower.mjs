@@ -182,6 +182,17 @@ try {
   await interact();
   const inAlcyone = await stepUntil(page, () => window.__game.scenes.current?.id === 'alcyone' && !window.__game.scenes.isTransitioning, 120);
   check('the gallery stair leads up to Alcyone', upFocus === 'cel.to_alcyone' && inAlcyone, String(upFocus));
+  // Arriving with Rem in his arms.
+  const arrive = await stepUntil(page, () => window.__game.cinematics.playing === 'alc.arrive', 10);
+  await stepUntil(page, () => window.__game.dialogue.state?.id === 'alc.arrive', 20);
+  const carried = await page.evaluate(() => ({ rem: window.__game.actors.has('rem'), lying: window.__game.actors.get('rem')?.lying ?? false }));
+  await settleLook();
+  await step(page, 0.4, true);
+  await shot(page, 'tower-04b-carry');
+  await readThrough(() => 0, null, cinematicOver);
+  await stepUntil(page, () => window.__game.mode === 'exploration', 20);
+  const setDown = await page.evaluate(() => ({ rem: window.__game.actors.has('rem') }));
+  check('Subaru carries Rem up into Alcyone (and sets the scene down cleanly)', arrive && carried.rem && carried.lying && !setDown.rem, JSON.stringify({ carried, setDown }));
   await step(page, 1, false);
   // Wooden floors and a warm, close room; the score ducks while people talk.
   await page.evaluate(() => window.__game.input.simulate('Key:KeyW', true));

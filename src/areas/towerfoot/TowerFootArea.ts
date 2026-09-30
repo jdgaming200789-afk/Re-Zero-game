@@ -134,6 +134,9 @@ class TowerFootArea extends Area {
     this.addSpawn('ruins', 0, heightAt(0, 10), 10, 180);
     this.addSpawn('flats_edge', 0, heightAt(0, -22), -22, 180);
     this.addSpawn('plaza', 0, heightAt(0, -95), -95, 180);
+    // Return point once the flats are crossed: the plaza's western corner, off
+    // the glass and out of the sleeping pack's sight.
+    this.addSpawn('tf.plaza_edge', -26, heightAt(-26, -94), -94, 115);
     this.addSpawn('gate', 0, 5.1, GATE_FRONT_Z + 5, 180);
     this.addSpawn('gate_out', 0, 5.1, GATE_FRONT_Z + 5, 0);
     this.addPlazaMarkers();
@@ -450,7 +453,8 @@ class TowerFootArea extends Area {
       },
       grade: NIGHT_GRADE,
       exposure: 1.25,
-      music: 'exploration',
+      // Uneasy while the Sand Earthworm is still out there.
+      music: this.game.state.bool('tf.worm_seen') && !this.game.state.bool('tf.worm_dead') ? 'tension' : 'exploration',
       tension: 0.1,
       keyLight: this.sky.moonDirection,
       rim: { color: new Color(0.5, 0.6, 0.9), strength: 0.45 },

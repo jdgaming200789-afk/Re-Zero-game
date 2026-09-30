@@ -140,9 +140,10 @@ export const CHATTER: ChatterDef[] = [
   {
     id: 'alc.arrival',
     trigger: { on: 'areaEnter', area: 'alcyone', delay: 2 },
+    condition: 'alc.rem_settled',
     lines: [
-      { speaker: 'meili', text: 'It’s warm up here! And it smells like wood and old blankets!', expression: 'joy' },
-      { speaker: 'beatrice', text: 'Someone lived here. For a very long time, I suppose.', expression: 'thinking' },
+      { speaker: 'meili', text: 'Home sweet tower! Hehe.', expression: 'joy' },
+      { speaker: 'beatrice', text: 'Don’t get used to it, I suppose.', expression: 'annoyed' },
     ],
   },
   {

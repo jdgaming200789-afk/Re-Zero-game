@@ -4,7 +4,7 @@
 //   node tools/browser/areas.mjs [baseUrl]
 import { launch, waitReady, hold, press, shot, state, step, setYaw } from './harness.mjs';
 
-const base = process.argv[2] ?? 'http://127.0.0.1:5173/';
+const base = process.argv[2] ?? process.env.GAME_URL ?? 'http://127.0.0.1:5173/';
 const failures = [];
 const log = (...a) => console.log(a.map((x) => (typeof x === 'string' ? x : JSON.stringify(x))).join(' '));
 const expect = (cond, msg) => {

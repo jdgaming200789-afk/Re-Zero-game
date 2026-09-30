@@ -1,6 +1,7 @@
 import { createLogger } from '../core/Log';
 import type { GameContext, GameSystem } from '../game/GameContext';
 import type { Area, AreaFactory } from './Area';
+import type { MusicState } from '../core/events/GameEvents';
 import { CharacterLighting } from '../characters/render/AnimeMaterial';
 
 const log = createLogger('Scenes');
@@ -137,6 +138,11 @@ export class SceneManager implements GameSystem {
       CharacterLighting.rimStrength.value = a.rim.strength;
     }
     if (a.music) this.game.events.emit('audio:musicState', { state: a.music });
+  }
+
+  /** The mood the current area asks for right now (what the score returns to after a fight). */
+  areaMusic(): MusicState {
+    return this.current?.atmosphere().music ?? 'exploration';
   }
 
   update(dt: number): void {

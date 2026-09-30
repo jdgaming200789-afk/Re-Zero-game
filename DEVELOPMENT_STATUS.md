@@ -1,10 +1,10 @@
 # Re:Zero - Pleiades — Development Status
 
-_Last updated: Phase 11 part 2 (Electra and the Sword Saint)._
+_Last updated: Phase 12 begun (README and screenshots; all 14 browser suites green)._
 
 ## Current phase
 
-**Phases 1–10 complete; Phase 11 (content expansion) in progress.** The vertical slice plays end to end from the title screen to the chapter card (`tools/browser/playthrough.mjs`). Phase 11 added the Books of the Dead in Taygeta's library and a new floor above it — Electra, and the Sword Saint's trial. Next: Phase 12 (optimization, bug fixing, final presentation).
+**Phases 1–11 complete; Phase 12 (optimization, bug fixing, polish, final presentation) in progress.** The vertical slice plays end to end from the title screen to the chapter card (`tools/browser/playthrough.mjs`); Phase 11 added the Books of the Dead in Taygeta's library and a new floor above it — Electra, and the Sword Saint's trial. Phase 12 so far: the README rewritten as the project's front page with generated screenshots (`tools/browser/screenshots.mjs`), and the heaviest combat frame cut from 4.4k draw calls to 450. All 14 browser suites and 72 unit tests pass.
 
 Vertical-slice design: [docs/VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) — "The Watchtower in the Sand".
 
@@ -352,6 +352,7 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
 - He gives his **attention** to one opponent at a time — whoever came at him last, otherwise Julius, the other swordsman — faces them, keeps a lazy sword's distance, and every second or so **flicks** away anyone in front of him (a telegraphed cone; light for companions, heavy for Subaru).
 - A snare from the front is parried, and draws his eye to Subaru for a moment ("Oi, kid. That tickles."). Standing in front of him is death by chopstick — and the lesson *He watches one of us at a time*.
 - **The way through**: Subaru's whip snare, from **behind** while Reid is busy with someone else — or while **Shamak** has him in the dark — wraps his wrist and he drops a chopstick. He laughs; the trial is passed; he sits back down to his noodles (and has something rude to say if you talk to him).
+- Party chatter on the windy floor, and Julius's verdict afterwards ("I should like to see the day he isn't bored." — "Please don't. I like having ribs.").
 - Return point on arrival; a rematch is a conversation with him ("You've got the eyes of somebody who's already lost to me once"), with Subaru's own plan as a thought once he knows it.
 
 ## Testing
@@ -374,6 +375,7 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
   - `tools/browser/playthrough.mjs`: **9/9** — the whole slice as above, beat by beat, 0 console errors.
 - Every browser test takes `GAME_URL` (default: the dev server on 5173). Editing sources hot-reloads the dev server's page under a running test, so long runs are best pointed at a production build: `npx vite build --minify false --outDir /tmp/rz-build && npx vite preview --outDir /tmp/rz-build --port 4173` (unminified: some tests find components by class name), then `GAME_URL=http://127.0.0.1:4173/ npm run smoke`.
 - Rebuilding character models: Blender isn't installed in a fresh container — `python3.11 -m venv /tmp/bpyenv && /tmp/bpyenv/bin/pip install -r tools/blender/requirements.txt`, then `BLENDER_PYTHON=/tmp/bpyenv/bin/python node tools/blender/run-blender.mjs characters <id>`.
+- `node tools/browser/screenshots.mjs` — stages a frame in each part of the game (the camp, Shaula, the carry, the star trial, the chapter card, Reid) and writes the README's JPEGs to `docs/screenshots/`.
 - `node tools/browser/sheet.mjs <prefix> <out.png> [cols]` — contact sheet of test screenshots for review.
 - `npm run cast` — lineup review: every character spawned side by side plus face close-ups (`test-results/cast_*.png`).
   - Celaeno's helical stair verified climbable from floor to the 12 m gallery.

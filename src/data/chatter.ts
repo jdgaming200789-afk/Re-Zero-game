@@ -112,6 +112,23 @@ export const CHATTER: ChatterDef[] = [
     ],
   },
 
+  // ------------------------------------------------------------ Electra
+  {
+    id: 'ele.wind',
+    trigger: { on: 'areaEnter', area: 'electra', delay: 3 },
+    condition: 'ele.met_reid',
+    lines: [{ speaker: 'meili', text: 'It’s so windy up here. If I let go of my braid it’ll fly all the way back to the desert.', expression: 'happy' }],
+  },
+  {
+    id: 'ele.julius',
+    trigger: { on: 'idle', area: 'electra', after: 8 },
+    condition: 'ele.trial_cleared',
+    lines: [
+      { speaker: 'julius', text: 'Four hundred years, and he still fights as though he’s bored. I should like to see the day he isn’t.', expression: 'thinking' },
+      { speaker: 'subaru', text: 'Please don’t. I like having ribs.' },
+    ],
+  },
+
   // ------------------------------------------------------------ Celaeno
   {
     id: 'cel.arrival',

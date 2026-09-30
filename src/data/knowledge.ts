@@ -116,6 +116,16 @@ export const KNOWLEDGE: Record<string, KnowledgeDef> = {
     text: 'Swinging a whip between the shelves of the dead counts as “damaging the books.” Shaula doesn’t care about intentions. Neither does her light.',
     category: 'danger',
   },
+  'people.reid': {
+    title: 'Reid Astrea',
+    text: 'The first Sword Saint — or the shade of him this tower keeps on Electra. Loud, rude, bored, and so far beyond everyone that he fights with a pair of chopsticks.',
+    category: 'people',
+  },
+  'reid.attention': {
+    title: 'He watches one of us at a time',
+    text: 'Reid gives his attention to whoever came at him last — usually Julius, the other swordsman — and flicks away anyone in front of him. Nobody touches him head-on. But he isn’t watching behind him.',
+    category: 'danger',
+  },
   'people.rem': {
     title: 'Rem',
     text: 'Rem has been asleep since Gluttony took her name and memories. Nobody but me remembers her. Not even her sister. I came here to wake her up.',

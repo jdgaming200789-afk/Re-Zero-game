@@ -302,3 +302,85 @@ add(
     { contact: 0.66, fadeIn: 0.1 },
   ),
 );
+
+// ------------------------------------------------------------------ Reid: a pair of chopsticks
+// Ready: loose, weight back, the right hand up by the chest with the sticks.
+const reidReady: PoseSpec = { ...stand, upperArmR: [-28, 14, -12], lowerArmR: [-96, 0, 0], handR: [0, 0, 8], upperArmL: [4, -50, 26], lowerArmL: [-84, 0, 0], spine: [2, 6, 0], upperLegR: [-6, 0, -4], lowerLegR: [10, 0, 0], hipsOffset: [0.015, -0.01, 0] };
+add(
+  clip(
+    'reidFlick',
+    0.5,
+    [
+      { t: 0, pose: reidReady },
+      { t: 0.4, pose: { ...reidReady, ...brace, spine: [-2, -18, 0], upperArmR: [-50, 30, -40], lowerArmR: [-120, 0, 0], handR: [0, 0, -30] }, ease: 'outCubic' },
+      { t: 0.55, pose: { ...reidReady, ...lungeL, spine: [6, 16, 0], upperArmR: [-84, -6, 12], lowerArmR: [-10, 0, 0], handR: [0, 0, 20] }, ease: 'inExpo' },
+      { t: 1, pose: reidReady, ease: 'inOutCubic' },
+    ],
+    { contact: 0.55, fadeIn: 0.04, fadeOut: 0.12 },
+  ),
+);
+add(
+  clip(
+    'reidParry',
+    0.28,
+    [
+      { t: 0, pose: reidReady },
+      { t: 0.35, pose: { ...reidReady, upperArmR: [-62, 4, -20], lowerArmR: [-70, 0, 0], handR: [0, 0, -34], spine: [0, -8, 0] }, ease: 'outExpo' },
+      { t: 1, pose: reidReady, ease: 'inOutCubic' },
+    ],
+    { fadeIn: 0.02, fadeOut: 0.08 },
+  ),
+);
+add(
+  clip(
+    'reidGuard',
+    0.6,
+    [
+      { t: 0, pose: stand },
+      { t: 1, pose: reidReady, ease: 'outCubic' },
+    ],
+    { fadeIn: 0.1, fadeOut: 0.3 },
+  ),
+);
+// Seated on a fallen drum of stone, a bowl in one hand, eating (play with holdEnd).
+const reidSeat: PoseSpec = {
+  ...symmetric({ upperLegL: [-84, 0, 10], lowerLegL: [80, 0, 0], footL: [4, 0, 0] }),
+  upperArmL: [-26, -30, 10],
+  lowerArmL: [-96, 0, 0],
+  handL: [0, 0, 20],
+  upperArmR: [-36, 20, -14],
+  lowerArmR: [-128, 0, 0],
+  handR: [0, 0, 6],
+  hipsOffset: [0, -0.44, -0.04],
+  spine: [10, 0, 0],
+  neck: [6, 0, 0],
+  head: [8, 0, 0],
+};
+add(
+  clip(
+    'reidEat',
+    1.6,
+    [
+      { t: 0, pose: stand },
+      { t: 0.5, pose: { ...reidSeat, hipsOffset: [0, -0.3, -0.03] }, ease: 'inOutSine' },
+      { t: 0.75, pose: { ...reidSeat, lowerArmR: [-142, 0, 0], head: [2, 0, 0] }, ease: 'inOutSine' },
+      { t: 1, pose: reidSeat, ease: 'inOutSine' },
+    ],
+    { fadeIn: 0.1, fadeOut: 0.5 },
+  ),
+);
+// One chopstick gone: he shakes out his hand and laughs.
+add(
+  clip(
+    'reidDropped',
+    1.2,
+    [
+      { t: 0, pose: reidReady },
+      { t: 0.2, pose: { ...reidReady, upperArmR: [-10, 0, -30], lowerArmR: [-40, 0, 0], handR: [0, 0, 30] }, ease: 'outCubic' },
+      { t: 0.45, pose: { ...reidReady, upperArmR: [-14, 0, -24], lowerArmR: [-60, 0, 0], handR: [0, 0, -30], spine: [-8, 0, 0], head: [-14, 0, 0] }, ease: 'inOutSine' },
+      { t: 0.7, pose: { ...reidReady, upperArmR: [-10, 0, -30], lowerArmR: [-40, 0, 0], handR: [0, 0, 30], spine: [-10, 0, 0], head: [-16, 0, 0] }, ease: 'inOutSine' },
+      { t: 1, pose: reidReady, ease: 'inOutCubic' },
+    ],
+    { fadeIn: 0.05, fadeOut: 0.3 },
+  ),
+);

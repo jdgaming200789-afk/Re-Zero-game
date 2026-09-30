@@ -50,6 +50,17 @@ export const QUESTS: QuestDef[] = [
     epilogue: 'Rigel. The brightest star of Orion — the hunter the scorpion killed. Only someone from my world could have known.',
   },
   {
+    id: 'the_sword_saint',
+    title: 'The Trial of Electra',
+    kind: 'main',
+    summary: 'Above the library, a stair climbs to Electra — the second floor, and the second trial. Whatever waits up there, it’s one floor closer to the Sage.',
+    objectives: [
+      { id: 'climb', text: 'Climb to Electra', done: "$area == 'electra'", marker: { area: 'taygeta', at: [0, 0, -19] } },
+      { id: 'reid', text: 'Make the Sword Saint take you seriously', done: 'ele.trial_cleared', show: 'ele.met_reid', hint: 'Nothing gets past those chopsticks head-on. Not even Julius.' },
+    ],
+    epilogue: 'The first Sword Saint dropped a chopstick, and laughed like it was the best thing that had happened in four hundred years.',
+  },
+  {
     id: 'the_library',
     title: 'The Books of the Dead',
     kind: 'side',

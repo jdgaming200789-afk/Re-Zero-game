@@ -156,6 +156,7 @@ export class AudioManager implements GameSystem, VoiceProvider {
     ev.on('dialogue:ended', () => this.setDuck(1, 1.2));
     ev.on('story:event', ({ id }) => this.storyCue(id));
     ev.on('combat:hit', ({ critical, damageType }) => this.hit(damageType, critical));
+    ev.on('combat:parried', () => this.clack());
     ev.on('ui:notify', ({ kind }) => this.chime(kind ?? 'info'));
     ev.on('quest:completed', () => this.fanfare());
     ev.on('knowledge:learned', () => this.chime('knowledge'));
@@ -328,6 +329,8 @@ export class AudioManager implements GameSystem, VoiceProvider {
       celaeno: { wet: 0.4, seconds: 3.8, bright: 0.45 },
       alcyone: { wet: 0.14, seconds: 0.9, bright: 0.3 },
       taygeta: { wet: 0.32, seconds: 2.8, bright: 0.85 },
+      // Open to the sky: wind, and a faint slap back off the columns.
+      electra: { wet: 0.08, seconds: 1.6, bright: 0.6 },
     };
     const r = rooms[areaId] ?? { wet: 0.1, seconds: 1.2, bright: 0.5 };
     this.reverb.buffer = impulseResponse(this.ctx, r.seconds, r.bright);
@@ -345,6 +348,17 @@ export class AudioManager implements GameSystem, VoiceProvider {
     s.thump(sfx, t, critical ? 180 : 140, 60, 0.16, critical ? 0.4 : 0.28);
     const freq = type === 'ice' ? 5200 : type === 'yin' ? 900 : type === 'wind' ? 3000 : type === 'light' ? 6500 : 2200;
     s.noiseHit(sfx, t, { type: 'bandpass', freq, q: 1.1, level: critical ? 0.3 : 0.2, decay: critical ? 0.22 : 0.12 });
+  }
+
+  /** Wood on steel: a blade turned aside by a pair of chopsticks. */
+  private clack(): void {
+    if (!this.ready) return;
+    const s = this.synth!;
+    const t = this.now;
+    const sfx = this.bus('sfx');
+    s.noiseHit(sfx, t, { type: 'bandpass', freq: 3400, q: 6, level: 0.32, decay: 0.05 });
+    s.noiseHit(sfx, t + 0.012, { type: 'bandpass', freq: 1700, q: 4, level: 0.18, decay: 0.08 });
+    s.bell(sfx, 96, t, 0.02, 0.4);
   }
 
   private chime(kind: string): void {

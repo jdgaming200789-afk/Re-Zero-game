@@ -4,6 +4,7 @@ import { CAMP_OPENING } from './camp';
 import { CAMP_TALK } from './campTalk';
 import { CELAENO_DIALOGUES } from './celaeno';
 import { DEV_DIALOGUES } from './dev';
+import { ELECTRA_DIALOGUES } from './electra';
 import { LIBRARY_DIALOGUES } from './library';
 import { RBD_DIALOGUES } from './rbd';
 import { TAYGETA_DIALOGUES } from './taygeta';
@@ -18,6 +19,7 @@ export const DIALOGUES: DialogueDef[] = [
   ...ALCYONE_DIALOGUES,
   ...TAYGETA_DIALOGUES,
   ...LIBRARY_DIALOGUES,
+  ...ELECTRA_DIALOGUES,
   ...RBD_DIALOGUES,
   ...DEV_DIALOGUES,
 ];

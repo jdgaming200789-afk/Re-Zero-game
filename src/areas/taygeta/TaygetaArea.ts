@@ -90,6 +90,9 @@ class TaygetaArea extends Area {
   private libraryBatch: KitBatch | null = null;
   private libraryRise = 1;
   private books: Library | null = null;
+  private upDoor!: Group;
+  private upPlug!: Mesh;
+  private upSeal: import('@dimforge/rapier3d-compat').Collider | null = null;
   private busy = false;
   private readonly owned: Array<{ dispose(): void }> = [];
 
@@ -111,10 +114,19 @@ class TaygetaArea extends Area {
     floor.receiveShadow = true;
     this.root.add(floor);
     this.trackCollider(g.physics.addDisc(new Vector3(0, 0, 0), R + 0.6));
-    const wall = new Mesh(new CylinderGeometry(R, R, HEIGHT, 128, 1, true, DOOR_HALF, Math.PI * 2 - 2 * DOOR_HALF), this.wallMat);
+    // Two doorways: the stair down (south, +Z) and, opposite, the stair up
+    // to Electra — sealed by a panel of wall until the library rises.
+    const wall = new Mesh(new CylinderGeometry(R, R, HEIGHT, 64, 1, true, DOOR_HALF, Math.PI - 2 * DOOR_HALF), this.wallMat);
     wall.position.y = HEIGHT / 2;
+    const wall2 = new Mesh(new CylinderGeometry(R, R, HEIGHT, 64, 1, true, Math.PI + DOOR_HALF, Math.PI - 2 * DOOR_HALF), this.wallMat);
+    wall2.position.y = HEIGHT / 2;
     const lintel = new Mesh(new CylinderGeometry(R, R, HEIGHT - 3.8, 8, 1, true, -DOOR_HALF, 2 * DOOR_HALF), this.wallMat);
     lintel.position.y = 3.8 + (HEIGHT - 3.8) / 2;
+    const lintel2 = new Mesh(new CylinderGeometry(R, R, HEIGHT - 3.8, 8, 1, true, Math.PI - DOOR_HALF, 2 * DOOR_HALF), this.wallMat);
+    lintel2.position.y = 3.8 + (HEIGHT - 3.8) / 2;
+    this.upPlug = new Mesh(new CylinderGeometry(R, R, 3.8, 8, 1, true, Math.PI - DOOR_HALF, 2 * DOOR_HALF), this.wallMat);
+    this.upPlug.position.y = 1.9;
+    this.root.add(wall2, lintel2, this.upPlug);
     // Faces up: the (back-sided) wall material shows it from below.
     const ceiling = new Mesh(new CircleGeometry(R + 0.1, 96), this.wallMat);
     ceiling.rotation.x = -Math.PI / 2;
@@ -123,11 +135,18 @@ class TaygetaArea extends Area {
     for (let i = 0; i < 48; i++) {
       const a = ((i + 0.5) / 48) * Math.PI * 2;
       if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < 5 * DEG) continue;
+      if (Math.abs(Math.atan2(Math.sin(a - Math.PI), Math.cos(a - Math.PI))) < 5 * DEG) continue;
       const p = polar(R + 0.25, a, HEIGHT / 2);
       const q = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), a);
       this.trackCollider(g.physics.addBox(p, new Vector3(1.4, HEIGHT / 2, 0.25), q));
     }
     this.trackCollider(doorRecess(this.root, g.physics, { angle: 0, radius: R + 0.02, baseY: 0, dir: 'down', mat: stone }));
+    // The way up, hidden (and walled off) until the library is raised.
+    this.upDoor = new Group();
+    this.upDoor.visible = false;
+    this.root.add(this.upDoor);
+    this.trackCollider(doorRecess(this.upDoor, g.physics, { angle: Math.PI, radius: R + 0.02, baseY: 0, dir: 'up', mat: stone }));
+    this.upSeal = g.physics.addBox(polar(R + 0.25, Math.PI, HEIGHT / 2), new Vector3(1.6, HEIGHT / 2, 0.25), new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI));
     onProgress(0.5);
 
     this.buildMonolith();
@@ -153,6 +172,7 @@ class TaygetaArea extends Area {
     this.addInteractables();
     this.addSpawn('default', 0, 0, 15.6, 180);
     this.addSpawn('arrive', 0, 0, 15.6, 180);
+    this.addSpawn('from_electra', 0, 0, -16.8, 0);
     this.addMarkers();
     this.listen('story:event', ({ id }) => {
       if (id === 'tay.sky') this.setLook('sky', 2.8);
@@ -332,6 +352,7 @@ class TaygetaArea extends Area {
     for (let i = 0; i < n; i++) {
       const a = ((i + 0.5) / n) * Math.PI * 2;
       if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < 4.5 * DEG) continue;
+      if (Math.abs(Math.atan2(Math.sin(a - Math.PI), Math.cos(a - Math.PI))) < 4.5 * DEG) continue;
       const p = polar(R - 0.4, a);
       for (const tier of [0, 3.15, 6.3]) shelf(p.x, p.z, a + Math.PI, tier, tier === 0);
     }
@@ -377,6 +398,17 @@ class TaygetaArea extends Area {
     this.addLibraryInteractables();
     this.books = new Library(g, this.scope, this.root, () => this.library !== null && this.look === 'library');
     this.books.populate();
+    this.openWayUp();
+  }
+
+  /** The library's far wall opens onto a stair climbing to Electra. */
+  private openWayUp(): void {
+    this.upDoor.visible = true;
+    this.upPlug.visible = false;
+    if (this.upSeal) {
+      this.game.physics.removeCollider(this.upSeal);
+      this.upSeal = null;
+    }
   }
 
   // ------------------------------------------------------------------ interactions
@@ -436,6 +468,23 @@ class TaygetaArea extends Area {
 
   private addLibraryInteractables(): void {
     const g = this.game;
+    const up = g.world.spawn('tay.to_electra', this.scope, { parent: this.root });
+    up.object3D.position.copy(polar(R - 0.5, Math.PI, 1.6));
+    up.add(
+      new Interactable({
+        id: 'tay.to_electra',
+        kind: 'door',
+        verb: 'Climb',
+        label: 'Stairs up — Electra',
+        range: 2.6,
+        angle: 80,
+        condition: (game) => this.look === 'library' && !game.cinematics.playing,
+        handler: async (ctx) => {
+          await ctx.contact;
+          if (ctx.game.scenes.knownAreas().includes('electra')) await ctx.game.scenes.goto('electra', 'arrive', { loadingScreen: true, fadeSeconds: 0.8 });
+        },
+      }),
+    );
     const e = g.world.spawn('tay.black_book', this.scope, { parent: this.root });
     e.object3D.position.set(0, 1.2, 0.4);
     e.add(
@@ -544,6 +593,7 @@ class TaygetaArea extends Area {
   }
 
   override dispose(): void {
+    if (this.upSeal) this.game.physics.removeCollider(this.upSeal);
     this.trial?.dispose();
     this.books?.dispose();
     this.libraryBatch?.dispose();

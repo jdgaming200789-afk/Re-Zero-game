@@ -301,6 +301,9 @@ export const STANCES: Record<string, PoseSpec> = {
   anastasia: { upperArmL: [-18, -42, -4], lowerArmL: [-122, 0, 0], handL: [0, 0, 0], upperArmR: [0, 0, -4], lowerArmR: [-20, 0, 0] },
   // Shaula: hand on the cocked hip, bouncing with energy.
   shaula: { upperArmL: [6, -72, 36], lowerArmL: [-92, 0, 0], handL: [0, 0, -14], upperArmR: [-4, 0, -8], lowerArmR: [-16, 0, 0], hips: [0, 0, -5], spine: [-1, 0, 4], upperLegL: [-4, 0, 3], lowerLegL: [9, 0, 0], hipsOffset: [-0.02, -0.004, 0] },
+  // Reid: a lazy slouch, weight on one leg, a hand on his hip — and the
+  // other up by his shoulder, twirling a pair of chopsticks.
+  reid: { upperArmL: [6, -60, 34], lowerArmL: [-90, 0, 0], handL: [0, 0, -12], upperArmR: [-22, 12, -10], lowerArmR: [-104, 0, 0], handR: [0, 0, 10], hips: [0, 0, 4], spine: [4, 0, -3], neck: [-2, 0, 4], head: [-4, 0, 6], upperLegR: [-5, 0, -3], lowerLegR: [10, 0, 0], hipsOffset: [0.02, -0.006, 0] },
   // At rest (lying in bed / unconscious): everything slack and straight.
   rest: { ...symmetric({ upperArmL: [0, 0, 4], lowerArmL: [-6, 0, 0], handL: [0, 0, 4] }), neck: [0, 0, 0], head: [0, 0, 0] },
 };

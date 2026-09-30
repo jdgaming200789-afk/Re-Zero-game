@@ -19,6 +19,8 @@ export const DEATHS: Record<string, DeathDef> = {
   /** Violence among the Books of the Dead, after Beatrice's warning: Shaula keeps the rule. */
   library: { style: 'light', learn: ['library.rule'] },
   'combat.sand_earthworm': { style: 'wound', learn: ['earthworm.vibration'] },
+  /** Flicked to death by a pair of chopsticks. */
+  'combat.reid': { style: 'wound', learn: ['reid.attention'] },
   combat: { style: 'wound', learn: [] },
   fall: { style: 'wound', learn: [] },
   default: { style: 'wound', learn: [] },
@@ -44,5 +46,6 @@ export const CHECKPOINTS: Record<string, CheckpointDef> = {
   celaeno: { id: 'celaeno', area: 'celaeno', spawn: 'gate', name: 'Celaeno, inside the tower' },
   alcyone: { id: 'alcyone', area: 'alcyone', spawn: 'green_room', name: 'The Green Room, at Rem’s side' },
   library: { id: 'library', area: 'taygeta', spawn: 'tay.read', name: 'Taygeta’s library, the first trial behind us' },
+  electra: { id: 'electra', area: 'electra', spawn: 'arrive', name: 'Electra, under the open sky' },
   gym: { id: 'gym', area: 'dev_gym', spawn: 'default', name: 'The practice hall' },
 };

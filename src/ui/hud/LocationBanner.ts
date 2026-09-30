@@ -7,6 +7,7 @@ const REGIONS: Record<string, string> = {
   celaeno: 'The Pleiades Watchtower',
   alcyone: 'The Pleiades Watchtower',
   taygeta: 'The Pleiades Watchtower',
+  electra: 'The Pleiades Watchtower',
 };
 
 /**

@@ -103,7 +103,44 @@ export const CINEMATICS: CinematicDef[] = [
       { do: 'title', kicker: 'Re:Zero · Pleiades', title: 'The Watchtower in the Sand', sub: 'End of the chapter — the Taygeta Library is open.', seconds: 3.6 },
       { do: 'follow', blend: 1.5 },
     ],
-    onEnd: [{ set: 'tay.trial_cleared' }, { event: 'tay.library' }, { set: 'story.chapter_done' }, { checkpoint: 'library' }],
+    onEnd: [{ set: 'tay.trial_cleared' }, { event: 'tay.library' }, { set: 'story.chapter_done' }, { checkpoint: 'library' }, { quest: 'the_sword_saint' }],
+  },
+  {
+    // Electra: the floor with no ceiling, and a dead man eating lunch.
+    id: 'ele.arrive',
+    letterbox: true,
+    steps: [
+      { do: 'place', who: 'subaru', at: '@ele.subaru' },
+      ...PARTY.map((id) => ({ do: 'place' as const, who: id, at: `@ele.${id}` })),
+      { do: 'music', state: 'mystery' },
+      { do: 'shot', shot: { from: '@ele.cam_wide', at: '@ele.wide_look', fov: 50, drift: [-0.08, 0.02, -0.05] } },
+      { do: 'wait', seconds: 1.6 },
+      { do: 'say', lines: [{ speaker: 'subaru', text: 'No ceiling. Just sky and wind — and a guy sitting in the middle of it all, eating.', thought: true }] },
+      { do: 'shot', shot: { from: '@ele.cam_reid', at: '@ele.reid_look', fov: 34, drift: [0, 0, -0.02] }, blend: 1.4, ease: 'inOutSine' },
+      { do: 'wait', seconds: 0.8 },
+      { do: 'say', lines: [{ speaker: 'reid', text: 'Took you long enough. I was about to finish lunch.', expression: 'smug' }] },
+      { do: 'dialogue', id: 'ele.reid', camera: 'auto' },
+      { do: 'follow', blend: 1.0 },
+    ],
+    // The duel itself starts once control is back (ElectraArea).
+    onEnd: [{ set: 'ele.met_reid' }, { learn: 'people.reid' }, { checkpoint: 'electra' }],
+  },
+  {
+    // Electra: one chopstick on the stone. Reid laughs; the trial is passed.
+    id: 'ele.cleared',
+    letterbox: true,
+    steps: [
+      { do: 'wait', seconds: 0.9 },
+      { do: 'shot', shot: { from: { of: 'reid', offset: [0.6, 0.15, 1.8], socket: 'head' }, at: { of: 'reid', socket: 'chest' }, fov: 38 }, blend: 0.6, ease: 'outCubic' },
+      { do: 'say', lines: [{ speaker: 'reid', text: '...Ha. Hahaha! Look at that — made me drop one!', expression: 'joy' }] },
+      { do: 'music', state: 'safe' },
+      { do: 'dialogue', id: 'ele.yield', camera: 'auto' },
+      { do: 'fade', to: 1, seconds: 0.6 },
+      { do: 'effects', effects: [{ event: 'ele.sit' }] },
+      { do: 'follow', blend: 0 },
+      { do: 'fade', to: 0, seconds: 0.8 },
+    ],
+    onEnd: [{ set: 'ele.trial_cleared' }, { event: 'ele.sit' }],
   },
   {
     // A Book of the Dead: Hadrian's last morning, lived. The library dreams

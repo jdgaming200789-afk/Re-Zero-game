@@ -691,6 +691,87 @@ def shaula() -> CharacterSpec:
     )
 
 
+# --------------------------------------------------------------------------- Reid Astrea
+
+def reid() -> CharacterSpec:
+    """The first Sword Saint's shade, keeper of Electra's trial. Astrea red
+    hair worn wild, a traveller's rough clothes — a sleeveless dark tunic,
+    a sash, bandaged forearms, a tattered half-cloak — and a sword he
+    never draws (he fights with a pair of chopsticks)."""
+    body = BodySpec(height=1.86, heads_tall=7.4, shoulder=1.2, hips=0.98, waist=1.0, chest=1.14, limb=1.06, sleeve=1.0, sleeve_cuff=1.0, torso_cloth=1.08, trouser=1.14, trouser_cuff=1.22, shoe=1.18, boot_height=0.24)
+    clumps = []
+    # A wild, flame-shaped fringe pushed up and back off the forehead.
+    for i, az in enumerate([-46, -28, -10, 10, 28, 46]):
+        side = math.sin(math.radians(az))
+        clumps.append(Clump(az=az, el=62, direction=(side * 0.5, -0.35, 0.55), length=0.62 + 0.1 * (i % 2), width=0.36, thickness=0.1, stiffness=0.85, gravity=0.3, curl=0.4 * (1 if az < 0 else -1), lift=0.02, tip=2.0))
+    # Two loose strands falling over the face.
+    clumps.append(Clump(az=-14, el=52, direction=(-0.2, -0.9, -0.5), length=0.7, width=0.16, thickness=0.06, stiffness=0.4, gravity=1.2, curl=0.5))
+    clumps.append(Clump(az=22, el=50, direction=(0.25, -0.9, -0.5), length=0.62, width=0.14, thickness=0.06, stiffness=0.4, gravity=1.2, curl=-0.5))
+    # Spiky sides and a shaggy back that stops at the nape.
+    for az in (-80, -98, 80, 98):
+        clumps.append(Clump(az=az, el=32, direction=(math.copysign(0.55, az), 0.2, -0.8), length=0.5, width=0.34, thickness=0.1, stiffness=0.6, lift=0.02, tip=1.8))
+    for az in range(115, 250, 18):
+        a = math.radians(az)
+        clumps.append(Clump(az=az, el=18, direction=(math.sin(a) * 0.6, 0.85, -0.3), length=0.62, width=0.38, thickness=0.11, stiffness=0.55, gravity=0.9, lift=0.015, tip=1.8, chain="hair_back0" if az < 185 else "hair_back1"))
+    hair = HairStyle(clumps=clumps + crown_flow(0.55, 0.42, step=24), hairline_front=0.44, chains={"hair_back0": 3, "hair_back1": 3})
+
+    def wraps(c):
+        return c.on_arm() and c.arm_len() - 0.13 * c.H < c.arm_s() < c.arm_len() - 0.012 * c.H
+
+    rules = [
+        ("skin", lambda c: is_skin_neck(c) or is_hand(c)),
+        ("wrap", wraps),
+        ("skin", lambda c: c.on_arm() and c.arm_s() > 0.045 * c.H),
+        ("boot", lambda c: (not c.on_arm()) and c.p.z < 0.24 * c.H),
+        ("sash", lambda c: (not c.on_arm()) and abs(c.p.z - (c.j.waist.z - 0.01 * c.H)) < 0.024 * c.H),
+        ("trousers", lambda c: below_waist(c, -0.03)),
+        ("tunic", lambda c: True),
+    ]
+
+    def garments(j: Joints, mats) -> Garments:
+        g = Garments()
+        # A tattered half-cloak thrown over the shoulders.
+        cp, cguides = cape("reid_cloak", j, 0.13, 0.36, mats["cloak"], tatters=1.0, chains=3, bones=3, folds=5, fold_depth=0.014)
+        cp["bone"] = "upperChest"
+        g.objects.append(cp)
+        names = []
+        for i, gl in enumerate(cguides):
+            g.chains[f"cape{i}"] = gl
+            names.append(f"cape{i}")
+        g.bindings[cp.name] = names
+        return g
+
+    def accessories(j: Joints, mats, head):
+        sw = acc.sword("reid_sword", Vector((j.hip_l.x + 0.035 * j.H, j.hip_l.y, j.hips.z)), j.H, mats["steel"], mats["sash"], mats["boot"])
+        sw["bone"] = "hips"
+        return [sw]
+
+    return CharacterSpec(
+        id="reid",
+        body=body,
+        head=HeadSpec(width=0.84, jaw=0.5, chin_point=0.46, cheek=0.06, nose=1.0),
+        hair=hair,
+        palette={
+            "skin": ("#e7c1a0", "skin"),
+            "face": ("#e7c1a0", "face"),
+            "hair": ("#c3262a", "hair"),
+            "tunic": ("#2b2728", "cloth"),
+            "sash": ("#b58a3c", "cloth"),
+            "trousers": ("#4b3f35", "cloth"),
+            "wrap": ("#d9cfbc", "cloth"),
+            "boot": ("#2a2220", "cloth"),
+            "cloak": ("#5b1d1b", "cloth"),
+            "steel": ("#c9ced8", "metal"),
+        },
+        zones=rules,
+        default_zone="tunic",
+        face={},
+        garments=garments,
+        accessories=accessories,
+        meta={"name": "Reid Astrea"},
+    )
+
+
 ROSTER = {
     "subaru": subaru,
     "emilia": emilia,
@@ -701,4 +782,5 @@ ROSTER = {
     "meili": meili,
     "anastasia": anastasia,
     "shaula": shaula,
+    "reid": reid,
 }

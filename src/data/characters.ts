@@ -279,6 +279,30 @@ export const CHARACTERS: Record<string, CharacterDefinition> = {
     nameColor: '#e0a050',
     outline: '#2a201c',
   },
+  reid: {
+    id: 'reid',
+    name: 'Reid Astrea',
+    shortName: 'Reid',
+    model: 'assets/models/characters/reid.glb',
+    height: 1.86,
+    stance: 'reid',
+    gait: { posture: 2, armSwing: 1.2, stride: 1.15, slouch: 0.6, bounce: 1.1 },
+    face: {
+      skin: '#e7c1a0',
+      iris: '#3f7fd6',
+      irisLight: '#a8d0ff',
+      brow: '#8e1c1e',
+      lash: '#3a1414',
+      eyeSize: 0.86,
+      tilt: 0.18,
+      lashWeight: 1.0,
+    },
+    defaultExpression: 'smug',
+    springs: [{ prefix: 'hair_back', stiffness: 2.2, drag: 0.45, gravity: 0.1, hitRadius: 0.02 }, ...chains(CAPE, 'cape')],
+    voice: { pitch: 112, rate: 11, timbre: 'deep' },
+    nameColor: '#e0503c',
+    outline: '#2a1a18',
+  },
 };
 
 export function characterDef(id: string): CharacterDefinition {

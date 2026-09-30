@@ -15,6 +15,19 @@ export const STORY_TRIGGERS: StoryTrigger[] = [
     delay: 1.2,
   },
   {
+    id: 'ele.arrive',
+    on: { areaEnter: 'electra' },
+    if: '!ele.met_reid',
+    play: { cinematic: 'ele.arrive' },
+    delay: 0.3,
+  },
+  {
+    id: 'ele.cleared',
+    on: { event: 'ele.chopstick' },
+    play: { cinematic: 'ele.cleared' },
+    delay: 0.2,
+  },
+  {
     id: 'tf.worm_dead',
     on: { flag: 'tf.worm_dead' },
     play: { dialogue: 'tf.worm_dead' },

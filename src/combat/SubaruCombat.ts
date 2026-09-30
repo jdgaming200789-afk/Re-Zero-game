@@ -171,7 +171,7 @@ export class SubaruCombat extends Component {
         direction: dir,
         stagger: step.stagger,
         critical,
-        tags: ['melee', 'whip'],
+        tags: step === SNARE ? ['melee', 'whip', 'snare'] : ['melee', 'whip'],
       });
     }
     // The crack itself: a spark at the tip even on a miss.

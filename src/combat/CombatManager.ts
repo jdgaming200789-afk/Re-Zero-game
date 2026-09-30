@@ -94,6 +94,12 @@ export class CombatManager implements GameSystem {
     if (source && !hostile(source.effectiveFaction, target.effectiveFaction)) {
       return { applied: 0, absorbed: 0, killed: false, staggered: false, ignored: true };
     }
+    if (target.alive && target.guard?.(info)) {
+      const at = info.point ?? target.center(_p);
+      this.impacts.burst('block', at, 14);
+      this.game.events.emit('combat:parried', { targetId: target.entity.id, attackerId: info.sourceId ?? -1, position: at.clone() });
+      return { applied: 0, absorbed: 0, killed: false, staggered: false, ignored: true };
+    }
     // Companions support; they don't end fights before Subaru has acted.
     if (source && source.faction === 'party' && info.sourceId !== this.game.player?.entity.id && this.companionDamageScale !== 1) {
       info = { ...info, amount: info.amount * this.companionDamageScale };

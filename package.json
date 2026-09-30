@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke": "node tools/browser/smoke.mjs && node tools/browser/areas.mjs && node tools/browser/party.mjs && node tools/browser/combat.mjs && node tools/browser/enemies.mjs && node tools/browser/earthworm.mjs && node tools/browser/dialogue.mjs && node tools/browser/rbd.mjs && node tools/browser/menus.mjs && node tools/browser/plaza.mjs && node tools/browser/tower.mjs && node tools/browser/library.mjs && node tools/browser/playthrough.mjs",
+    "smoke": "node tools/browser/smoke.mjs && node tools/browser/areas.mjs && node tools/browser/party.mjs && node tools/browser/combat.mjs && node tools/browser/enemies.mjs && node tools/browser/earthworm.mjs && node tools/browser/dialogue.mjs && node tools/browser/rbd.mjs && node tools/browser/menus.mjs && node tools/browser/plaza.mjs && node tools/browser/tower.mjs && node tools/browser/library.mjs && node tools/browser/electra.mjs && node tools/browser/playthrough.mjs",
     "assets:blender": "node tools/blender/run-blender.mjs",
     "assets:textures": "node tools/blender/run-blender.mjs textures",
     "assets:kit": "node tools/blender/run-blender.mjs kit",

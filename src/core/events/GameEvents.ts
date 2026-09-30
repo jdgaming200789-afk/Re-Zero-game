@@ -70,6 +70,8 @@ export interface GameEvents {
   'combat:started': { encounterId: string };
   'combat:ended': { encounterId: string; victory: boolean };
   'combat:hit': { attackerId: number; targetId: number; position: Vector3; amount: number; critical: boolean; damageType: string };
+  /** A blow turned aside by a guard (Reid's chopsticks). */
+  'combat:parried': { targetId: number; attackerId: number; position: Vector3 };
   'combat:lockOnChanged': { targetId: number | null };
   /** Subaru swung the whip or cast (areas with rules about violence listen). */
   'combat:playerAction': { kind: 'whip' | 'shamak' | 'barrier' };

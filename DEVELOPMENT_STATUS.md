@@ -1,10 +1,10 @@
 # Re:Zero - Pleiades — Development Status
 
-_Last updated: Phase 11 part 1 (the Books of the Dead)._
+_Last updated: Phase 11 part 2 (Electra and the Sword Saint)._
 
 ## Current phase
 
-**Phases 1–10 complete; Phase 11 (content expansion) in progress.** The vertical slice plays end to end from the title screen to the chapter card (`tools/browser/playthrough.mjs`). Phase 11 part 1 made Taygeta's library a place: the Books of the Dead. Next: more of the tower (Electra and the Sword Saint's trial), then Phase 12 (optimization, bug fixing, final presentation).
+**Phases 1–10 complete; Phase 11 (content expansion) in progress.** The vertical slice plays end to end from the title screen to the chapter card (`tools/browser/playthrough.mjs`). Phase 11 added the Books of the Dead in Taygeta's library and a new floor above it — Electra, and the Sword Saint's trial. Next: Phase 12 (optimization, bug fixing, final presentation).
 
 Vertical-slice design: [docs/VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) — "The Watchtower in the Sand".
 
@@ -340,6 +340,20 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
 - Solving Taygeta now sets a **return point in the library** (the trial stays solved when he dies there).
 - Sound: a descending shimmer into a memory, the light's crack, a bell when a book is found.
 
+### Phase 11 (part 2) — Content: Electra and the Sword Saint
+
+**Reid Astrea** (a new character, `tools/blender/characters/roster.py` → `reid.glb`, 30k triangles): the first Sword Saint's shade — Astrea-red hair worn wild, blue eyes, a sleeveless dark tunic, a sash, bandaged forearms, a tattered red half-cloak, a sword he never draws, and a pair of chopsticks (an in-hand prop). A lazy, cocky stance; clips for a chopstick flick, a parry, a guard, eating seated, and shaking out his hand when he loses one.
+
+**Electra** (`src/areas/electra/`) — the second floor has no ceiling: a moonlit disc of pale stone open to the sky, a duelling ring inlaid in the floor, broken columns and fallen drums around the rim, four braziers, wind, the dunes a long way down. Reached by a new stair in Taygeta's library (the far wall stays sealed until the library rises); a stair gate leads back down.
+
+**The trial** (`ReidDuel.ts`; the exact rules are this game's adaptation):
+- Reid sits on a drum of stone eating when the party arrives; he names the trial — "take me seriously enough that I have to take you seriously" — and stands up with his chopsticks. A new main quest, *The Trial of Electra*, starts when Taygeta's is done.
+- **Nothing touches him.** A new `Health.guard` hook turns aside every blow, spell and projectile (a spark and a wooden *clack*; `combat:parried`). The party can fight him all day.
+- He gives his **attention** to one opponent at a time — whoever came at him last, otherwise Julius, the other swordsman — faces them, keeps a lazy sword's distance, and every second or so **flicks** away anyone in front of him (a telegraphed cone; light for companions, heavy for Subaru).
+- A snare from the front is parried, and draws his eye to Subaru for a moment ("Oi, kid. That tickles."). Standing in front of him is death by chopstick — and the lesson *He watches one of us at a time*.
+- **The way through**: Subaru's whip snare, from **behind** while Reid is busy with someone else — or while **Shamak** has him in the dark — wraps his wrist and he drops a chopstick. He laughs; the trial is passed; he sits back down to his noodles (and has something rude to say if you talk to him).
+- Return point on arrival; a rematch is a conversation with him ("You've got the eyes of somebody who's already lost to me once"), with Subaru's own plan as a thought once he knows it.
+
 ## Testing
 - `npm run typecheck` — strict TypeScript.
 - `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data, dialogue runner (lines, conditions, effects, hidden/locked/once/insight choices, branching), quest evaluation, validation of every dialogue, quest, cinematic, story trigger and talk entry, the Return-by-Death rewind semantics, death/return-point data, save validation (corrupt/tampered/future saves rejected), the flats cover, Taygeta's constellations (the answer exists and is Orion's brightest star, lines are valid, every figure within reach and clear of the stair, the sky's Orion matches the trial's), and the button glyph mapping and pad detection. **72/72 passing.**
@@ -355,9 +369,11 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
   - `tools/browser/menus.mjs`: **14/14** — the game opens on the title (time held, Continue disabled without saves); Settings from the title changes a volume live and returns; New Game hides the title and starts the story; Esc pauses with location/objective/return point; the inventory lists tonics and the Carriage Bell; ringing the bell closes the menus and makes the noise; the map opens drawn; saving to a slot from the pause menu; back returns to pause; rebinding Interact to G; button prompts switching live between keycaps, Xbox and PlayStation (and the style setting overriding the device); Esc closes everything and play resumes; 0 console errors.
   - `tools/browser/tower.mjs`: **22/22** — Shaula's arrival (rules, quest, Celaeno return point); leaving through the gate is a Return by Death, and in the next loop the fatal answer is gone; the gallery stair to Alcyone, arriving with Rem in Subaru's arms (wooden footsteps, a close room, music ducking under dialogue); the Green Room scene (Rem lying in bed, return point at her side); up to Taygeta; the monolith turns the room to night; aiming at Betelgeuse by looking and touching it burns; two more wrong stars and Subaru remembers; the fourth kills him and he wakes beside Rem knowing; the next climb answers the riddle at once; Rigel raises the library and completes the quest; the gate then opens; the balcony scene with Emilia; 0 console errors.
   - `tools/browser/plaza.mjs`: **10/10** — the pack waits on the plaza and the gate won't open; walking on starts the fight and moves the return point off the flats; the second wave arrives as the first falls and the fight holds until it does; beating it starts the worm's reveal and the plan (with the Insight option); the return point moves to the plaza; dying to the worm returns Subaru to the plaza with the pack still dead; the bell on the glass draws the worm into the light; the gate opens; 0 console errors.
-  - `tools/browser/library.mjs`: **LIBRARY_COUNT** — the lectern names the Books of the Dead and starts the quest; there is no book for Rem (the quest completes); Hadrian's name finds his book; reading it dreams the library away into his memory and back; a whip crack draws Beatrice's warning, a second one Shaula's light, and he wakes in the library knowing the rule — and still knowing Rem is alive; 0 console errors.
-  - `tools/browser/playthrough.mjs`: **PLAYTHROUGH_COUNT** — the whole slice as above, beat by beat, 0 console errors.
+  - `tools/browser/library.mjs`: **7/7** — the lectern names the Books of the Dead and starts the quest; there is no book for Rem (the quest completes); Hadrian's name finds his book; reading it dreams the library away into his memory and back; a whip crack draws Beatrice's warning, a second one Shaula's light, and he wakes in the library knowing the rule — and still knowing Rem is alive; 0 console errors.
+  - `tools/browser/electra.mjs`: **8/8** — the library's stair up opens onto Electra and Reid; meeting him starts the duel (boss music, return point); every party blow is parried; a snare from the front is turned aside and draws his eye; standing in front of him is death by chopstick, and Subaru wakes in Electra knowing the lesson; talking to him starts a rematch; from behind, while he duels Julius, the snare makes him drop a chopstick and the trial is passed; 0 console errors.
+  - `tools/browser/playthrough.mjs`: **9/9** — the whole slice as above, beat by beat, 0 console errors.
 - Every browser test takes `GAME_URL` (default: the dev server on 5173). Editing sources hot-reloads the dev server's page under a running test, so long runs are best pointed at a production build: `npx vite build --minify false --outDir /tmp/rz-build && npx vite preview --outDir /tmp/rz-build --port 4173` (unminified: some tests find components by class name), then `GAME_URL=http://127.0.0.1:4173/ npm run smoke`.
+- Rebuilding character models: Blender isn't installed in a fresh container — `python3.11 -m venv /tmp/bpyenv && /tmp/bpyenv/bin/pip install -r tools/blender/requirements.txt`, then `BLENDER_PYTHON=/tmp/bpyenv/bin/python node tools/blender/run-blender.mjs characters <id>`.
 - `node tools/browser/sheet.mjs <prefix> <out.png> [cols]` — contact sheet of test screenshots for review.
 - `npm run cast` — lineup review: every character spawned side by side plus face close-ups (`test-results/cast_*.png`).
   - Celaeno's helical stair verified climbable from floor to the 12 m gallery.
@@ -381,9 +397,8 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
 - Rem's apron can press into the quilt from below at some angles.
 
 ## Next tasks
-1. Phase 11 — Electra: the second trial, the Sword Saint Reid Astrea (needs a new character model: Blender isn't installed in a fresh container — `pip install bpy==4.2.0` into Python 3.11, then `node tools/blender/run-blender.mjs characters`).
-2. Phase 12 — optimization, bug fixing, final presentation; a full playthrough by hand on real hardware (pacing, walk times, chatter density).
-3. On real hardware: an audio mix pass with speakers (levels, reverb amounts, the heartbeat), and frame-rate measurements per area and preset.
+1. Phase 12 — optimization, bug fixing, final presentation; a full playthrough by hand on real hardware (pacing, walk times, chatter density).
+2. On real hardware: an audio mix pass with speakers (levels, reverb amounts, the heartbeat), and frame-rate measurements per area and preset.
 
 ## Technical decisions
 - **Textures generated in Python (numpy) rather than baked from Blender nodes** — periodic noise guarantees seamless tiling and is fully deterministic; Blender is used where it is strongest (modelling with modifiers, booleans, decimation, UVs, glTF export).
@@ -414,6 +429,7 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
 - N8AO and SMAA are the most expensive passes; both scale with quality presets (AO half-res, disabled on Low).
 - Shadow-casting local lights must stay within the per-tier budget (`SHADOW_LIGHT_BUDGET`).
 - Trimesh colliders for large kit pieces should use simplified collision proxies (Phase 2 exports them).
+- The two-wave plaza fight (nine jackals, the whole party) was the heaviest frame measured: 4,412 draw calls / 3.06 M triangles across all passes. Merging creature parts by material (a jackal 81 → 11 meshes) and clipping the campfire's cube shadow to its light radius (it was redrawing everything within 500 m, six times) brought it to 450 / 1.19 M. Humanoid characters (13–20 meshes each) could be merged the same way.
 - Characters: ~30–41k triangles each plus an outline shell (≈2× vertex work). A full party on screen is ~300–400k triangles; candidates: outline shells dropped beyond ~25 m, LOD meshes from Blender's decimate, face texture updates throttled for distant characters (already only redrawn on change).
 - Spring bones run on the CPU at 60 Hz sub-steps (≈80 joints for Emilia); fine for a party, would need culling/LOD for crowds.
 - Alcyone: ~600k triangles and ~250 draw calls with the whole party in view (the Green Room foliage is ~6k instanced leaves). Candidates: foliage distance culling per room, fewer ivy leaves on Low.

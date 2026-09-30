@@ -11,4 +11,5 @@ export function registerAreas(scenes: SceneManager): void {
   scenes.register('celaeno', () => import('./celaeno/CelaenoArea'));
   scenes.register('alcyone', () => import('./alcyone/AlcyoneArea'));
   scenes.register('taygeta', () => import('./taygeta/TaygetaArea'));
+  scenes.register('electra', () => import('./electra/ElectraArea'));
 }

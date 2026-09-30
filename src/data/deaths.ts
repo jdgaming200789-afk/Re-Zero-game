@@ -37,6 +37,7 @@ export interface CheckpointDef {
 
 export const CHECKPOINTS: Record<string, CheckpointDef> = {
   camp_night: { id: 'camp_night', area: 'tower_foot', spawn: 'camp', name: 'The camp at the tower’s foot, the first night' },
+  plaza: { id: 'plaza', area: 'tower_foot', spawn: 'tf.plaza_subaru', name: 'The gate plaza, the witchbeasts dead' },
   celaeno: { id: 'celaeno', area: 'celaeno', spawn: 'gate', name: 'Celaeno, inside the tower' },
   alcyone: { id: 'alcyone', area: 'alcyone', spawn: 'green_room', name: 'The Green Room, at Rem’s side' },
   gym: { id: 'gym', area: 'dev_gym', spawn: 'default', name: 'The practice hall' },

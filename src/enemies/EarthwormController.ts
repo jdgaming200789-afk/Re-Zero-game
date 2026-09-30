@@ -122,7 +122,8 @@ export class EarthwormController extends Component {
     if (felt <= 0) return;
     if (this.targetFresh <= 0 || felt > 4) {
       this.target.copy(at);
-      this.targetFresh = 5;
+      // A big sound holds its attention long enough to cross the dunes to it.
+      this.targetFresh = Math.max(5, Math.min(14, loudness * 0.32));
     }
   }
 

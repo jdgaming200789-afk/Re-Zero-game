@@ -93,6 +93,25 @@ export const CHATTER: ChatterDef[] = [
     ],
   },
 
+  {
+    id: 'tf.plaza_watch',
+    trigger: { on: 'zone', zone: 'tf.plaza' },
+    condition: { all: ['story.opening_done', '!tf.plaza_cleared'] },
+    lines: [
+      { speaker: 'meili', text: 'Onii-san... there are witchbeasts sleeping on the stones. A lot of them.', expression: 'thinking' },
+      { speaker: 'julius', text: 'Then let them wake to steel. Stay behind us, Subaru.', expression: 'determined' },
+    ],
+  },
+  {
+    id: 'tf.bell',
+    trigger: { on: 'event', id: 'bell.rung' },
+    condition: { all: ['tf.worm_seen', '!tf.worm_dead'] },
+    lines: [
+      { speaker: 'subaru', text: 'Okay. Now stand still. Be a rock. Rocks don’t get eaten.' },
+      { speaker: 'beatrice', text: 'The whole desert heard that, I suppose.', expression: 'annoyed' },
+    ],
+  },
+
   // ------------------------------------------------------------ Celaeno
   {
     id: 'cel.arrival',

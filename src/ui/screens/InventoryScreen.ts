@@ -1,3 +1,4 @@
+import { ringBell } from '../../story/ItemActions';
 import { SubaruCombat } from '../../combat/SubaruCombat';
 import { ITEMS, type ItemDef } from '../../data/items';
 import type { GameContext } from '../../game/GameContext';
@@ -94,14 +95,7 @@ export class InventoryScreen extends Screen {
       g.screens.hide();
     } else if (i.use === 'ring') {
       g.screens.hide();
-      const p = g.player;
-      if (!p) return;
-      // Clear, carrying, and heard by everything under the sand for a long way.
-      g.events.emit('audio:stinger', { id: 'bell' });
-      g.enemies.noise(p.entity.object3D.position, 40);
-      g.events.emit('story:event', { id: 'bell.rung' });
-      void p.visual.play('reachMid');
-      g.events.emit('bark:play', { speakerId: 'subaru', text: 'Come on, then. Come and get me.', duration: 2.5 });
+      ringBell(g);
     }
     this.rebuild();
   }

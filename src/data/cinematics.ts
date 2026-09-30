@@ -28,6 +28,27 @@ const STAND_FROM_REM: CinematicDef['steps'] = [
 
 export const CINEMATICS: CinematicDef[] = [
   {
+    // The gate plaza: the fight woke the Sand Earthworm.
+    id: 'tf.worm',
+    letterbox: true,
+    steps: [
+      { do: 'place', who: 'subaru', at: '@tf.plaza_subaru' },
+      ...PARTY.map((id) => ({ do: 'place' as const, who: id, at: `@tf.plaza_${id}` })),
+      { do: 'music', state: 'tension' },
+      { do: 'shot', shot: { from: '@tf.cam_party', at: '@tf.party_look', fov: 44, drift: [0.02, 0, -0.03] } },
+      { do: 'say', lines: [{ speaker: 'emilia', text: 'Is everyone all right? ...Subaru, the ground —', expression: 'thinking' }] },
+      { do: 'effects', effects: [{ event: 'tf.worm_rise' }, { set: 'tf.worm_seen' }] },
+      { do: 'shake', strength: 0.5, seconds: 1.4 },
+      { do: 'shot', shot: { from: '@tf.cam_worm', at: '@tf.worm_look', fov: 44, drift: [0, 0.03, -0.08] }, blend: 1.2, ease: 'inOutSine' },
+      { do: 'wait', seconds: 5 },
+      { do: 'say', lines: [{ speaker: 'subaru', text: 'That’s not a worm. That’s a train. With teeth.', expression: 'fear' }] },
+      { do: 'dialogue', id: 'tf.worm', camera: 'auto' },
+      { do: 'follow', blend: 1.2 },
+    ],
+    // Dying to it brings him back here, to the plaza, not all the way to camp.
+    onEnd: [{ set: 'tf.worm_seen' }, { checkpoint: 'plaza' }],
+  },
+  {
     // Taygeta: a white room and one black stone.
     id: 'tay.arrive',
     letterbox: true,

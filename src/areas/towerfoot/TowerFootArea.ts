@@ -15,6 +15,7 @@ import { SHADOW_MAP_SIZE } from '../../settings/Settings';
 import { Interactable } from '../../interaction/Interactable';
 import { CAMP, FLATS, FLATS_COVER, GATE_FRONT_Z, STAIRS_FOOT_Z, TOWER_CENTER, flatsMask, heightAt, plazaMask, splatAt } from './TowerFootLayout';
 import { Heliosphere } from './Heliosphere';
+import { GatePlaza, WORM_HOME } from './GatePlaza';
 import { towerFootMap } from './TowerFootMap';
 import type { ColorGrade } from '../../render/effects/ColorGradeEffect';
 
@@ -42,6 +43,7 @@ class TowerFootArea extends Area {
   private batches: KitBatch[] = [];
   private terrain!: DuneTerrain;
   heliosphere!: Heliosphere;
+  plaza!: GatePlaza;
 
   constructor(game: GameContext) {
     super(game);
@@ -113,8 +115,9 @@ class TowerFootArea extends Area {
     const wall = g.vfx.add(new SandWall(950, 300, Math.PI * 0.15, Math.PI * 1.2), this.scope);
     this.root.add(wall);
 
-    // ---- The light from the summit.
+    // ---- The light from the summit, and what waits on the plaza.
     this.heliosphere = new Heliosphere(g, this.root, this.scope);
+    this.plaza = new GatePlaza(g, this.scope);
 
     // ---- Bounds: the dunes are climbable, the Sand Time is not an option.
     this.addBoundary();
@@ -133,7 +136,30 @@ class TowerFootArea extends Area {
     this.addSpawn('plaza', 0, heightAt(0, -95), -95, 180);
     this.addSpawn('gate', 0, 5.1, GATE_FRONT_Z + 5, 180);
     this.addSpawn('gate_out', 0, 5.1, GATE_FRONT_Z + 5, 0);
+    this.addPlazaMarkers();
     onProgress(1);
+  }
+
+  /** Staging for the worm's reveal: the party on the plaza, looking west. */
+  private addPlazaMarkers(): void {
+    const at = (id: string, x: number, z: number, yawDeg = 270, lift = 0) => this.addSpawn(id, x, this.ground(x, z) + lift, z, yawDeg);
+    at('tf.plaza_subaru', 1, -104);
+    at('tf.plaza_emilia', 2.2, -102.8);
+    at('tf.plaza_beatrice', 2.4, -105.2);
+    at('tf.plaza_julius', 0.2, -102.4);
+    at('tf.plaza_ram', 3.6, -104.4);
+    at('tf.plaza_anastasia', 3.4, -102.2);
+    at('tf.plaza_meili', 3.8, -106.2);
+    at('tf.plaza_patrasche', 5.2, -103.4);
+    // In front of the party, looking west at where it breaches (it arcs towards them).
+    at('tf.cam_worm', -4, -97.5, 0, 2.2);
+    at('tf.worm_look', WORM_HOME.x + 8, WORM_HOME.z - 1.2, 0, 3.6);
+    at('tf.cam_party', -5, -103.6, 0, 1.7);
+    at('tf.party_look', 2, -104, 0, 1.4);
+  }
+
+  override onEnter(): void {
+    void this.plaza.populate();
   }
 
   private addBatch(b: KitBatch): void {
@@ -360,6 +386,8 @@ class TowerFootArea extends Area {
       label: 'The Pleiades Watchtower',
       range: 4.2,
       angle: 80,
+      condition: () => this.plaza.gateBlocked() === null,
+      lockedText: () => this.plaza.gateBlocked(),
       handler: async (ctx) => {
         await ctx.contact;
         await ctx.game.scenes.goto('celaeno', 'gate', { loadingScreen: true, fadeSeconds: 0.9 });
@@ -434,6 +462,7 @@ class TowerFootArea extends Area {
     this.batches = [];
     this.terrain.dispose();
     this.heliosphere.dispose();
+    this.plaza.dispose();
     this.sky.dispose();
     this.env?.dispose();
     super.dispose();

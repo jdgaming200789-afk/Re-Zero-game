@@ -250,6 +250,13 @@ export class AudioManager implements GameSystem, VoiceProvider {
         s.bell(this.bus('ui'), 81, t, 0.05, 2.4);
         s.bell(this.bus('ui'), 88, t + 0.18, 0.035, 2.4);
         break;
+      case 'bell':
+        // The carriage bell: a bright brass ring with a long tail that carries.
+        s.bell(sfx, 88, t, 0.12, 3.2);
+        s.bell(sfx, 95, t + 0.01, 0.06, 2.6);
+        s.bell(sfx, 88, t + 0.42, 0.09, 3.0);
+        s.bell(sfx, 95, t + 0.43, 0.045, 2.4);
+        break;
       case 'star_burn':
         // A wrong star: white-hot sizzle and a falling whine.
         s.noiseHit(sfx, t, { type: 'highpass', freq: 5200, level: 0.3, decay: 0.7, sweepTo: 1400 });

@@ -1,3 +1,4 @@
+import { ringBell } from '../story/ItemActions';
 import { CHECKPOINTS } from '../data/deaths';
 import { KNOWLEDGE } from '../data/knowledge';
 import { SAVE_SLOTS, type SaveSlot } from '../save/SaveSystem';
@@ -67,6 +68,12 @@ export function registerStoryDevCommands(dev: DevConsole, game: Game): void {
       game.rbd.die(args[0] ?? 'combat');
       return `Died (${args[0] ?? 'combat'})`;
     },
+  });
+  dev.register({
+    name: 'bell',
+    usage: 'bell',
+    help: 'Ring the Carriage Bell where Subaru stands (a lure for the worm)',
+    run: () => (ringBell(game) ? 'Ding.' : 'Nobody to ring it'),
   });
   dev.register({
     name: 'punish',

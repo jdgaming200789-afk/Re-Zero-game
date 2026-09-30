@@ -7,6 +7,20 @@ import type { StoryTrigger } from '../story/StoryDirector';
  */
 export const STORY_TRIGGERS: StoryTrigger[] = [
   {
+    // The pack is dead; the noise woke something bigger.
+    id: 'tf.worm',
+    on: { flag: 'tf.plaza_cleared' },
+    if: '!tf.worm_seen',
+    play: { cinematic: 'tf.worm' },
+    delay: 1.2,
+  },
+  {
+    id: 'tf.worm_dead',
+    on: { flag: 'tf.worm_dead' },
+    play: { dialogue: 'tf.worm_dead' },
+    delay: 2.5,
+  },
+  {
     id: 'cel.shaula',
     on: { areaEnter: 'celaeno' },
     if: { all: ['story.opening_done', '!cel.met_shaula'] },

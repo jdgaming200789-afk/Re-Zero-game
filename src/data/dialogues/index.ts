@@ -6,11 +6,13 @@ import { CELAENO_DIALOGUES } from './celaeno';
 import { DEV_DIALOGUES } from './dev';
 import { RBD_DIALOGUES } from './rbd';
 import { TAYGETA_DIALOGUES } from './taygeta';
+import { TOWERFOOT_DIALOGUES } from './towerfoot';
 
 /** Every conversation in the game, by id. */
 export const DIALOGUES: DialogueDef[] = [
   CAMP_OPENING,
   ...CAMP_TALK,
+  ...TOWERFOOT_DIALOGUES,
   ...CELAENO_DIALOGUES,
   ...ALCYONE_DIALOGUES,
   ...TAYGETA_DIALOGUES,

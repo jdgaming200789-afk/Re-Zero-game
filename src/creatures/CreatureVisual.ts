@@ -138,13 +138,14 @@ export class CreatureVisual implements CharacterVisual {
         const src = m as MeshStandardMaterial;
         const role = ((src.userData.role as AnimeRole) ?? 'cloth') as AnimeRole;
         const glow = role === 'eye' && src.color.getHSL({ h: 0, s: 0, l: 0 }).l > 0.3;
-        return createAnimeMaterial({ color: src.color.clone(), role, fade: this.fade, envShadow: this.envShadow, emissive: glow ? src.color.clone().multiplyScalar(0.7) : undefined });
+        return createAnimeMaterial({ color: src.color.clone(), role, fade: this.fade, envShadow: this.envShadow, emissive: glow ? src.color.clone().multiplyScalar(0.7) : undefined, vertexColors: !!mesh.geometry.attributes.color });
       };
       mesh.material = Array.isArray(mesh.material) ? mesh.material.map(convert) : convert(mesh.material);
       for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) this.owned.push(m);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.frustumCulled = false;
+      mesh.userData.cannotReceiveAO = true;
     }
     this.owned.push(...buildOutlines(skinned, { base: new Color(def.outline), fade: this.fade, width: () => 0.0026 }));
 

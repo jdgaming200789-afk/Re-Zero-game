@@ -511,8 +511,11 @@ def sand_earthworm() -> CreatureSpec:
     )
 
 
+from patrasche import patrasche as patrasche_v2  # noqa: E402
+from jackal import dune_jackal as dune_jackal_v2  # noqa: E402
+
 BESTIARY = {
-    "patrasche": patrasche,
-    "dune_jackal": dune_jackal,
+    "patrasche": patrasche_v2,
+    "dune_jackal": dune_jackal_v2,
     "sand_earthworm": sand_earthworm,
 }

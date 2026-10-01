@@ -25,6 +25,8 @@ try {
   });
   await step(page, 0.2, false);
   await devCommand(page, 'camfade off');
+  // Hide the player's whip coil (it hangs in the scene at the hip).
+  await page.evaluate(() => window.__game.render.scene.traverse((o) => { if (o.geometry?.type === 'TorusGeometry') o.visible = false; }));
   if (opt.gfx) {
     // e.g. --gfx=ambientOcclusion:false,postProcessing:high
     const patch = Object.fromEntries(opt.gfx.split(',').map((kv) => { const [k, v] = kv.split(':'); return [k, v === 'true' ? true : v === 'false' ? false : v]; }));
@@ -73,18 +75,32 @@ try {
           const V = a.position.constructor;
           const box = new (g.render.camera.position.constructor)();
           void box;
-          const h = creature ? 1.5 : a.visual.socketPosition('head', new V()).y - a.position.y + 0.2;
+          const h = creature ? a.visual.socketPosition('head', new V()).y - a.position.y + 0.25 : a.visual.socketPosition('head', new V()).y - a.position.y + 0.2;
           const yaw = a.yaw + (deg * Math.PI) / 180;
-          const dist = creature ? 5.4 : h * 1.75;
-          const at = new V(a.position.x, a.position.y + h * 0.52, a.position.z);
+          const dist = creature ? Math.max(2.6, (a.def?.height ?? 1.5) * 2.3) : h * 1.75;
+          const at = new V(a.position.x, a.position.y + h * 0.5, a.position.z);
           const from = new V(at.x + Math.sin(yaw) * dist, at.y + h * 0.08, at.z + Math.cos(yaw) * dist);
-          g.camera.cut({ position: from, lookAt: at, fov: 34 });
+          g.camera.cut({ position: from, lookAt: at, fov: creature ? 44 : 34 });
         },
         [id, deg, info.creature],
       );
       await step(page, 0.05, true);
       await page.waitForTimeout(100);
       shots.push([label, (await page.screenshot({ timeout: 150000 })).toString('base64')]);
+    }
+    if (info.creature) {
+      await page.evaluate((id) => {
+        const g = window.__game;
+        const a = g.actors.get(id);
+        const V = a.position.constructor;
+        const head = a.visual.socketPosition('head', new V());
+        const fwd = new V(Math.sin(a.yaw + 0.9), 0, Math.cos(a.yaw + 0.9));
+        const s = (a.def?.height ?? 1.5) / 2;
+        g.camera.cut({ position: head.clone().addScaledVector(fwd, 0.5 + 0.55 * s).add(new V(0, 0.15 * s, 0)), lookAt: head.clone().add(new V(Math.sin(a.yaw) * 0.25 * s, 0, Math.cos(a.yaw) * 0.25 * s)), fov: 40 });
+      }, id);
+      await step(page, 0.05, true);
+      await page.waitForTimeout(100);
+      shots.push(['head', (await page.screenshot({ timeout: 150000 })).toString('base64')]);
     }
     if (!info.creature) {
       await page.setViewportSize({ width: 640, height: 820 });

@@ -32,7 +32,8 @@ NodeMap = dict[str, tuple[Vector, float, float]]
 @dataclass
 class Part:
     obj: bpy.types.Object
-    bone: str
+    # None: weighted like the body surface under it (straps, tack, shells).
+    bone: str | None
 
 
 @dataclass
@@ -47,6 +48,9 @@ class CreatureSpec:
     zone: Callable[["ZoneCtx"], str]
     parts: Callable[["Builder"], list[Part]] | None = None
     sculpt: Callable[[Vector, "Builder"], Vector] | None = None
+    # Vertex albedo (sRGB 0..1) for the body: gradients and markings that
+    # zone materials can't draw. Zones painted with it should be white.
+    paint: Callable[[Vector, Vector, "Builder"], tuple[float, float, float]] | None = None
     subdiv: int = 2
     meta: dict = field(default_factory=dict)
 
@@ -249,9 +253,17 @@ def build(spec: CreatureSpec) -> str:
     zone_body(b, body)
     select_only(body, arm)
     bpy.ops.object.parent_set(type="ARMATURE_AUTO")
+    if spec.paint:
+        paint_body(b, body)
     parts = spec.parts(b) if spec.parts else []
     for part in parts:
-        rigid(part.obj, arm, part.bone)
+        if part.bone is None:
+            skin_like(b, part.obj)
+            part.obj.parent = arm
+            mod = part.obj.modifiers.new("Armature", "ARMATURE")
+            mod.object = arm
+        else:
+            rigid(part.obj, arm, part.bone)
     arm["creature"] = spec.id
     arm["meta"] = json.dumps(spec.meta)
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -266,10 +278,43 @@ def build(spec: CreatureSpec) -> str:
         export_materials="EXPORT",
         export_animations=False,
         export_def_bones=False,
+        export_vertex_color="ACTIVE",
+        export_all_vertex_colors=False,
+        export_active_vertex_color_when_no_material=True,
     )
     tris = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in bpy.data.objects if o.type == "MESH")
     print(f"{spec.id}: {tris} tris, {len(arm.data.bones)} bones → {os.path.relpath(path, ROOT)} ({os.path.getsize(path) / 1024:.0f} KB)")
     return path
+
+
+def srgb_lin(c: float) -> float:
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def paint_body(b: Builder, body) -> None:
+    me = body.data
+    col = me.color_attributes.new("Col", "FLOAT_COLOR", "POINT")
+    me.calc_normals_split() if hasattr(me, "calc_normals_split") else None
+    for v in me.vertices:
+        r, g, bl = b.spec.paint(v.co.copy(), v.normal.copy(), b)
+        col.data[v.index].color = (srgb_lin(r), srgb_lin(g), srgb_lin(bl), 1.0)
+
+
+class _BodyRef:
+    def __init__(self, body):
+        self.body = body
+
+
+def skin_like(b: Builder, obj) -> None:
+    """Weights from the nearest body surface (see tailor.skin_like_body)."""
+    import tailor
+
+    ref = getattr(b, "_ref", None)
+    if ref is None:
+        ref = b._ref = _BodyRef(b.body)
+    tailor.skin_like_body(obj, ref)
+    for ca in list(obj.data.color_attributes):
+        obj.data.color_attributes.remove(ca)
 
 
 def lerp(a: Vector, c: Vector, t: float) -> Vector:

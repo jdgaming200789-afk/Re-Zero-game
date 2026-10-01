@@ -28,6 +28,7 @@ import { registerCastDevCommands } from '../debug/castCommands';
 import { registerStoryDevCommands } from '../debug/storyCommands';
 import { CharacterFactory } from '../characters/CharacterFactory';
 import { CharacterLighting } from '../characters/render/AnimeMaterial';
+import { FaceRenderer } from '../characters/face/FaceRenderer';
 import { ActorManager } from '../actors/ActorManager';
 import { PartyManager } from '../party/PartyManager';
 import { ChatterSystem } from '../party/Chatter';
@@ -72,6 +73,9 @@ const MODE_CONTEXTS: Record<GameMode, InputContext[]> = {
   loading: [],
   death: [],
 };
+
+/** Multiplier on a character's on-screen size for choosing its level of detail. */
+const LOD_BIAS: Record<string, number> = { low: 0.6, medium: 0.8, high: 1, ultra: 1.6 };
 
 /**
  * Composition root and main loop. Creates every manager, wires them
@@ -352,6 +356,7 @@ export class Game implements GameContext {
   frame(realDt: number, render = true): void {
     const t = this.time;
     t.advance(realDt);
+    FaceRenderer.beginFrame();
     this.input.beginFrame(t.unscaledElapsed, t.unscaledDt);
     this.handleGlobalInput();
 
@@ -379,6 +384,11 @@ export class Game implements GameContext {
     const player = this.player;
     this.camera.update(t.dt, t.unscaledDt, player ? player.followTarget : null, this.input.look);
     CharacterLighting.viewPosition.copy(this.render.camera.position);
+    // Character LOD works in CSS pixels, so dynamic resolution doesn't
+    // change which level a character shows.
+    const cam = this.render.camera;
+    CharacterLighting.lodScale = this.render.size.y / (2 * Math.tan((cam.fov * Math.PI) / 360));
+    CharacterLighting.lodBias = LOD_BIAS[this.settings.graphics.preset] ?? 1;
     this.combatHud?.update(t.unscaledDt, this.render.camera);
     // Effects update after the camera so billboards face this frame's view.
     this.vfx.update(t.dt);

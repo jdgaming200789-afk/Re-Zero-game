@@ -1,4 +1,4 @@
-import { Color, Euler, Group, Quaternion, Uniform, Vector3, type Bone, type Material, type MeshStandardMaterial, type Object3D, type SkinnedMesh } from 'three';
+import { Box3, Color, Euler, Group, Quaternion, Uniform, Vector3, type Bone, type Material, type MeshStandardMaterial, type Object3D, type SkinnedMesh } from 'three';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { GroundQuery } from '../characters/AnimeCharacter';
 import { solveTwoBone, rotateBoneWorld } from '../characters/anim/IK';
@@ -6,6 +6,7 @@ import { SpringChainSystem } from '../characters/anim/SpringBones';
 import type { CharacterVisual, LocomotionState, PlayActionOptions } from '../characters/CharacterVisual';
 import { loadModel } from '../characters/ModelCache';
 import { CharacterLighting, createAnimeMaterial, type AnimeRole } from '../characters/render/AnimeMaterial';
+import { LodSwitcher, meshLodReady } from '../characters/render/MeshLod';
 import { buildOutlines } from '../characters/render/Outlines';
 import { mergeSkinnedByMaterial } from '../characters/render/MergeSkinned';
 import { createLogger } from '../core/Log';
@@ -75,6 +76,8 @@ export class CreatureVisual implements CharacterVisual {
   groundQuery: GroundQuery | null = null;
   occlusionQuery: ((from: Vector3, dirToLight: Vector3) => boolean) | null = null;
   readonly fade = new Uniform(1);
+  /** Hit flash strength (decays over ~0.12 s). */
+  readonly flash = new Uniform(0);
   readonly envShadow = new Uniform(1);
 
   private model!: Object3D;
@@ -104,6 +107,8 @@ export class CreatureVisual implements CharacterVisual {
   private envTimer = 0;
   private envTarget = 1;
   private readonly lastRootPos = new Vector3(1e9, 0, 0);
+  /** Index-only levels of detail by on-screen size. */
+  lod!: LodSwitcher;
 
   private constructor(
     readonly def: CreatureDefinition,
@@ -114,7 +119,7 @@ export class CreatureVisual implements CharacterVisual {
 
   static async create(def: CreatureDefinition, scheduler: Scheduler): Promise<CreatureVisual> {
     const c = new CreatureVisual(def, scheduler);
-    const gltf = await loadModel(def.model);
+    const [gltf] = await Promise.all([loadModel(def.model), meshLodReady]);
     mergeParts(def.id, gltf.scene);
     c.model = SkeletonUtils.clone(gltf.scene) as Object3D;
     c.root.add(c.model);
@@ -138,7 +143,7 @@ export class CreatureVisual implements CharacterVisual {
         const src = m as MeshStandardMaterial;
         const role = ((src.userData.role as AnimeRole) ?? 'cloth') as AnimeRole;
         const glow = role === 'eye' && src.color.getHSL({ h: 0, s: 0, l: 0 }).l > 0.3;
-        return createAnimeMaterial({ color: src.color.clone(), role, fade: this.fade, envShadow: this.envShadow, emissive: glow ? src.color.clone().multiplyScalar(0.7) : undefined, vertexColors: !!mesh.geometry.attributes.color });
+        return createAnimeMaterial({ color: src.color.clone(), role, fade: this.fade, flash: this.flash, envShadow: this.envShadow, emissive: glow ? src.color.clone().multiplyScalar(0.7) : undefined, vertexColors: !!mesh.geometry.attributes.color });
       };
       mesh.material = Array.isArray(mesh.material) ? mesh.material.map(convert) : convert(mesh.material);
       for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) this.owned.push(m);
@@ -148,6 +153,13 @@ export class CreatureVisual implements CharacterVisual {
       mesh.userData.cannotReceiveAO = true;
     }
     this.owned.push(...buildOutlines(skinned, { base: new Color(def.outline), fade: this.fade, width: () => 0.0026 }));
+    // Levels of detail sized by the creature's longest dimension.
+    const size = new Box3().setFromObject(this.model).getSize(new Vector3());
+    this.lod = new LodSwitcher(Math.max(size.x, size.y, size.z));
+    this.model.traverse((o) => {
+      const m = o as SkinnedMesh;
+      if (m.isSkinnedMesh) this.lod.add(m, m.name.endsWith('_outline') ? 1 : 0);
+    });
 
     const skeleton = skinned[0]?.skeleton;
     if (!skeleton) throw new Error(`Creature ${def.id} has no skeleton`);
@@ -257,6 +269,10 @@ export class CreatureVisual implements CharacterVisual {
     return b ? b.getWorldPosition(out) : this.root.getWorldPosition(out);
   }
 
+  hitFlash(strength = 1): void {
+    this.flash.value = Math.max(this.flash.value, strength);
+  }
+
   dispose(): void {
     for (const o of this.owned) o.dispose();
     this.owned.length = 0;
@@ -333,6 +349,7 @@ export class CreatureVisual implements CharacterVisual {
       this.springs.update(dt);
     }
     this.updateShading(dt);
+    if (this.flash.value > 0) this.flash.value = Math.max(0, this.flash.value - dt * 8);
   }
 
   private sampledLift(): number {
@@ -477,6 +494,7 @@ export class CreatureVisual implements CharacterVisual {
     const view = CharacterLighting.viewPosition;
     const chest = this.socketPosition('chest', _v);
     const d = chest.distanceTo(view);
+    this.lod.update(d);
     const target = CharacterLighting.cameraFade ? Math.min(clamp((d - 0.8) / 1.0, 0, 1), this.occluding ? 0.35 : 1) : 1;
     // Fade out fast (a snapping camera must never sit inside a hull for a
     // few frames), back in gently.

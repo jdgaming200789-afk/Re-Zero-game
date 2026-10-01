@@ -20,6 +20,10 @@ export const CharacterLighting = {
   cameraFade: true,
   /** Camera position (updated by the game each frame) for LOD decisions. */
   viewPosition: new Vector3(),
+  /** Screen pixels per world unit at 1 m (CSS viewport height / (2 tan(fov/2))). */
+  lodScale: 900,
+  /** Quality multiplier on the on-screen size LOD sees (Ultra keeps detail further out). */
+  lodBias: 1,
   /** Direction *towards* the key light (moon/sun), world space. Areas set it. */
   keyLightDir: new Vector3(-0.78, 0.46, 0.22).normalize(),
 };
@@ -49,6 +53,8 @@ export interface AnimeMaterialOptions {
   emissive?: Color;
   /** Multiply by baked vertex colours (anatomy / fold shading). */
   vertexColors?: boolean;
+  /** Per-character hit flash (0..1): a hot white bloom over the body, strongest at the rim. */
+  flash?: Uniform<number>;
 }
 
 /** Ordered-dither discard: screen-door transparency that needs no sorting. */
@@ -105,6 +111,7 @@ export function createAnimeMaterial(o: AnimeMaterialOptions): MeshToonMaterial {
     shader.uniforms.uPaletteKeep = CharacterLighting.paletteKeep;
     shader.uniforms.uEnvShadow = o.envShadow ?? { value: 1 };
     shader.uniforms.uFade = o.fade ?? { value: 1 };
+    shader.uniforms.uFlash = o.flash ?? { value: 0 };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec2 vAnimeUv;')
       .replace('#include <uv_vertex>', '#include <uv_vertex>\nvAnimeUv = uv;');
@@ -136,6 +143,7 @@ export function createAnimeMaterial(o: AnimeMaterialOptions): MeshToonMaterial {
          uniform float uIsHair;
          uniform float uIsFace;
          uniform float uPaletteKeep;
+         uniform float uFlash;
          varying vec2 vAnimeUv;
          ${DITHER_GLSL}`,
       )
@@ -167,6 +175,10 @@ export function createAnimeMaterial(o: AnimeMaterialOptions): MeshToonMaterial {
            if ( uIsFace > 0.5 ) {
              // Keep faces readable in darkness.
              outgoingLight = max( outgoingLight, diffuseColor.rgb * uFaceFloor );
+           }
+           if ( uFlash > 0.001 ) {
+             // Hit flash: white-hot, brightest at the silhouette (bloom catches it).
+             outgoingLight = mix( outgoingLight, vec3( 1.6, 1.45, 1.3 ), uFlash * ( 0.35 + 0.65 * rim ) );
            }
          }
          #include <opaque_fragment>`,

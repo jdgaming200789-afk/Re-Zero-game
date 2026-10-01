@@ -18,7 +18,8 @@ import { Noise2D } from '../../world/terrain/Noise2D';
 export const TOWER_CENTER = new Vector3(0, 0, -170);
 export const TOWER_RADIUS = 42;
 export const GATE_FRONT_Z = TOWER_CENTER.z + TOWER_RADIUS; // -128
-export const STAIRS_FOOT_Z = GATE_FRONT_Z + 22; // -106
+/** Foot of the gate stairs (the newel posts stand a metre further out). Matches build_tower.py. */
+export const STAIRS_FOOT_Z = GATE_FRONT_Z + 23.6; // -104.4
 export const CAMP = new Vector3(6, 0, 52);
 export const FLATS = { minX: -54, maxX: 54, minZ: -84, maxZ: -26 };
 export const CORRIDOR_HALF_WIDTH = 62;

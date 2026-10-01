@@ -62,6 +62,8 @@ export class Health extends Component {
   extraRadius = 0;
 
   onHit?: (result: DamageResult, info: DamageInfo) => void;
+  /** A blow that would have landed passed through invulnerability (dodge i-frames, a barrier). */
+  onEvade?: (info: DamageInfo) => void;
   /** Return true to parry the blow outright (a guard that no damage passes). */
   guard?: (info: DamageInfo) => boolean;
   onDeath?: (info: DamageInfo) => void;

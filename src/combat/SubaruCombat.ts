@@ -13,6 +13,8 @@ type State = 'free' | 'attack' | 'dodge' | 'cast' | 'barrier' | 'item' | 'stagge
 
 interface WhipStep {
   clip: string;
+  /** The keyframed clip's own length (it is sped up to fit `duration`). */
+  clipLength: number;
   duration: number;
   contact: number;
   damage: number;
@@ -21,12 +23,18 @@ interface WhipStep {
   arc: number;
 }
 
+// Snappy: a crack lands ~0.23 s after the press, and the next swing can be
+// chained the moment it does.
 const COMBO: WhipStep[] = [
-  { clip: 'whip1', duration: 0.62, contact: 0.46, damage: 6, stagger: 8, side: 1, arc: 70 },
-  { clip: 'whip2', duration: 0.6, contact: 0.46, damage: 6, stagger: 8, side: -1, arc: 90 },
-  { clip: 'whip3', duration: 0.85, contact: 0.52, damage: 11, stagger: 20, side: 1, arc: 60 },
+  { clip: 'whip1', clipLength: 0.62, duration: 0.52, contact: 0.44, damage: 6, stagger: 8, side: 1, arc: 75 },
+  { clip: 'whip2', clipLength: 0.6, duration: 0.5, contact: 0.44, damage: 6, stagger: 8, side: -1, arc: 90 },
+  { clip: 'whip3', clipLength: 0.85, duration: 0.74, contact: 0.5, damage: 12, stagger: 22, side: 1, arc: 65 },
 ];
-const SNARE: WhipStep = { clip: 'whipSnare', duration: 0.75, contact: 0.42, damage: 4, stagger: 30, side: 1, arc: 25 };
+const SNARE: WhipStep = { clip: 'whipSnare', clipLength: 0.75, duration: 0.68, contact: 0.42, damage: 4, stagger: 30, side: 1, arc: 25 };
+/** How long a press is remembered while Subaru is busy. */
+const BUFFER = 0.4;
+/** A dodge this fresh when a blow passes through it is a perfect dodge. */
+const PERFECT_WINDOW = 0.28;
 
 export interface SubaruCooldowns {
   shamak: number;
@@ -46,7 +54,10 @@ export class SubaruCombat extends Component {
   private stateTime = 0;
   private comboIndex = 0;
   private comboWindow = 0;
-  private queued: 'attack' | null = null;
+  private queued: 'attack' | 'snare' | 'dodge' | null = null;
+  private queuedAge = 0;
+  private dodgeAge = 99;
+  private perfectThisDodge = false;
   private step: WhipStep | null = null;
   private hitDone = false;
   private whip!: WhipProp;
@@ -76,12 +87,15 @@ export class SubaruCombat extends Component {
     this.game.events.on('player:visualChanged', () => this.whip.setVisual(this.player.visual));
     this.barrierVfx = new BarrierVfx(this.game.render.scene, new Color(0.62, 0.36, 1.0), 1.05);
     this.player.onDodgeRequested = () => this.tryDodge();
-    this.health.onHit = (r) => {
+    // Blows that pass through invulnerability: the barrier soaks them (and
+    // sets up a counter); a fresh dodge slips them (a perfect dodge).
+    this.health.onEvade = () => {
       if (this.state === 'barrier') {
         this.absorbedDuringBarrier = true;
         this.barrierVfx.pulse();
-        return;
-      }
+      } else if (this.state === 'dodge' && this.dodgeAge < PERFECT_WINDOW && !this.perfectThisDodge) this.perfectDodge();
+    };
+    this.health.onHit = (r) => {
       if (r.killed) return;
       if (r.staggered) this.enter('stagger', 0.85, () => void this.player.visual.play('stagger', { fadeIn: 0.03 }));
       else void this.player.visual.play('flinch', { fadeIn: 0.03 });
@@ -143,12 +157,21 @@ export class SubaruCombat extends Component {
 
   // ------------------------------------------------------------------ actions
   private attack(step: WhipStep): void {
-    const { point, target } = this.aimTarget(3.2);
-    if (target) this.faceTowards(point);
+    const { point, target } = this.aimTarget(step === SNARE ? 5.5 : 4.6);
+    if (target) {
+      this.faceTowards(point);
+      if (!this.lockTarget) this.game.camera.follow.assist(point);
+      // Close the gap: a quick step in so the crack connects at the whip's
+      // sweet spot instead of whiffing at the edge of its reach.
+      const pos = this.entity.object3D.position;
+      const d = Math.hypot(point.x - pos.x, point.z - pos.z) - target.radius;
+      const want = step === SNARE ? 3.4 : 2.1;
+      if (d > want + 0.15) this.player.dash(_d.set(point.x - pos.x, 0, point.z - pos.z).normalize(), Math.min(1.6, d - want), 0.16, true);
+    }
     this.step = step;
     this.hitDone = false;
     this.enter('attack', step.duration);
-    void this.player.visual.play(step.clip, { fadeIn: 0.05 });
+    void this.player.visual.play(step.clip, { fadeIn: 0.04, speed: step.clipLength / step.duration });
     this.whip.strike(point, step.duration * step.contact, step.duration, step.side);
     this.player.stamina = Math.max(0, this.player.stamina - 5);
     this.game.events.emit('combat:playerAction', { kind: 'whip' });
@@ -180,10 +203,14 @@ export class SubaruCombat extends Component {
   }
 
   tryDodge(): void {
-    if (this.state === 'dodge' || this.state === 'down' || this.state === 'stagger' || this.state === 'barrier') return;
-    // Cancel an attack only after its hit has landed.
-    if (this.state === 'attack' && !this.hitDone) return;
+    if (this.state === 'down' || this.state === 'stagger' || this.state === 'barrier') return;
+    // Busy (mid-dodge, the crack itself): remember the press for a moment.
+    if (this.state === 'dodge' || (this.state === 'attack' && this.inActiveFrames())) {
+      this.buffer('dodge');
+      return;
+    }
     if (this.player.stamina < 18) return;
+    this.queued = null;
     this.player.stamina -= 18;
     this.whip.cancel();
     const input = this.game.input.move;
@@ -194,7 +221,34 @@ export class SubaruCombat extends Component {
     const strafing = this.lockTarget !== null;
     this.player.dash(dir, 3.1, 0.38, !strafing);
     this.health.grantInvulnerability(0.32);
-    this.enter('dodge', 0.55, () => void this.player.visual.play('dodge', { fadeIn: 0.03 }));
+    this.dodgeAge = 0;
+    this.perfectThisDodge = false;
+    this.enter('dodge', 0.5, () => void this.player.visual.play('dodge', { fadeIn: 0.03 }));
+  }
+
+  /** Swing windup → cancellable; the 70 ms around the crack are committed. */
+  private inActiveFrames(): boolean {
+    if (!this.step) return false;
+    const t = this.step.duration - this.stateTime;
+    const contact = this.step.duration * this.step.contact;
+    return t > contact - 0.07 && !this.hitDone;
+  }
+
+  private buffer(kind: 'attack' | 'snare' | 'dodge'): void {
+    this.queued = kind;
+    this.queuedAge = 0;
+  }
+
+  /** Slipped a blow at the last instant: time slows, the counter is critical. */
+  private perfectDodge(): void {
+    this.perfectThisDodge = true;
+    this.nextCritical = true;
+    this.health.grantInvulnerability(0.35);
+    this.player.stamina = Math.min(this.player.movement.maxStamina, this.player.stamina + 20);
+    this.game.time.slowMotion(0.3, 0.55);
+    this.game.render.chromaticPulse = Math.max(this.game.render.chromaticPulse, 1.4);
+    this.game.camera.shake.add(0.12);
+    this.game.events.emit('combat:perfectDodge', { position: this.health.center(new Vector3()) });
   }
 
   private castShamak(): void {
@@ -367,9 +421,15 @@ export class SubaruCombat extends Component {
       if (input.pressed('lockOn')) this.toggleLock();
       if (input.pressed('lockSwitchLeft')) this.switchLock(-1);
       if (input.pressed('lockSwitchRight')) this.switchLock(1);
-      if (input.pressed('attackLight')) this.queued = 'attack';
+      if (input.pressed('attackLight')) this.buffer('attack');
+      if (input.pressed('attackHeavy') && c.snare <= 0) this.buffer('snare');
       if (input.pressed('dodge') && !this.player.hasControl) this.tryDodge();
       if (this.game.mode === 'combat' && input.pressed('jump') && !this.player.hasControl) this.tryDodge();
+    }
+    this.dodgeAge += dt;
+    if (this.queued) {
+      this.queuedAge += dt;
+      if (this.queuedAge > BUFFER) this.queued = null;
     }
 
     // State machine
@@ -379,13 +439,28 @@ export class SubaruCombat extends Component {
         this.hitDone = true;
         this.resolveWhipHit();
       }
-      // Combo chaining: a queued attack fires once the hit has landed.
-      if (this.state === 'attack' && this.hitDone && this.queued === 'attack' && this.stateTime < this.step!.duration * 0.35 && this.step !== SNARE) {
+      // Cancels: once the crack has landed, a buffered swing chains, a
+      // snare or a dodge cuts the recovery short.
+      if (this.state === 'attack' && this.hitDone && this.queued && this.step!.duration - this.stateTime > this.step!.duration * this.step!.contact + 0.05) {
+        const q = this.queued;
         this.queued = null;
-        this.comboIndex = (this.comboIndex + 1) % COMBO.length;
-        this.attack(COMBO[this.comboIndex]!);
-        return;
+        if (q === 'dodge') {
+          this.tryDodge();
+          return;
+        }
+        if (q === 'snare' && c.snare <= 0) {
+          c.snare = 3;
+          this.attack(SNARE);
+          return;
+        }
+        if (q === 'attack' && this.step !== SNARE) {
+          this.comboIndex = (this.comboIndex + 1) % COMBO.length;
+          this.attack(COMBO[this.comboIndex]!);
+          return;
+        }
       }
+      // A dodge's tail can be cut by the next action.
+      if (this.state === 'dodge' && this.stateTime < 0.16 && (this.queued === 'attack' || this.queued === 'snare')) this.stateTime = 0;
       if (this.stateTime <= 0) {
         if (this.state === 'barrier') this.endBarrier();
         if (this.state === 'attack') this.comboWindow = 0.45;
@@ -402,9 +477,15 @@ export class SubaruCombat extends Component {
       this.attack(COMBO[this.comboIndex]!);
       return;
     }
-    if (input.pressed('attackHeavy') && c.snare <= 0) {
+    if (this.queued === 'snare' && c.snare <= 0) {
+      this.queued = null;
       c.snare = 3;
       this.attack(SNARE);
+      return;
+    }
+    if (this.queued === 'dodge') {
+      this.queued = null;
+      this.tryDodge();
       return;
     }
     if (input.pressed('ability1')) this.castShamak();

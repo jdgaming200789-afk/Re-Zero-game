@@ -157,6 +157,8 @@ export class AudioManager implements GameSystem, VoiceProvider {
     ev.on('story:event', ({ id }) => this.storyCue(id));
     ev.on('combat:hit', ({ critical, damageType }) => this.hit(damageType, critical));
     ev.on('combat:parried', () => this.clack());
+    ev.on('combat:perfectDodge', () => this.whoosh());
+    ev.on('combat:finalBlow', () => this.finalBlow());
     ev.on('ui:notify', ({ kind }) => this.chime(kind ?? 'info'));
     ev.on('quest:completed', () => this.fanfare());
     ev.on('knowledge:learned', () => this.chime('knowledge'));
@@ -348,6 +350,27 @@ export class AudioManager implements GameSystem, VoiceProvider {
     s.thump(sfx, t, critical ? 180 : 140, 60, 0.16, critical ? 0.4 : 0.28);
     const freq = type === 'ice' ? 5200 : type === 'yin' ? 900 : type === 'wind' ? 3000 : type === 'light' ? 6500 : 2200;
     s.noiseHit(sfx, t, { type: 'bandpass', freq, q: 1.1, level: critical ? 0.3 : 0.2, decay: critical ? 0.22 : 0.12 });
+  }
+
+  /** Air torn past the ear: the perfect-dodge cue (a reversed swell into a ring). */
+  private whoosh(): void {
+    if (!this.ready) return;
+    const s = this.synth!;
+    const t = this.now;
+    const sfx = this.bus('sfx');
+    s.noiseHit(sfx, t, { type: 'bandpass', freq: 1200, q: 0.8, level: 0.22, attack: 0.12, decay: 0.18 });
+    s.bell(sfx, 91, t + 0.1, 0.035, 1.2);
+  }
+
+  /** The fight's last blow: a low hit and a ringing tail under the slow-motion. */
+  private finalBlow(): void {
+    if (!this.ready) return;
+    const s = this.synth!;
+    const t = this.now;
+    const sfx = this.bus('sfx');
+    s.thump(sfx, t, 110, 38, 0.6, 0.45);
+    s.noiseHit(sfx, t, { type: 'lowpass', freq: 900, level: 0.25, decay: 0.7 });
+    s.bell(sfx, 79, t + 0.05, 0.03, 2.2);
   }
 
   /** Wood on steel: a blade turned aside by a pair of chopsticks. */

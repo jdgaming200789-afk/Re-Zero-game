@@ -100,7 +100,10 @@ export class EarthwormController extends Component {
     this.health.lockInvulnerable(true); // hurtable only while surfaced
     this.health.extraRadius = 1.1;
     this.health.onDeath = () => this.die();
-    this.health.onHit = () => void this.visual.play('flinch');
+    this.health.onHit = () => {
+      this.visual.hitFlash?.(0.6);
+      void this.visual.play('flinch');
+    };
   }
 
   override onDetach(): void {

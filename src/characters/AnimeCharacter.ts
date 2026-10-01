@@ -2,6 +2,7 @@ import { BufferAttribute, Color, Group, Quaternion, SkinnedMesh, Uniform, Vector
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { loadModel } from './ModelCache';
 import { buildOutlines } from './render/Outlines';
+import { LodSwitcher, meshLodReady } from './render/MeshLod';
 import { clamp, damp, DEG, Easing } from '../core/math/MathUtil';
 import type { Scheduler } from '../core/Scheduler';
 import type { CharacterDefinition } from '../data/characters';
@@ -71,6 +72,8 @@ export class AnimeCharacter implements CharacterVisual {
   readonly envShadow = new Uniform(1);
   /** Dither fade (1 = opaque): characters dissolve when the camera is inside them. */
   readonly fade = new Uniform(1);
+  /** Hit flash strength (decays over ~0.12 s). */
+  readonly flash = new Uniform(0);
   private occluding = false;
   /** Returns true when the ray from a point towards the key light is blocked. */
   occlusionQuery: ((from: Vector3, dirToLight: Vector3) => boolean) | null = null;
@@ -79,6 +82,8 @@ export class AnimeCharacter implements CharacterVisual {
   private readonly lastRootPos = new Vector3(1e9, 0, 0);
   private airBlend = 0;
   private lean = 0;
+  /** Index-only levels of detail by on-screen size. */
+  lod!: LodSwitcher;
 
   private constructor(
     readonly def: CharacterDefinition,
@@ -95,7 +100,7 @@ export class AnimeCharacter implements CharacterVisual {
 
   static async create(def: CharacterDefinition, scheduler: Scheduler): Promise<AnimeCharacter> {
     const c = new AnimeCharacter(def, scheduler);
-    const gltf = await loadModel(def.model);
+    const [gltf] = await Promise.all([loadModel(def.model), meshLodReady]);
     const model = SkeletonUtils.clone(gltf.scene) as Object3D;
     c.root.add(model);
     c.setup(model);
@@ -120,8 +125,8 @@ export class AnimeCharacter implements CharacterVisual {
         const src = m as MeshStandardMaterial;
         const role = ((src.userData.role as AnimeRole) ?? 'cloth') as AnimeRole;
         if (role === 'face' && this.face)
-          return createAnimeMaterial({ color: new Color(1, 1, 1), role: 'face', map: this.face.texture, emissiveMap: this.face.glow, envShadow: this.envShadow, fade: this.fade });
-        return createAnimeMaterial({ color: src.color.clone(), role, envShadow: role === 'hair' ? this.envShadow : undefined, fade: this.fade, vertexColors: !!mesh.geometry.attributes.color });
+          return createAnimeMaterial({ color: new Color(1, 1, 1), role: 'face', map: this.face.texture, emissiveMap: this.face.glow, envShadow: this.envShadow, fade: this.fade, flash: this.flash });
+        return createAnimeMaterial({ color: src.color.clone(), role, envShadow: role === 'hair' ? this.envShadow : undefined, fade: this.fade, flash: this.flash, vertexColors: !!mesh.geometry.attributes.color });
       };
       const firstMat = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as MeshStandardMaterial;
       const isHair = firstMat.userData.role === 'hair';
@@ -154,6 +159,14 @@ export class AnimeCharacter implements CharacterVisual {
         width: (role) => (role === 'face' ? 0.0012 : role === 'hair' ? 0.0022 : 0.0026),
       }),
     );
+    // Levels of detail: the face keeps its painted UV layout at full detail;
+    // outline shells run a level coarser than the surfaces they trace.
+    this.lod = new LodSwitcher(def.height);
+    model.traverse((o) => {
+      const m = o as SkinnedMesh;
+      if (!m.isSkinnedMesh || typeof m.userData.face === 'string') return;
+      this.lod.add(m, m.name.endsWith('_outline') ? 1 : 0);
+    });
 
     this.rig = new HumanoidRig(model, skinned);
     const hips = this.rig.bone('hips');
@@ -279,6 +292,10 @@ export class AnimeCharacter implements CharacterVisual {
     return bone.getWorldPosition(out);
   }
 
+  hitFlash(strength = 1): void {
+    this.flash.value = Math.max(this.flash.value, strength);
+  }
+
   dispose(): void {
     this.face?.dispose();
     // Materials and merged outline shells are per instance; source geometry
@@ -292,6 +309,7 @@ export class AnimeCharacter implements CharacterVisual {
     // Nearest of chest / head to the camera: fade before it clips inside.
     const view = CharacterLighting.viewPosition;
     const d = Math.min(this.rig.bone('chest').getWorldPosition(_v).distanceTo(view), this.rig.bone('head').getWorldPosition(_v).distanceTo(view));
+    this.lod.update(d);
     const target = CharacterLighting.cameraFade ? Math.min(clamp((d - 0.45) / 0.75, 0, 1), this.occluding ? 0.35 : 1) : 1;
     // Fade out fast (a snapping camera must never sit inside a hull for a
     // few frames), back in gently.
@@ -327,6 +345,7 @@ export class AnimeCharacter implements CharacterVisual {
     this.updateEnvShadow(dt);
     this.updateFaceDetail();
     this.updateCameraFade(dt);
+    if (this.flash.value > 0) this.flash.value = Math.max(0, this.flash.value - dt * 8);
 
     // --- Base: idle ↔ locomotion
     const moving = clamp((loco.speed - 0.05) / 0.5, 0, 1);

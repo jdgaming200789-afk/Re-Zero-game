@@ -56,6 +56,12 @@ export class EnemyController extends Component {
       const src = this.game.combat.get(info.sourceId);
       if (src) this.addThreat(src, r.applied * 2 + 5);
       if (this.state === 'idle' || this.state === 'suspicious') this.alert(src ?? null);
+      this.actor.visual.hitFlash?.(r.staggered || info.critical ? 1 : 0.65);
+      // Knocked back along the blow (not out of a lunge already committed).
+      if (!r.killed && info.direction && this.state !== 'strike') {
+        const push = 0.2 + (info.stagger ?? 0) * 0.022 + (r.staggered ? 0.6 : 0);
+        this.actor.dash(_a.copy(info.direction).setY(0).normalize(), push, r.staggered ? 0.22 : 0.14, false);
+      }
       if (r.staggered) this.enterStagger();
       else if (this.state !== 'windup' && this.state !== 'strike' && !r.killed) void this.actor.visual.play('flinch', { fadeIn: 0.03 });
     };

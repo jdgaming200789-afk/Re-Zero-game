@@ -112,6 +112,14 @@ class TowerFootArea extends Area {
     const fire = g.vfx.add(new Fire({ scale: 1.1, lightIntensity: 32, lightDistance: 20 }), this.scope);
     fire.position.set(CAMP.x - 3, heightAt(CAMP.x - 3, CAMP.z - 6) + 0.15, CAMP.z - 6);
     this.root.add(fire);
+    // Braziers flanking the great doors: one warm light between them, so the
+    // entrance reads from across the plaza instead of as a black void.
+    const doorZ = GATE_FRONT_Z + 4.9;
+    for (const side of [-1, 1]) {
+      const f = g.vfx.add(new Fire({ scale: 0.8, lightIntensity: 26, lightDistance: 15, light: side < 0, lightOffset: new Vector3(4.6, 1.4, -0.6) }), this.scope);
+      f.position.set(side * 4.6, 5.0 + 1.08, doorZ);
+      this.root.add(f);
+    }
     const lantern = new PointLight(0xffb46b, 4, 7, 2);
     lantern.position.set(CAMP.x + 2 + 0.95, heightAt(CAMP.x + 2, CAMP.z - 2) + 2.05, CAMP.z - 2 + 1.8);
     this.root.add(lantern);
@@ -272,7 +280,7 @@ class TowerFootArea extends Area {
       const x = Math.cos(a) * r;
       const z = Math.sin(a) * r * 0.8;
       if (z < -90) continue;
-      b.place(rng.pick(['Rock_B', 'Rock_D']), x, this.ground(x, z, 1.2), z, { rotY: rng.range(0, 6.28), scale: rng.range(1.2, 2.2), collide: false });
+      b.place(rng.pick(['Rock_B', 'Rock_D']), x, this.ground(x, z, 1.2), z, { rotY: rng.range(0, 6.28), scale: rng.range(1.2, 2.2) });
     }
   }
 
@@ -288,7 +296,7 @@ class TowerFootArea extends Area {
       const x = rng.range(FLATS.minX + 6, FLATS.maxX - 6);
       const z = rng.range(FLATS.minZ + 4, FLATS.maxZ - 4);
       if (flatsMask(x, z) < 0.8) continue;
-      b.place('Rubble_Small', x, this.ground(x, z, 0.1), z, { rotY: rng.range(0, 6.28), collide: false });
+      b.place('Rubble_Small', x, this.ground(x, z, 0.1), z, { rotY: rng.range(0, 6.28) });
     }
   }
 
@@ -296,6 +304,8 @@ class TowerFootArea extends Area {
     const z0 = STAIRS_FOOT_Z;
     b.place('Obelisk', -24, 0, z0 + 4, { rotY: 0 });
     b.place('Obelisk', 24, 0, z0 + 4, { rotY: 0 });
+    // Braziers flanking the great doors (their fires are lit in load()).
+    for (const side of [-1, 1]) b.place('Brazier', side * 4.6, 5.0, GATE_FRONT_Z + 4.9);
     for (const side of [-1, 1]) {
       for (let i = 0; i < 3; i++) {
         const x = side * (14 + i * 7);

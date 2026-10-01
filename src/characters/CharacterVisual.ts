@@ -75,5 +75,7 @@ export interface CharacterVisual {
   setOccluding?(occluding: boolean): void;
   /** World position of a named socket (hand_R, head, chest...). */
   socketPosition(name: string, out: Vector3): Vector3;
+  /** Brief white-hot flash when struck (0..1 strength). */
+  hitFlash?(strength?: number): void;
   dispose(): void;
 }

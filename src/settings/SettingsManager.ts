@@ -82,9 +82,13 @@ export class SettingsManager {
       const parsed = JSON.parse(raw) as Partial<GameSettings>;
       // Merge section by section so settings added in later versions get
       // their defaults instead of `undefined`.
+      const graphics = { ...defaults.graphics, ...(parsed.graphics ?? {}) };
+      // A named preset means "the preset's values": re-apply them so tuning
+      // a preset in a later version reaches players who picked it.
+      if (graphics.preset !== 'custom' && graphics.preset in QUALITY_PRESETS) Object.assign(graphics, QUALITY_PRESETS[graphics.preset as QualityPreset]);
       return {
         version: SETTINGS_VERSION,
-        graphics: { ...defaults.graphics, ...(parsed.graphics ?? {}) },
+        graphics,
         audio: { ...defaults.audio, ...(parsed.audio ?? {}) },
         gameplay: { ...defaults.gameplay, ...(parsed.gameplay ?? {}) },
         bindings: { ...(parsed.bindings ?? {}) },

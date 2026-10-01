@@ -107,7 +107,10 @@ export class CombatManager implements GameSystem {
     const result = target.receive(info);
     const point = info.point ?? target.center(_p);
     if (result.ignored) {
-      if (target.alive && target.invulnerable) this.impacts.burst('block', point, 8);
+      if (target.alive && target.invulnerable) {
+        this.impacts.burst('block', point, 8);
+        target.onEvade?.(info);
+      }
       return result;
     }
     const g = this.game;
@@ -125,16 +128,42 @@ export class CombatManager implements GameSystem {
     const stop = info.hitStop ?? (heavy ? 0.07 : 0.035);
     if (stop > 0) g.time.hitStop(stop, 0.06);
     const playerId = g.player?.entity.id;
-    if (target.entity.id === playerId) g.camera.shake.add(heavy ? 0.45 : 0.25);
-    else if (info.sourceId === playerId) g.camera.shake.add(heavy ? 0.18 : 0.08);
+    if (target.entity.id === playerId) {
+      g.camera.shake.add(heavy ? 0.45 : 0.25);
+      g.camera.follow.kick(heavy ? 0.22 : 0.1);
+    } else if (info.sourceId === playerId) {
+      g.camera.shake.add(heavy ? 0.18 : 0.08);
+      if (heavy || info.critical) g.camera.follow.kick(-0.12);
+      if (info.critical) g.camera.follow.punchFov(-5);
+    }
     this.impacts.burst(result.absorbed > 0 && result.applied === 0 ? 'block' : info.type, point, heavy ? 28 : 16);
     target.onHit?.(result, info);
     if (result.killed) {
       g.events.emit('character:died', { entityId: target.entity.id, characterId: target.characterId ?? target.name });
       target.onDeath?.(info);
       log.info(`${target.name} defeated`);
+      if (this.encounterId && hostile('party', target.effectiveFaction) && !this.hostilesNear(target)) this.finalBlow(target, point);
     }
     return result;
+  }
+
+  private hostilesNear(except: Health): boolean {
+    const at = except.entity.object3D.position;
+    for (const h of this.bodies) {
+      if (h === except || !h.alive || h.entity.destroyed || !hostile('party', h.effectiveFaction)) continue;
+      if (h.entity.object3D.position.distanceTo(at) < 45) return true;
+    }
+    return false;
+  }
+
+  /** The last enemy falls: a beat of slow motion to let the fight land. */
+  private finalBlow(target: Health, point: Vector3): void {
+    const g = this.game;
+    g.time.slowMotion(0.25, 0.8);
+    g.camera.shake.add(0.3);
+    g.render.chromaticPulse = Math.max(g.render.chromaticPulse, 1.2);
+    target.entity.object3D.visible && this.impacts.burst('physical', point, 40);
+    g.events.emit('combat:finalBlow', { position: point.clone() });
   }
 
   heal(target: Health, amount: number): number {

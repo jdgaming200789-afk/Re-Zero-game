@@ -486,6 +486,8 @@ def build_rubble(name, seed, count=9, spread=1.2, stone="sandstone_ashlar"):
         v.co.z -= minz + 0.05
     finalize(o, name, smooth_angle=30)
     make_lods(o, (0.4,))
+    # A low mound you walk over (or around, where it's tall), not through.
+    collider_hull(name, 0, o)
 
 
 def build_brazier():
@@ -724,6 +726,7 @@ def build_campfire():
     o = join(parts, "Campfire")
     finalize(o, "Campfire", surface="stone", smooth_angle=40)
     o["socket_fire"] = "0,0.25,0"
+    collider_cyl("Campfire", 0, 0.78, 0.6, (0, 0, 0.3))
 
 
 def build_tent():

@@ -71,7 +71,8 @@ export class RenderPipeline {
   private aaPass: EffectPass | null = null;
 
   private settings: GraphicsSettings;
-  private readonly size = new Vector2();
+  /** Canvas size in CSS pixels. */
+  readonly size = new Vector2();
 
   // Grade blending (area moods, story beats)
   private gradeFrom: ColorGrade = { ...NEUTRAL_GRADE };

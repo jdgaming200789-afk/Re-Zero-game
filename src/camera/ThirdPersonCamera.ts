@@ -73,6 +73,13 @@ export class ThirdPersonCamera {
   collisionRadius = 0.22;
   autoRecenter = true;
   lockTarget: Vector3 | null = null;
+  /** Spring-driven kick along the view axis (+ pulls the camera back). */
+  private kickZ = 0;
+  private kickV = 0;
+  private fovPunch = 0;
+  /** Soft framing assist toward a point (an attack's target) while the player isn't steering. */
+  private readonly assistPoint = new Vector3();
+  private assistTime = 0;
 
   readonly pose: CameraPose = { position: new Vector3(), quaternion: new Quaternion(), fov: 55 };
 
@@ -120,6 +127,22 @@ export class ThirdPersonCamera {
     this.pitch = clamp(Math.asin(clamp(d.y / len, -1, 1)), this.minPitch, this.maxPitch);
   }
 
+  /** Jolt the camera along its view axis (impacts). */
+  kick(strength: number): void {
+    this.kickV += strength * 9;
+  }
+
+  /** Brief FOV change in degrees (negative = punch in). */
+  punchFov(deg: number): void {
+    if (Math.abs(deg) > Math.abs(this.fovPunch)) this.fovPunch = deg;
+  }
+
+  /** For a moment, turn to keep `point` in frame with the character. */
+  assist(point: Vector3, seconds = 0.7): void {
+    this.assistPoint.copy(point);
+    this.assistTime = seconds;
+  }
+
   update(dt: number, target: FollowTarget, look: { x: number; y: number }): CameraPose {
     const p = PROFILES[this.profile];
     // Blend profile parameters so transitions into combat feel continuous.
@@ -144,6 +167,22 @@ export class ThirdPersonCamera {
       this.pitch = clamp(this.pitch, this.minPitch, this.maxPitch);
       if (looking) this.lookIdleTime = 0;
       else this.lookIdleTime += dt;
+      // Attack assist: swing round just enough to keep the struck enemy in
+      // frame (off-centre, beside the character), never fighting the stick.
+      if (this.assistTime > 0) {
+        this.assistTime -= dt;
+        if (!looking) {
+          const to = _v1.subVectors(this.assistPoint, target.position);
+          const flat = Math.hypot(to.x, to.z);
+          if (flat > 0.5) {
+            const towardYaw = Math.atan2(-to.x, -to.z);
+            const off = angleDelta(this.yaw, towardYaw);
+            // Only correct when it's drifting out of a ~50° cone.
+            const limit = 25 * DEG;
+            if (Math.abs(off) > limit) this.yaw = dampAngle(this.yaw, towardYaw - Math.sign(off) * limit, 0.18, dt);
+          }
+        }
+      }
       // Gentle recenter behind a moving character.
       if (this.autoRecenter && this.lookIdleTime > 1.6 && target.speed > 1.2) {
         const behind = target.yaw + Math.PI;
@@ -153,8 +192,16 @@ export class ThirdPersonCamera {
       }
     }
 
-    // ---- Pivot follow
+    // ---- Pivot follow (locked on: drift toward the target so both stay framed)
     const desiredPivot = _v2.copy(target.position).addScaledVector(UP, target.pivotHeight + this.params.pivotLift);
+    let lockPull = 0;
+    if (this.lockTarget) {
+      const sep = Math.hypot(this.lockTarget.x - target.position.x, this.lockTarget.z - target.position.z);
+      const w = clamp(sep / 14, 0, 0.3);
+      desiredPivot.x += (this.lockTarget.x - target.position.x) * w;
+      desiredPivot.z += (this.lockTarget.z - target.position.z) * w;
+      lockPull = clamp((sep - 3) * 0.12, 0, 1.4);
+    }
     if (!this.initialized) {
       this.pivot.copy(desiredPivot);
       this.currentDistance = this.params.distance;
@@ -177,19 +224,25 @@ export class ThirdPersonCamera {
     const shoulderPivot = _v3.copy(this.pivot).addScaledVector(right, this.shoulderCurrent);
 
     // ---- Collision along the boom
-    const desiredDistance = this.params.distance * this.zoom * (target.sprinting ? 1.1 : 1);
+    const desiredDistance = (this.params.distance + lockPull) * this.zoom * (target.sprinting ? 1.1 : 1);
     const hitDist = this.physics.sphereCast(shoulderPivot, back, this.collisionRadius, desiredDistance, Masks.camera);
     const allowed = hitDist !== null ? Math.max(0.35, hitDist - 0.04) : desiredDistance;
     if (allowed < this.currentDistance) this.currentDistance = damp(this.currentDistance, allowed, 0.02, dt);
     else this.currentDistance = damp(this.currentDistance, allowed, 0.32, dt);
 
-    this.pose.position.copy(shoulderPivot).addScaledVector(back, this.currentDistance);
+    // Impact kick: a stiff, critically damped spring (never past the boom's collision limit).
+    const k = 260;
+    this.kickV += (-k * this.kickZ - 2 * Math.sqrt(k) * this.kickV) * dt;
+    this.kickZ += this.kickV * dt;
+    const kick = clamp(this.kickZ, -0.4, Math.max(0, allowed - this.currentDistance));
+    this.pose.position.copy(shoulderPivot).addScaledVector(back, this.currentDistance + kick);
 
     // ---- FOV: widen slightly when sprinting, when pulled in close (feels less claustrophobic).
     const closeness = clamp(1 - this.currentDistance / desiredDistance, 0, 1);
     const fovTarget = this.baseFov + this.params.fovAdd + (target.sprinting ? 6 : 0) + closeness * 5;
     this.fovCurrent = damp(this.fovCurrent, fovTarget, 0.35, dt);
-    this.pose.fov = this.fovCurrent;
+    this.fovPunch = damp(this.fovPunch, 0, 0.08, dt);
+    this.pose.fov = this.fovCurrent + this.fovPunch;
     return this.pose;
   }
 

@@ -96,6 +96,18 @@ export class FaceRenderer {
   private boost = 1;
   /** Seconds between repaints (faces far from the camera repaint rarely). */
   redrawInterval = 1 / 30;
+  /**
+   * Repaints allowed per frame across every face (each re-uploads two
+   * canvases). A crowded fight otherwise uploads a face per character per
+   * frame; over-budget faces simply repaint a frame later.
+   */
+  static budget = 3;
+  private static used = 0;
+
+  /** Called once per frame by the game loop. */
+  static beginFrame(): void {
+    FaceRenderer.used = 0;
+  }
 
   constructor(readonly style: FaceStyle) {
     const c = document.createElement('canvas');
@@ -190,8 +202,8 @@ export class FaceRenderer {
       this.dirty = true;
     }
     this.redrawCooldown -= dt;
-    if (this.dirty && this.redrawCooldown <= 0) {
-      this.draw();
+    if (this.dirty && this.redrawCooldown <= 0 && FaceRenderer.used < FaceRenderer.budget) {
+      if (this.draw()) FaceRenderer.used++;
       this.redrawCooldown = this.redrawInterval;
     }
   }
@@ -203,13 +215,14 @@ export class FaceRenderer {
   }
 
   // ------------------------------------------------------------------ drawing
-  private draw(): void {
+  /** Repaints the face; false when nothing visible changed (no upload). */
+  private draw(): boolean {
     this.dirty = false;
     const s = this.style;
     const e = this.current;
     const mouth = this.viseme ?? this.mouth;
     const key = `${JSON.stringify(e)}|${mouth}|${this.gaze.x.toFixed(2)},${this.gaze.y.toFixed(2)}|${this.blinkT.toFixed(2)}`;
-    if (key === this.lastKey) return;
+    if (key === this.lastKey) return false;
     this.lastKey = key;
     const g = this.ctx;
     g.fillStyle = s.skin;
@@ -239,6 +252,7 @@ export class FaceRenderer {
     if (e.tears > 0.05) this.drawTears(e.tears, eyeLine, spread);
     this.texture.needsUpdate = true;
     this.glow.needsUpdate = true;
+    return true;
   }
 
   /** Upper lid sampled from the inner to the outer corner. */

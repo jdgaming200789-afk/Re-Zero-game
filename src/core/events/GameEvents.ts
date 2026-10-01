@@ -74,6 +74,10 @@ export interface GameEvents {
   'combat:hit': { attackerId: number; targetId: number; position: Vector3; amount: number; critical: boolean; damageType: string };
   /** A blow turned aside by a guard (Reid's chopsticks). */
   'combat:parried': { targetId: number; attackerId: number; position: Vector3 };
+  /** Subaru slipped a blow inside a fresh dodge (time slows, next hit critical). */
+  'combat:perfectDodge': { position: Vector3 };
+  /** The last enemy of an encounter fell. */
+  'combat:finalBlow': { position: Vector3 };
   'combat:lockOnChanged': { targetId: number | null };
   /** Subaru swung the whip or cast (areas with rules about violence listen). */
   'combat:playerAction': { kind: 'whip' | 'shamak' | 'barrier' };

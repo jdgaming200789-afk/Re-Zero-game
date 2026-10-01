@@ -379,7 +379,11 @@ def collider_box(piece: str, index: int, size, center, rot_z=0.0):
 
 
 def collider_cyl(piece: str, index: int, radius, height, center):
-    o = cylinder(f"COL_{piece}_{index}_CYL", radius, height, center, segments=12)
+    # Built at the origin and moved by its location, so a rotation set
+    # afterwards turns it about its own centre (a baked-in offset would
+    # swing around the piece origin instead).
+    o = cylinder(f"COL_{piece}_{index}_CYL", radius, height, (0, 0, 0), segments=12)
+    o.location = center
     o["collider"] = "cyl"
     return o
 

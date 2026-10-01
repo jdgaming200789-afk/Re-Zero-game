@@ -67,6 +67,10 @@ export interface FireOptions {
   lightDistance?: number;
   lightColor?: number;
   embers?: boolean;
+  /** False: flames and embers only (another fire lights the area). */
+  light?: boolean;
+  /** Where the light sits relative to the flames (e.g. centred between a pair of braziers). */
+  lightOffset?: Vector3;
   /** Stronger, colder, magical flame. */
   color?: 'warm' | 'blue' | 'green';
 }
@@ -81,6 +85,7 @@ export class Fire extends Group implements VfxUpdatable {
   private readonly materials: ShaderMaterial[] = [];
   readonly embers: ParticleEmitter | null;
   private readonly baseIntensity: number;
+  private readonly lightBase = new Vector3();
   private readonly seed = Math.random() * 100;
   scope = '';
   private t = 0;
@@ -119,7 +124,10 @@ export class Fire extends Group implements VfxUpdatable {
     }
     this.baseIntensity = opts.lightIntensity ?? 14 * scale;
     this.light = new PointLight(opts.lightColor ?? palette.light, this.baseIntensity, opts.lightDistance ?? 9 * Math.sqrt(scale), 2);
-    this.light.position.y = 0.5 * scale;
+    this.lightBase.set(0, 0.5 * scale, 0);
+    if (opts.lightOffset) this.lightBase.add(opts.lightOffset);
+    this.light.position.copy(this.lightBase);
+    this.light.visible = opts.light !== false;
     // No cube shadows: a point-light shadow redraws the scene six more times
     // a frame, and three's frozen cube maps rendered every lit material
     // black on some GPUs (the "black flash" mid-fight at the camp).
@@ -144,8 +152,8 @@ export class Fire extends Group implements VfxUpdatable {
     // Organic flicker: two noise bands plus rare gutters.
     const n = noise1D(this.t * 7 + this.seed, 5) * 0.12 + noise1D(this.t * 19 + this.seed, 9) * 0.06;
     this.light.intensity = this.baseIntensity * (0.92 + n);
-    this.light.position.x = noise1D(this.t * 3 + this.seed, 2) * 0.03;
-    this.light.position.z = noise1D(this.t * 3 + this.seed, 3) * 0.03;
+    this.light.position.x = this.lightBase.x + noise1D(this.t * 3 + this.seed, 2) * 0.03;
+    this.light.position.z = this.lightBase.z + noise1D(this.t * 3 + this.seed, 3) * 0.03;
     this.embers?.update(dt, camera.position);
   }
 

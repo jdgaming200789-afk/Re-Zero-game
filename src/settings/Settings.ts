@@ -110,8 +110,10 @@ export const QUALITY_PRESETS: Record<QualityPreset, Omit<GraphicsSettings, 'pres
     volumetrics: true,
   },
   ultra: {
-    resolutionScale: 1.25,
-    dynamicResolution: false,
+    // Ultra's extra sharpness comes from the 2x high-DPI cap; rendering above
+    // native resolution as well (1.25x of 2x) was what made Ultra crawl.
+    resolutionScale: 1,
+    dynamicResolution: true,
     shadowQuality: 'ultra',
     textureQuality: 'high',
     effectsQuality: 'high',

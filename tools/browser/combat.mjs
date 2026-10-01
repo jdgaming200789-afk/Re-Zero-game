@@ -90,6 +90,47 @@ try {
   });
   await shot(page, 'combat_barrier');
   check('E·M·M barrier nullifies a hit', blocked === true);
+  await step(page, 1.4, false);
+  const counter = await page.evaluate(() => window.__game.player.entity.components.find((c) => c.constructor.name === 'SubaruCombat').nextCritical);
+  check('a blow soaked by the barrier sets up a critical counter', counter === true);
+
+  // Perfect dodge: a blow that passes through a fresh dodge slows time.
+  await step(page, 0.6, false);
+  await press(page, 'Key:AltLeft');
+  await step(page, 0.08, false);
+  const perfect = await page.evaluate(() => {
+    const g = window.__game;
+    const sc = g.player.entity.components.find((c) => c.constructor.name === 'SubaruCombat');
+    const dummy = g.combat.all().find((h) => h.name === 'Practice Dummy');
+    let fired = false;
+    const off = g.events.on('combat:perfectDodge', () => (fired = true));
+    const r = g.combat.damage(sc.health, { amount: 20, type: 'physical', sourceId: dummy.entity.id });
+    off?.();
+    return { fired, ignored: r.ignored, scale: g.time.timeScale };
+  });
+  check('a blow inside a fresh dodge is a perfect dodge (slow motion)', perfect.fired && perfect.ignored && perfect.scale < 0.5, JSON.stringify(perfect));
+  await step(page, 1.0, false);
+
+  // Buffered input: a press during the swing chains the next one.
+  const chained = await page.evaluate(async () => {
+    const g = window.__game;
+    const sc = g.player.entity.components.find((c) => c.constructor.name === 'SubaruCombat');
+    const press = (code) => {
+      g.input.simulate(code, true);
+      g.frame(1 / 60, false);
+      g.input.simulate(code, false);
+    };
+    press('Mouse:0');
+    for (let i = 0; i < 6; i++) g.frame(1 / 60, false);
+    press('Mouse:0'); // buffered mid-swing
+    let maxIndex = 0;
+    for (let i = 0; i < 60; i++) {
+      g.frame(1 / 60, false);
+      maxIndex = Math.max(maxIndex, sc.comboIndex);
+    }
+    return maxIndex;
+  });
+  check('a press during a swing is buffered into the next combo hit', chained >= 1, `combo index ${chained}`);
 
   // Take a real hit, then drink a tonic.
   await step(page, 1.5, false);

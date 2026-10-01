@@ -67,7 +67,9 @@ def ring_segment_windows(radius, z, count, w, h, skip_front=False, lit_every=0):
         c, s = math.cos(a), math.sin(a)
         is_lit = lit_every and (i % lit_every == 0)
         pane = box(f"win_{z}_{i}", (w, 0.4, h), (0, 0, 0), "dark")
-        top = cylinder(f"wtop_{z}_{i}", w / 2, 0.4, (0, 0, 0), segments=12, mat="dark")
+        # The arch cap sits a little inside the pane's faces: flush caps
+        # z-fought with the pane where they overlap.
+        top = cylinder(f"wtop_{z}_{i}", w / 2, 0.34, (0, 0, 0), segments=12, mat="dark")
         top.rotation_euler = (math.pi / 2, 0, 0)
         top.location = (0, 0, h / 2)
         apply_transform(top)
@@ -176,18 +178,111 @@ def build_gate(radius):
     so.location = (0, front_y - 5.2, 5.0 + GATE_H + 9.0)
     apply_transform(so)
     parts.append(so)
-    # Broad stairs up to the gate threshold (5 m rise), from the plaza.
-    n = 20
-    for i in range(n):
-        h = 5.0 * (i + 1) / n
-        w = GATE_W + 16.0 - i * 0.2
-        st = box(f"gst{i}", (w, 0.9, 0.25), (0, front_y - 22.0 + i * 0.9, h - 0.125), "limestone_smooth")
-        parts.append(st)
-    fill = box("gst_fill", (GATE_W + 16.0, 18.0, 4.8), (0, front_y - 13.0, 2.4), "sandstone_ashlar")
-    parts.append(fill)
-    landing = box("gate_landing", (GATE_W + 20.0, 8.0, 5.0), (0, front_y - 2.5, 2.5), "limestone_smooth")
-    parts.append(landing)
+    # Great doors in the arch: two bronze leaves with banding and a seam.
+    door_y = front_y - 2.0 - 0.18
+    for side in (-1, 1):
+        leaf = box(f"door{side}", (GATE_W / 2 - 0.12, 0.3, GATE_H - GATE_W / 2 - 0.2), (side * (GATE_W / 4 + 0.03), door_y, 5.0 + (GATE_H - GATE_W / 2) / 2), "wood_dark")
+        parts.append(leaf)
+        for k in range(4):
+            band = box(f"door_band{side}_{k}", (GATE_W / 2 - 0.5, 0.12, 0.35), (side * (GATE_W / 4 + 0.03), door_y - 0.2, 6.6 + k * 3.6), "gold")
+            parts.append(band)
+        ring = cylinder(f"door_ring{side}", 0.42, 0.12, (0, 0, 0), segments=16, mat="gold")
+        ring.rotation_euler = (math.pi / 2, 0, 0)
+        ring.location = (side * 0.9, door_y - 0.24, 10.2)
+        apply_transform(ring)
+        parts.append(ring)
+    parts += build_stairs(front_y)
     return parts
+
+
+# Gate stairs: 19 solid treads rising to the landing (the 20th rise).
+STAIR_W = 26.0
+STAIR_RISE = 0.25
+STAIR_RUN = 0.9
+STAIR_STEPS = 19
+CHEEK_W = 1.4
+
+
+def landing_front(front_y):
+    return front_y - 6.5
+
+
+def stairs_foot(front_y):
+    return landing_front(front_y) - STAIR_STEPS * STAIR_RUN
+
+
+def build_stairs(front_y):
+    """Broad stairs up to the gate threshold (5 m rise), from the plaza.
+
+    Every tread is solid down to the ground (no floating slabs, no fill
+    block to walk through), the top tread meets the landing at its edge
+    (no coplanar tops to z-fight), and parapet cheeks close the sides.
+    """
+    parts = []
+    land_y = landing_front(front_y)
+    foot_y = stairs_foot(front_y)
+    for i in range(STAIR_STEPS):
+        top = STAIR_RISE * (i + 1)
+        y0 = foot_y + i * STAIR_RUN
+        parts.append(box(f"gst{i}", (STAIR_W, STAIR_RUN, top), (0, y0 + STAIR_RUN / 2, top / 2), "limestone_smooth"))
+    slope = STAIR_RISE / STAIR_RUN
+    for side in (-1, 1):
+        x0 = side * STAIR_W / 2
+        x1 = side * (STAIR_W / 2 + CHEEK_W)
+        bm = bmesh.new()
+        ya, yb = foot_y - 0.6, land_y
+        za, zb = 1.0, 1.0 + (yb - foot_y) * slope
+        vs = [bm.verts.new(v) for v in [(x0, ya, 0), (x1, ya, 0), (x1, yb, 0), (x0, yb, 0), (x0, ya, za), (x1, ya, za), (x1, yb, zb), (x0, yb, zb)]]
+        for f in [(0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]:
+            bm.faces.new([vs[k] for k in f])
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        cheek = mesh_object(f"gst_cheek{side}", bm)
+        assign(cheek, "sandstone_ashlar")
+        parts.append(cheek)
+        # Coping along the cheek's top, and a newel block at its foot.
+        cap = box(f"gst_cope{side}", (CHEEK_W + 0.3, math.hypot(yb - ya, zb - za) + 0.2, 0.22), (0, 0, 0), "limestone_smooth")
+        cap.rotation_euler = (math.atan2(zb - za, yb - ya), 0, 0)
+        cap.location = ((x0 + x1) / 2, (ya + yb) / 2, (za + zb) / 2 + 0.11)
+        apply_transform(cap)
+        parts.append(cap)
+        newel = box(f"gst_newel{side}", (CHEEK_W + 0.6, 1.6, 1.7), ((x0 + x1) / 2, foot_y - 1.2, 0.85), "limestone_smooth")
+        bevel(newel, 0.08, 2)
+        parts.append(newel)
+    return parts
+
+
+def stair_colliders(front_y):
+    """A ramp through the tread midpoints, and tall cheek walls."""
+    land_y = landing_front(front_y)
+    foot_y = stairs_foot(front_y)
+    slope = STAIR_RISE / STAIR_RUN
+    theta = math.atan(slope)
+    # Ramp top: z = (y - y_start) * slope, rising to 5.0 just past the landing edge.
+    y_start = foot_y - 0.5 * STAIR_RUN
+    y_end = y_start + 5.0 / slope
+    length = math.hypot(y_end - y_start, 5.0)
+    thick = 6.0
+    my, mz = (y_start + y_end) / 2, 2.5
+    c = collider_box("TowerBase", 3, (STAIR_W, length, thick), (0, my + math.sin(theta) * thick / 2, mz - math.cos(theta) * thick / 2))
+    c.rotation_euler = (theta, 0, 0)
+    for side in (-1, 1):
+        ya, yb = foot_y - 0.6, land_y
+        za, zb = 1.0, 1.0 + (yb - foot_y) * slope + 0.22
+        th = math.atan2(zb - za, yb - ya)
+        ln = math.hypot(yb - ya, zb - za)
+        t = 9.0
+        cc = collider_box("TowerBase", 8 + (side > 0), (CHEEK_W, ln, t), (side * (STAIR_W / 2 + CHEEK_W / 2), (ya + yb) / 2 + math.sin(th) * t / 2, (za + zb) / 2 - math.cos(th) * t / 2))
+        cc.rotation_euler = (th, 0, 0)
+        collider_box("TowerBase", 10 + (side > 0), (CHEEK_W + 0.6, 1.6, 1.7), (side * (STAIR_W / 2 + CHEEK_W / 2), foot_y - 1.2, 0.85))
+
+
+def build_landing(radius, front_y):
+    """The gate landing, cut back where the plinth's top ring already is
+    (their tops share z = 5: overlapping, they z-fought)."""
+    landing = box("gate_landing", (GATE_W + 20.0, 8.0, 5.0), (0, front_y - 2.5, 2.5), "limestone_smooth")
+    cutter = cylinder("landing_cut", radius + 3.0 + 0.02, 12.0, (0, 0, 2.5), segments=96)
+    boolean_diff(landing, cutter, solver="EXACT")
+    return landing
 
 
 def build_plinth(radius):
@@ -241,6 +336,7 @@ def main():
     crown, glow = build_crown(TIERS[-1][2] + 2.2)
     upper_parts += crown
     base_parts += build_gate(TIERS[0][0])
+    base_parts.append(build_landing(TIERS[0][0], -TIERS[0][0]))
 
     base = join(base_parts, "TowerBase")
     base.name = "KIT_TowerBase"
@@ -270,11 +366,13 @@ def main():
         collider_box("TowerBase", 20 + i, (3.0, 3.2, 30.0), (math.cos(a) * (r0 + 1.4), math.sin(a) * (r0 + 1.4), 20.0), rot_z=a - math.pi / 2)
     collider_cyl("TowerBase", 1, r0 + 7.0, 1.6, (0, 0, 0.8))
     collider_cyl("TowerBase", 2, r0 + 5.0, 3.2, (0, 0, 1.6))
+    # The plinth's top ring is walkable where the landing meets it.
+    collider_cyl("TowerBase", 7, r0 + 3.0, 5.0, (0, 0, 2.5))
     front_y = -r0
-    ramp_len = math.hypot(18.0, 5.0)
-    c = collider_box("TowerBase", 3, (GATE_W + 16.0, ramp_len, 0.5), (0, front_y - 13.0, 2.4))
-    c.rotation_euler = (math.atan2(5.0, 18.0), 0, 0)
+    stair_colliders(front_y)
     collider_box("TowerBase", 4, (GATE_W + 20.0, 8.0, 5.0), (0, front_y - 2.5, 2.5))
+    # The closed doors (their face sits 0.33 m in front of the tunnel).
+    collider_box("TowerBase", 12, (GATE_W, 1.0, GATE_H), (0, front_y - 2.0 - 0.33 + 0.5, 5.0 + GATE_H / 2))
     for side in (-1, 1):
         collider_box("TowerBase", 5 + (side > 0), (5.0, 6.0, 30.0), (side * (GATE_W / 2 + 2.5), front_y - 1.8, 20.0))
 

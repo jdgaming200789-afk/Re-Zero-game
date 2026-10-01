@@ -16,6 +16,7 @@ export class WormVisual implements CharacterVisual {
   readonly root = new Group();
   eyeHeight = 1;
   readonly fade = new Uniform(1);
+  readonly flash = new Uniform(0);
   readonly envShadow = new Uniform(1);
   private readonly segs: Bone[] = [];
   private readonly restWorld: Quaternion[] = [];
@@ -49,7 +50,7 @@ export class WormVisual implements CharacterVisual {
     for (const mesh of skinned) {
       const convert = (m: Material): Material => {
         const src = m as MeshStandardMaterial;
-        return createAnimeMaterial({ color: src.color.clone(), role: ((src.userData.role as AnimeRole) ?? 'cloth') as AnimeRole, fade: this.fade, envShadow: this.envShadow, vertexColors: !!mesh.geometry.attributes.color });
+        return createAnimeMaterial({ color: src.color.clone(), role: ((src.userData.role as AnimeRole) ?? 'cloth') as AnimeRole, fade: this.fade, flash: this.flash, envShadow: this.envShadow, vertexColors: !!mesh.geometry.attributes.color });
       };
       mesh.material = Array.isArray(mesh.material) ? mesh.material.map(convert) : convert(mesh.material);
       for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) this.owned.push(m);
@@ -137,6 +138,9 @@ export class WormVisual implements CharacterVisual {
     return out.copy(this.headPos);
   }
   setOccluding(): void {}
+  hitFlash(strength = 1): void {
+    this.flash.value = Math.max(this.flash.value, strength);
+  }
   dispose(): void {
     for (const o of this.owned) o.dispose();
     this.root.removeFromParent();
@@ -144,6 +148,7 @@ export class WormVisual implements CharacterVisual {
 
   update(dt: number, _loco: LocomotionState): void {
     this.time += dt;
+    if (this.flash.value > 0) this.flash.value = Math.max(0, this.flash.value - dt * 8);
     this.sway = damp(this.sway, this.swayTarget, 0.2, dt);
     this.swayTarget = Math.max(0, this.swayTarget - dt * 0.6);
     if (!this.segs.length) return;

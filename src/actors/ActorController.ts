@@ -247,7 +247,11 @@ export class ActorController extends Component {
     if (desiredSpeed > 0.05) {
       const targetYaw = Math.atan2(desired.x, desired.z);
       const delta = Math.abs(angleDelta(this.yaw, targetYaw));
-      this.yaw = moveTowardsAngle(this.yaw, targetYaw, mv.turnRate * DEG * dt);
+      // Ease into the heading (no bang-bang flicker when the steering
+      // wobbles by a few degrees), capped at the turn rate.
+      const maxTurn = mv.turnRate * DEG * dt;
+      const y = this.yaw + clamp(angleDelta(this.yaw, targetYaw) * Math.min(1, dt * 14), -maxTurn, maxTurn);
+      this.yaw = Math.atan2(Math.sin(y), Math.cos(y));
       const align = clamp(Math.cos(Math.min(delta, Math.PI)) * 0.8 + 0.2, 0.05, 1);
       const want = desiredSpeed * align;
       const accel = want > currentSpeed ? mv.acceleration : mv.deceleration;

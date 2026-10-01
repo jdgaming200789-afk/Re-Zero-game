@@ -193,6 +193,8 @@ export class CreatureVisual implements CharacterVisual {
       const chain = def.tail.filter((n) => n.startsWith(sd.prefix)).map((n) => this.bone(n)).filter((b): b is Bone => !!b);
       if (chain.length) this.springs.addChain(chain, { stiffness: sd.stiffness, drag: sd.drag, gravity: sd.gravity, hitRadius: sd.hitRadius ?? 0.04 });
     }
+    this.springs.center = this.root;
+    this.springs.inertia = 0.5;
   }
 
   private bone(name: string): Bone | undefined {

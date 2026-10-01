@@ -1,4 +1,5 @@
 import { Vector3 } from 'three';
+import { CLIPS } from '../characters/anim/Clips';
 import { createLogger } from '../core/Log';
 import type { CharacterVisual } from '../characters/CharacterVisual';
 import type { GameContext, GameSystem } from '../game/GameContext';
@@ -12,6 +13,43 @@ export interface ChatterLine {
   expression?: string;
   /** Override the reading-time estimate (seconds). */
   seconds?: number;
+  /** Gesture clip for the line ('none' for stillness); default: from the expression. */
+  anim?: string;
+}
+
+/** Talking hands: a gesture that suits the line's mood (varied by the text). */
+function autoGesture(line: ChatterLine): string | null {
+  if (line.anim) return line.anim === 'none' ? null : line.anim;
+  let h = 0;
+  for (let i = 0; i < line.text.length; i++) h = (h * 31 + line.text.charCodeAt(i)) >>> 0;
+  const pick = (opts: Array<string | null>) => opts[h % opts.length] ?? null;
+  switch (line.expression) {
+    case 'joy':
+      return pick(['laugh', 'laugh', 'nod']);
+    case 'happy':
+      return pick(['nod', 'explain', null, 'laugh']);
+    case 'sad':
+    case 'despair':
+      return pick(['sigh', 'lookDown']);
+    case 'angry':
+      return pick(['fist', 'shakeHead']);
+    case 'annoyed':
+      return pick(['shakeHead', 'sigh', 'facepalm']);
+    case 'thinking':
+      return 'think';
+    case 'surprised':
+    case 'fear':
+      return 'gasp';
+    case 'embarrassed':
+      return pick(['handOnChest', 'lookDown']);
+    case 'smug':
+    case 'cocky':
+      return pick(['shrug', null]);
+    case 'determined':
+      return pick(['fist', 'nod']);
+    default:
+      return pick(['explain', null, null, 'nod', 'shrug', null]);
+  }
 }
 
 export type ChatterTrigger =
@@ -167,6 +205,8 @@ export class ChatterSystem implements GameSystem {
         const seconds = line.seconds ?? Math.min(7, Math.max(2.2, 1.4 + line.text.length * 0.055));
         this.game.events.emit('bark:play', { speakerId: line.speaker, text: line.text, duration: seconds });
         if (line.expression) v.setExpression(line.expression, 1, seconds + 1);
+        const gesture = autoGesture(line);
+        if (gesture && CLIPS[gesture]) void v.play(gesture, { fadeIn: 0.15 });
         v.setSpeaking(true);
         // Everyone turns to the speaker; the speaker addresses whoever
         // spoke last (companion brains default to looking at Subaru).
@@ -183,6 +223,12 @@ export class ChatterSystem implements GameSystem {
         await this.game.scheduler.wait(seconds - speakTime + 0.25);
         if (isPlayer) v.lookAt(null);
         else player?.visual.lookAt(null);
+        // Now and then someone who was listening nods along.
+        const listeners = d.lines.map((l) => l.speaker).filter((id, i, a) => id !== line.speaker && a.indexOf(id) === i && this.present(id));
+        if (listeners.length && Math.random() < 0.35) {
+          const who = listeners[Math.floor(Math.random() * listeners.length)]!;
+          if (who !== player?.characterId) void this.visualOf(who)?.play('nod', { fadeIn: 0.12 });
+        }
         prevSpeaker = line.speaker;
       }
     } finally {

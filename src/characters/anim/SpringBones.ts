@@ -26,11 +26,24 @@ interface Joint {
   initialized: boolean;
 }
 
+/** Reference step the stiffness / gravity / drag settings are tuned for. */
+const BASE_STEP = 1 / 60;
+/** Largest distance a particle may travel in one step (m): no explosions. */
+const MAX_STEP_TRAVEL = 0.12;
+
 /**
  * VRM-style spring bones for hair strands, braids, drills, skirts and capes.
  * Each joint's tail is a verlet particle pulled back toward its animated
  * rest direction, under gravity and drag, pushed out of sphere colliders
  * on the body; the bone is then rotated to point at the particle.
+ *
+ * Stability at speed: particles live partly in the character's own frame
+ * (the `center`, like VRM's spring center) — only `inertia` of the body's
+ * travel and turning reaches them, so sprinting streams the hair back
+ * instead of slamming it into the head and shoulders. The simulation runs
+ * every frame in equal sub-steps of at most 1/60 s with time-corrected
+ * verlet, so it stays in lock-step with the interpolated body at any
+ * refresh rate (no 60 Hz judder at 144 Hz, no uneven kicks at 30 Hz).
  */
 export class SpringChainSystem {
   private readonly chains: Joint[][] = [];
@@ -38,7 +51,14 @@ export class SpringChainSystem {
   private readonly settings: SpringSettings[] = [];
   /** External wind (world m/s), e.g. desert gusts. */
   readonly wind = new Vector3();
-  private accumulator = 0;
+  /** The character root: particles are carried along with it. */
+  center: Object3D | null = null;
+  /** Fraction of the center's own motion the particles feel (0..1). */
+  inertia = 0.35;
+  private centerInit = false;
+  private readonly lastCenterPos = new Vector3();
+  private readonly lastCenterQ = new Quaternion();
+  private prevStep = BASE_STEP;
 
   addChain(bones: Bone[], s: SpringSettings): void {
     const joints: Joint[] = [];
@@ -79,19 +99,50 @@ export class SpringChainSystem {
   /** Snap particles to the current pose (after teleports / cutscene cuts). */
   reset(): void {
     for (const chain of this.chains) for (const j of chain) j.initialized = false;
+    this.centerInit = false;
   }
 
   update(dt: number): void {
-    // Fixed 60 Hz sub-steps for stability regardless of frame rate.
-    this.accumulator = Math.min(this.accumulator + dt, 0.1);
-    const step = 1 / 60;
-    while (this.accumulator >= step) {
-      this.accumulator -= step;
-      this.stepOnce(step);
+    if (dt <= 0) return;
+    dt = Math.min(dt, 0.1);
+    this.carryWithCenter();
+    const n = Math.max(1, Math.ceil(dt / BASE_STEP - 1e-6));
+    const h = dt / n;
+    for (let i = 0; i < n; i++) this.stepOnce(h);
+  }
+
+  /** Move every particle with (1 - inertia) of the center's motion since last frame. */
+  private carryWithCenter(): void {
+    const c = this.center;
+    if (!c) return;
+    c.matrixWorld.decompose(_cp, _cq, _cs);
+    if (!this.centerInit) {
+      this.centerInit = true;
+      this.lastCenterPos.copy(_cp);
+      this.lastCenterQ.copy(_cq);
+      return;
     }
+    const carry = 1 - this.inertia;
+    _dq.copy(_cq).multiply(_qi.copy(this.lastCenterQ).invert());
+    _pq.identity().slerp(_dq, carry);
+    _dp.subVectors(_cp, this.lastCenterPos).multiplyScalar(carry);
+    const pivot = this.lastCenterPos;
+    for (const chain of this.chains) {
+      for (const j of chain) {
+        if (!j.initialized) continue;
+        for (const p of [j.current, j.prev]) p.sub(pivot).applyQuaternion(_pq).add(pivot).add(_dp);
+      }
+    }
+    this.lastCenterPos.copy(_cp);
+    this.lastCenterQ.copy(_cq);
   }
 
   private stepOnce(dt: number): void {
+    // Time-corrected verlet: velocity scaled by the step ratio, drag and
+    // forces converted from their 60 Hz tuning.
+    const ratio = dt / this.prevStep;
+    this.prevStep = dt;
+    const f = (dt * dt) / BASE_STEP;
     const colliderWorld = this.colliders.map((c) => ({ c: c.offset.clone().applyMatrix4(c.bone.matrixWorld), r: c.radius }));
     for (let ci = 0; ci < this.chains.length; ci++) {
       const chain = this.chains[ci]!;
@@ -109,12 +160,15 @@ export class SpringChainSystem {
           j.initialized = true;
         }
         const restDir = _dir.subVectors(restTail, head).normalize();
+        _vel.subVectors(j.current, j.prev).multiplyScalar(Math.pow(1 - s.drag, dt / BASE_STEP) * ratio);
+        const sp = _vel.length();
+        if (sp > MAX_STEP_TRAVEL) _vel.multiplyScalar(MAX_STEP_TRAVEL / sp);
         const next = _next
           .copy(j.current)
-          .addScaledVector(_vel.subVectors(j.current, j.prev), 1 - s.drag)
-          .addScaledVector(restDir, s.stiffness * dt)
-          .add(_g.set(0, -s.gravity * dt, 0))
-          .addScaledVector(this.wind, dt * 0.02);
+          .add(_vel)
+          .addScaledVector(restDir, s.stiffness * f)
+          .add(_g.set(0, -s.gravity * f, 0))
+          .addScaledVector(this.wind, f * 0.02);
         // Length constraint
         next.sub(head).normalize().multiplyScalar(j.length).add(head);
         // Collisions
@@ -157,3 +211,10 @@ const _lt = new Vector3();
 const _lr = new Vector3();
 const _q = new Quaternion();
 const _inv = new Matrix4();
+const _cp = new Vector3();
+const _cq = new Quaternion();
+const _cs = new Vector3();
+const _dq = new Quaternion();
+const _qi = new Quaternion();
+const _pq = new Quaternion();
+const _dp = new Vector3();

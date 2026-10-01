@@ -49,13 +49,14 @@ export class WormVisual implements CharacterVisual {
     for (const mesh of skinned) {
       const convert = (m: Material): Material => {
         const src = m as MeshStandardMaterial;
-        return createAnimeMaterial({ color: src.color.clone(), role: ((src.userData.role as AnimeRole) ?? 'cloth') as AnimeRole, fade: this.fade, envShadow: this.envShadow });
+        return createAnimeMaterial({ color: src.color.clone(), role: ((src.userData.role as AnimeRole) ?? 'cloth') as AnimeRole, fade: this.fade, envShadow: this.envShadow, vertexColors: !!mesh.geometry.attributes.color });
       };
       mesh.material = Array.isArray(mesh.material) ? mesh.material.map(convert) : convert(mesh.material);
       for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) this.owned.push(m);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.frustumCulled = false;
+      mesh.userData.cannotReceiveAO = true;
     }
     this.owned.push(...buildOutlines(skinned, { base: new Color(outline), fade: this.fade, width: () => 0.0022 }));
     const bones = skinned[0]!.skeleton.bones;

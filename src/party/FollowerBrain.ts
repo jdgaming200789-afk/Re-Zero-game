@@ -1,6 +1,6 @@
 import { Vector3 } from 'three';
 import type { ActorBrain, ActorController } from '../actors/ActorController';
-import { clamp } from '../core/math/MathUtil';
+import { clamp, dampVec3 } from '../core/math/MathUtil';
 import type { PartyMemberDef } from '../data/party';
 import type { PartyManager } from './PartyManager';
 
@@ -96,8 +96,9 @@ export class FollowerBrain implements ActorBrain {
     toTarget.y = 0;
     const d = toTarget.length();
 
-    // ---- Steering
-    const steer = actor.steer.set(0, 0, 0);
+    // ---- Steering (computed raw, then low-pass filtered so separation
+    // pushes and slot corrections don't jerk the heading at a sprint)
+    const steer = _raw.set(0, 0, 0);
     if (this.state !== 'idle' && d > 0.15) {
       const mv = actor.movement;
       let speed: number;
@@ -113,6 +114,7 @@ export class FollowerBrain implements ActorBrain {
       steer.copy(toTarget).multiplyScalar(speed / Math.max(d, 1e-4));
     }
     party.addSeparation(actor, steer);
+    dampVec3(actor.steer, steer, this.state === 'idle' ? 0 : 0.07, dt);
 
     // ---- Attention
     this.updateAttention(actor, dt, leaderDist);
@@ -157,3 +159,4 @@ export class FollowerBrain implements ActorBrain {
 
 const _v = new Vector3();
 const _t = new Vector3();
+const _raw = new Vector3();

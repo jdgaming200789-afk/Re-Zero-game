@@ -18,6 +18,8 @@ export interface GraphicsSettings {
   preset: QualityPreset | 'custom';
   /** Multiplier on device pixel ratio (render resolution). */
   resolutionScale: number;
+  /** Lower the render resolution on the fly when the frame rate drops. */
+  dynamicResolution: boolean;
   shadowQuality: ShadowQuality;
   textureQuality: TierQuality;
   effectsQuality: TierQuality;
@@ -70,6 +72,7 @@ export const SETTINGS_VERSION = 1;
 export const QUALITY_PRESETS: Record<QualityPreset, Omit<GraphicsSettings, 'preset' | 'fieldOfView' | 'showFps'>> = {
   low: {
     resolutionScale: 0.75,
+    dynamicResolution: true,
     shadowQuality: 'low',
     textureQuality: 'low',
     effectsQuality: 'low',
@@ -82,6 +85,7 @@ export const QUALITY_PRESETS: Record<QualityPreset, Omit<GraphicsSettings, 'pres
   },
   medium: {
     resolutionScale: 1,
+    dynamicResolution: true,
     shadowQuality: 'medium',
     textureQuality: 'medium',
     effectsQuality: 'medium',
@@ -94,6 +98,7 @@ export const QUALITY_PRESETS: Record<QualityPreset, Omit<GraphicsSettings, 'pres
   },
   high: {
     resolutionScale: 1,
+    dynamicResolution: true,
     shadowQuality: 'high',
     textureQuality: 'high',
     effectsQuality: 'high',
@@ -106,6 +111,7 @@ export const QUALITY_PRESETS: Record<QualityPreset, Omit<GraphicsSettings, 'pres
   },
   ultra: {
     resolutionScale: 1.25,
+    dynamicResolution: false,
     shadowQuality: 'ultra',
     textureQuality: 'high',
     effectsQuality: 'high',

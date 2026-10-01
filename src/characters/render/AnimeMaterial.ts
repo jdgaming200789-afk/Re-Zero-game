@@ -93,6 +93,9 @@ export function createAnimeMaterial(o: AnimeMaterialOptions): MeshToonMaterial {
     shader.uniforms.uShadowTint = { value: tint };
     shader.uniforms.uShadeThreshold = { value: threshold };
     shader.uniforms.uShadeSoft = { value: soft };
+    // Terminator colour: skin warms and saturates where light turns to
+    // shadow; cloth gets a faint cool edge.
+    shader.uniforms.uEdgeTint = { value: o.role === 'skin' || o.role === 'face' ? new Color(0.32, 0.06, 0.02) : o.role === 'hair' ? new Color(0.04, 0.03, 0.08) : new Color(0.0, 0.02, 0.06) };
     shader.uniforms.uRimColor = CharacterLighting.rimColor;
     shader.uniforms.uRimStrength = CharacterLighting.rimStrength;
     shader.uniforms.uFaceFloor = CharacterLighting.faceFloor;
@@ -111,6 +114,7 @@ export function createAnimeMaterial(o: AnimeMaterialOptions): MeshToonMaterial {
         `uniform vec3 uShadowTint;
          uniform float uShadeThreshold;
          uniform float uShadeSoft;
+         uniform vec3 uEdgeTint;
          uniform float uCastDarken;
          uniform float uEnvShadow;
          float animeShadow = 1.0;
@@ -118,7 +122,8 @@ export function createAnimeMaterial(o: AnimeMaterialOptions): MeshToonMaterial {
            float h = dot( normal, lightDirection ) * 0.5 + 0.5;
            float sh = min( animeShadow, uEnvShadow );
            float lit = smoothstep( uShadeThreshold - uShadeSoft, uShadeThreshold + uShadeSoft, h ) * sh;
-           return mix( uShadowTint, vec3( 1.0 ), lit ) * mix( uCastDarken, 1.0, sh );
+           float edge = 1.0 - smoothstep( 0.0, uShadeSoft * 2.2, abs( h - uShadeThreshold ) );
+           return ( mix( uShadowTint, vec3( 1.0 ), lit ) + uEdgeTint * edge * sh ) * mix( uCastDarken, 1.0, sh );
          }`,
       )
       .replace('#include <lights_fragment_begin>', ANIME_LIGHTS)

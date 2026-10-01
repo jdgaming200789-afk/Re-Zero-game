@@ -78,6 +78,7 @@ export class AnimeCharacter implements CharacterVisual {
   private envShadowTarget = 1;
   private readonly lastRootPos = new Vector3(1e9, 0, 0);
   private airBlend = 0;
+  private lean = 0;
 
   private constructor(
     readonly def: CharacterDefinition,
@@ -192,6 +193,7 @@ export class AnimeCharacter implements CharacterVisual {
       }
     }
     if (this.springs.chainCount > 0) {
+      this.springs.center = this.root;
       const s = def.height / 1.7;
       this.springs.addCollider({ bone: this.rig.bone('head'), offset: new Vector3(0, 0.09 * s, 0.01), radius: 0.115 * s });
       this.springs.addCollider({ bone: this.rig.bone('upperChest'), offset: new Vector3(0, 0.02, 0), radius: 0.13 * s });
@@ -299,6 +301,9 @@ export class AnimeCharacter implements CharacterVisual {
     const d = this.rig.bone('head').getWorldPosition(_v).distanceTo(CharacterLighting.viewPosition);
     // Thin painted lines vanish in mip levels at distance: thicken them.
     this.face.setDetail(d < 4 ? 1 : d < 9 ? 1.6 : 2.4);
+    // Every repaint re-uploads the face texture: close faces animate at
+    // 30 Hz, mid-distance ones at 15, distant ones at 6.
+    this.face.redrawInterval = d < 5 ? 1 / 30 : d < 14 ? 1 / 15 : 1 / 6;
   }
 
   private updateEnvShadow(dt: number): void {
@@ -387,8 +392,10 @@ export class AnimeCharacter implements CharacterVisual {
       }
     }
 
-    // --- Lean into turns and acceleration
-    const lean = clamp(loco.turnRate * loco.speed * 1.6, -14, 14);
+    // --- Lean into turns (smoothed; capped at running speed so a sprint's
+    // small steering corrections don't rock the whole body)
+    this.lean = damp(this.lean, clamp(loco.turnRate * Math.min(loco.speed, 4.5) * 1.6, -12, 12), 0.09, dt);
+    const lean = this.lean;
     this.pose.rotate('hips', 0, 0, -lean * 0.5);
     this.pose.rotate('spine', 0, 0, -lean * 0.4);
     this.pose.rotate('head', 0, 0, lean * 0.5);

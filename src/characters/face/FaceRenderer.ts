@@ -94,6 +94,8 @@ export class FaceRenderer {
   private lastKey = '';
   /** Line-weight multiplier for distant faces (see setDetail). */
   private boost = 1;
+  /** Seconds between repaints (faces far from the camera repaint rarely). */
+  redrawInterval = 1 / 30;
 
   constructor(readonly style: FaceStyle) {
     const c = document.createElement('canvas');
@@ -190,7 +192,7 @@ export class FaceRenderer {
     this.redrawCooldown -= dt;
     if (this.dirty && this.redrawCooldown <= 0) {
       this.draw();
-      this.redrawCooldown = 1 / 30;
+      this.redrawCooldown = this.redrawInterval;
     }
   }
 

@@ -269,6 +269,8 @@ def build(spec: CharacterSpec) -> str:
     if spec.hidden:
         hide_under(body, j, spec.hidden)
 
+    consolidate(spec.id, arm, keep={head.name, hair.name})
+
     arm["character"] = spec.id
     arm["meta"] = json.dumps(spec.meta)
     for o in bpy.data.objects:
@@ -329,6 +331,113 @@ def assign_nearest_chain(obj, arm, base_bone: str, chains: dict[str, tuple[list[
         groups[bones[i0]].add([v.index], w_near * (1 - frac * 0.5), "ADD")
         if i0 + 1 < len(bones):
             groups[bones[i0 + 1]].add([v.index], w_near * frac * 0.5, "ADD")
+
+
+ROLE_ORDER = ["cloth", "metal", "hair", "eye"]
+
+
+def _base_color(mat) -> tuple[float, float, float]:
+    bsdf = mat.node_tree.nodes.get("Principled BSDF") if mat and mat.use_nodes else None
+    if bsdf:
+        c = bsdf.inputs["Base Color"].default_value
+        return (c[0], c[1], c[2])
+    return (1.0, 1.0, 1.0)
+
+
+def consolidate(cid: str, arm, keep: set[str], skip_roles: frozenset[str] = frozenset()) -> None:
+    """Fewer draw calls: bake every garment's material colour into a vertex
+    colour, then merge all pieces by shading role into two meshes — skin
+    (warm outlines) and everything else (one primitive per role). The face,
+    the hair and parts the game toggles (`separate`) stay on their own."""
+    cands = [
+        o
+        for o in bpy.data.objects
+        if o.type == "MESH" and o.parent == arm and o.name not in keep and not o.get("separate") and not o.name.startswith("julius_sword")
+        and not any(m and m.get("role") in skip_roles for m in o.data.materials)
+    ]
+    role_mats: dict[str, bpy.types.Material] = {}
+
+    def role_mat(role: str):
+        m = role_mats.get(role)
+        if m is None:
+            m = make_material(f"M_{cid}_vc_{role}", (1.0, 1.0, 1.0), role)
+            role_mats[role] = m
+        return m
+
+    pieces: dict[str, list] = {"skin": [], "main": []}
+    for o in cands:
+        me = o.data
+        if not me.materials:
+            continue
+        point = me.color_attributes.get("Col")
+        pvals = [tuple(point.data[i].color[:3]) for i in range(len(me.vertices))] if point and point.domain == "POINT" else None
+        corner = me.color_attributes.new("VCol", "FLOAT_COLOR", "CORNER")
+        roles = []
+        for poly in me.polygons:
+            mat = me.materials[poly.material_index] if poly.material_index < len(me.materials) else None
+            c = _base_color(mat)
+            roles.append(mat.get("role", "cloth") if mat else "cloth")
+            for li in poly.loop_indices:
+                k = (1.0, 1.0, 1.0)
+                if pvals:
+                    k = pvals[me.loops[li].vertex_index]
+                corner.data[li].color = (c[0] * k[0], c[1] * k[1], c[2] * k[2], 1.0)
+        for ca in [a for a in me.color_attributes if a.name != "VCol"]:
+            me.color_attributes.remove(ca)
+        corner.name = "Col"
+        # Re-slot by role: face roles map onto the shared role materials.
+        order = [r for r in ["skin"] + ROLE_ORDER if r in set(roles)] + [r for r in dict.fromkeys(roles) if r not in ["skin"] + ROLE_ORDER]
+        me.materials.clear()
+        for r in order:
+            me.materials.append(role_mat(r))
+        idx = {r: i for i, r in enumerate(order)}
+        for poly, r in zip(me.polygons, roles):
+            poly.material_index = idx[r]
+        me.color_attributes.active_color = me.color_attributes["Col"]
+        if os.environ.get("CONSOLIDATE_DEBUG"):
+            print("  consolidate", o.name, order)
+        if order == ["skin"]:
+            pieces["skin"].append(o)
+        elif "skin" in order:
+            # Mixed (the zoned body): split its skin off into a copy.
+            skin_obj = o.copy()
+            skin_obj.data = me.copy()
+            bpy.context.scene.collection.objects.link(skin_obj)
+            si = idx["skin"]
+            for target, drop in ((o, lambda f: f.material_index == si), (skin_obj, lambda f: f.material_index != si)):
+                bm = bmesh.new()
+                bm.from_mesh(target.data)
+                bmesh.ops.delete(bm, geom=[f for f in bm.faces if drop(f)], context="FACES")
+                bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+                bm.to_mesh(target.data)
+                bm.free()
+            pieces["main"].append(o)
+            pieces["skin"].append(skin_obj)
+        else:
+            pieces["main"].append(o)
+    for group, objs in pieces.items():
+        objs = [o for o in objs if o.name in bpy.data.objects and len(o.data.polygons)]
+        if not objs:
+            continue
+        select_only(*objs)
+        bpy.context.view_layer.objects.active = objs[0]
+        if len(objs) > 1:
+            bpy.ops.object.join()
+        out = bpy.context.view_layer.objects.active
+        out.name = f"{cid}_{group}"
+        me = out.data
+        # Drop material slots no face uses any more, keep the role order.
+        used = sorted({p.material_index for p in me.polygons})
+        mats = [me.materials[i] for i in used]
+        remap = {old: new for new, old in enumerate(used)}
+        new_idx = [remap[p.material_index] for p in me.polygons]
+        me.materials.clear()
+        for m in mats:
+            me.materials.append(m)
+        for p, i in zip(me.polygons, new_idx):
+            p.material_index = i
+        if me.color_attributes.get("Col"):
+            me.color_attributes.active_color = me.color_attributes["Col"]
 
 
 def meta_face(meta: dict) -> dict:

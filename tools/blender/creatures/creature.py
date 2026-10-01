@@ -264,6 +264,10 @@ def build(spec: CreatureSpec) -> str:
             mod.object = arm
         else:
             rigid(part.obj, arm, part.bone)
+    # One primitive per shading role (glowing eyes keep their own colour).
+    from build import consolidate
+
+    consolidate(spec.id, arm, keep=set(), skip_roles=frozenset({"eye"}))
     arm["creature"] = spec.id
     arm["meta"] = json.dumps(spec.meta)
     os.makedirs(OUT_DIR, exist_ok=True)

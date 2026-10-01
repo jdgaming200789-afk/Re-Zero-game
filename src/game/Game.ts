@@ -412,7 +412,7 @@ export class Game implements GameContext {
     const s = this.render.stats();
     const p = this.player?.entity.object3D.position ?? new Vector3();
     this.ui.setFpsText(
-      `${s.fps.toFixed(0)} fps  ${s.frameMs.toFixed(1)} ms  ${s.drawCalls} calls  ${(s.triangles / 1000).toFixed(0)}k tris\n` +
+      `${s.fps.toFixed(0)} fps  ${s.frameMs.toFixed(1)} ms  ${s.drawCalls} calls  ${(s.triangles / 1000).toFixed(0)}k tris  res ${Math.round(this.render.dynamicScale * 100)}%\n` +
         `pos ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}  mode ${this._mode}`,
     );
   }

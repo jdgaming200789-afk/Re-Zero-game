@@ -85,6 +85,10 @@ export class RenderPipeline {
   private chromaticBase = 0;
   chromaticPulse = 0;
   private frameTimes: number[] = [];
+  /** Dynamic resolution: a multiplier on the render scale, eased with the frame rate. */
+  private dynScale = 1;
+  private dynTimer = 0;
+  private dynGood = 0;
 
   constructor(canvas: HTMLCanvasElement, settings: GraphicsSettings) {
     this.settings = { ...settings };
@@ -211,7 +215,10 @@ export class RenderPipeline {
     const canvas = this.renderer.domElement;
     const w = canvas.clientWidth || window.innerWidth;
     const h = canvas.clientHeight || window.innerHeight;
-    const ratio = Math.min(window.devicePixelRatio || 1, 2) * this.settings.resolutionScale;
+    // High-DPI screens: at most 1.5x the CSS pixels (2x on Ultra) — the post
+    // chain runs per pixel and 4x the pixels rarely shows in motion.
+    const dprCap = this.settings.preset === 'ultra' ? 2 : 1.5;
+    const ratio = Math.min(window.devicePixelRatio || 1, dprCap) * this.settings.resolutionScale * this.dynScale;
     this.renderer.setPixelRatio(ratio);
     this.renderer.setSize(w, h, false);
     this.composer.setSize(w, h, false);
@@ -271,6 +278,47 @@ export class RenderPipeline {
 
     this.frameTimes.push(unscaledDt);
     if (this.frameTimes.length > 60) this.frameTimes.shift();
+    this.adaptResolution(unscaledDt);
+  }
+
+  /**
+   * Dynamic resolution: below ~50 fps, step the render scale down (to 55%);
+   * after a few steady seconds above 58 fps, step it back up.
+   */
+  private adaptResolution(dt: number): void {
+    if (!this.settings.dynamicResolution) {
+      if (this.dynScale !== 1) {
+        this.dynScale = 1;
+        this.onResize();
+      }
+      return;
+    }
+    this.dynTimer += dt;
+    if (this.dynTimer < 1 || this.frameTimes.length < 30) return;
+    this.dynTimer = 0;
+    const avg = this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length;
+    const fps = 1 / Math.max(avg, 1e-4);
+    let next = this.dynScale;
+    if (fps < 50) {
+      next = Math.max(0.55, this.dynScale - (fps < 35 ? 0.15 : 0.08));
+      this.dynGood = 0;
+    } else if (fps > 58) {
+      if (++this.dynGood >= 3) {
+        next = Math.min(1, this.dynScale + 0.05);
+        this.dynGood = 0;
+      }
+    } else {
+      this.dynGood = 0;
+    }
+    if (Math.abs(next - this.dynScale) > 1e-3) {
+      this.dynScale = next;
+      this.onResize();
+    }
+  }
+
+  /** Current dynamic resolution multiplier (1 = full). */
+  get dynamicScale(): number {
+    return this.dynScale;
   }
 
   stats(): RenderStats {

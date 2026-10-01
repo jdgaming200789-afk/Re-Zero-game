@@ -112,12 +112,21 @@ try {
   const r1 = await reid();
   check('the party attacks and every blow is parried with a clack of wood', r1.parries >= 3 && r1.hp === 999 && r1.state === 'duel', JSON.stringify(r1));
 
-  // Head-on: Subaru's snare is parried and draws his eye.
-  await aroundReid(0, 2.2);
-  await step(page, 0.1, false);
-  await press(page, 'Mouse:2');
-  await step(page, 0.8, false);
-  const r2 = await reid();
+  // Head-on: Subaru's snare is parried and draws his eye. (A flick already
+  // winding up can stagger him off the snare: then wait out the cooldown
+  // and try again — that's the fight, not a failure.)
+  let r2 = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await aroundReid(0, 2.2);
+    await step(page, 0.1, false);
+    await stepUntil(page, () => window.__game.player.entity.components.find((c) => c.constructor.name === 'SubaruCombat')?.state === 'free', 3);
+    const before = (await reid()).parries;
+    await press(page, 'Mouse:2');
+    await step(page, 0.8, false);
+    r2 = await reid();
+    if (r2.parries > before && r2.focus === 'Subaru') break;
+    await step(page, 3.2, false);
+  }
   check('a snare from the front is turned aside — and now he’s looking at Subaru', r2.state === 'duel' && r2.parries > r1.parries && r2.focus === 'Subaru', JSON.stringify(r2));
 
   // ---------------------------------------------------------------- dying to chopsticks

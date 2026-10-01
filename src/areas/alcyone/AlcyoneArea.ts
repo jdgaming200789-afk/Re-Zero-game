@@ -470,7 +470,7 @@ class AlcyoneArea extends Area {
       grp.position.set(x, y, z);
       this.root.add(grp);
       if (light > 0) {
-        const l = new PointLight(0xffa860, light, dist, 2);
+        const l = new PointLight(0xffbf85, light, dist, 2);
         l.position.set(x, y - 0.1, z);
         this.root.add(l);
       }
@@ -479,7 +479,7 @@ class AlcyoneArea extends Area {
       const a = (i / 6) * Math.PI * 2;
       lantern(Math.sin(a) * 2.1, 3.9, Math.cos(a) * 1.1, 0);
     }
-    const hall = new PointLight(0xffa860, 70, 20, 2);
+    const hall = new PointLight(0xffbf85, 70, 20, 2);
     hall.position.set(0, 3.6, 0);
     hall.castShadow = false;
     this.root.add(hall);

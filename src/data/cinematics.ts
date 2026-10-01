@@ -263,9 +263,9 @@ export const CINEMATICS: CinematicDef[] = [
     letterbox: true,
     steps: [
       { do: 'fade', to: 1, seconds: 0.9, color: '#f1d9b8' },
-      { do: 'effects', effects: [{ event: 'lib.memory_begin' }] },
+      { do: 'effects', effects: [{ event: 'lib.memory_begin' }, { event: 'lib.reid_memory' }] },
       { do: 'music', state: 'cinematic' },
-      { do: 'shot', shot: { from: '@lib.mem_cam', at: '@lib.mem_look', fov: 50, drift: [0, 0.03, -0.1] } },
+      { do: 'shot', shot: { from: '@lib.reid_mem_cam', at: '@lib.reid_mem_look', fov: 50, drift: [0, 0.02, -0.12] } },
       { do: 'fade', to: 0, seconds: 2.0, color: '#f1d9b8', wait: false },
       { do: 'wait', seconds: 1.2 },
       {
@@ -276,6 +276,7 @@ export const CINEMATICS: CinematicDef[] = [
         ],
       },
       { do: 'shot', shot: { from: '@lib.mem_cam_up', at: '@lib.mem_up', fov: 58, drift: [0, 0.02, -0.05] }, blend: 2.6, ease: 'inOutSine' },
+      { do: 'effects', effects: [{ event: 'lib.reid_pages' }] },
       { do: 'say', lines: [{ speaker: null, text: 'Wait. The pages are turning by themselves. Faster. Faster than I can—' }] },
       { do: 'music', state: 'silence' },
       { do: 'fade', to: 0.85, seconds: 1.4, color: '#000000' },

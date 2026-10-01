@@ -293,6 +293,7 @@ export function doorRecess(
   opts: { angle: number; radius: number; baseY: number; dir: 'up' | 'down' | 'flat'; mat: Material; floor?: Material; glow?: Material },
 ): RAPIER.Collider {
   const g = new Group();
+  g.name = 'DoorRecess';
   g.position.copy(polar(opts.radius, opts.angle, opts.baseY));
   g.rotation.y = opts.angle;
   const box = (w: number, h: number, d: number, x: number, y: number, z: number, mat = opts.mat) => {
@@ -304,6 +305,8 @@ export function doorRecess(
     return m;
   };
   const depth = 2.2;
+  // (Floors here sit 4 mm under the room's floor: where the two overlap at
+  // the threshold, the room's wins instead of the pair flickering.)
   box(0.4, 4.4, depth, -1.5, 2.1, depth / 2);
   box(0.4, 4.4, depth, 1.5, 2.1, depth / 2);
   box(3.4, 4.4, 0.4, 0, 2.1, depth + 0.2);
@@ -311,7 +314,7 @@ export function doorRecess(
   // faces) so no two faces share a plane.
   box(3.36, 0.42, depth + 0.36, 0, 4.11, depth / 2);
   if (opts.dir === 'up') {
-    box(2.6, 0.3, depth, 0, -0.15, depth / 2);
+    box(2.6, 0.3, depth, 0, -0.154, depth / 2);
     for (let k = 0; k < 6; k++) {
       const h = 0.2 * (k + 1);
       box(2.6, h, 0.32, 0, h / 2, 0.45 + k * 0.3);
@@ -323,7 +326,7 @@ export function doorRecess(
       g.add(lightPane);
     }
   } else if (opts.dir === 'flat') {
-    box(2.6, 0.3, depth, 0, -0.15, depth / 2, opts.floor ?? opts.mat);
+    box(2.6, 0.3, depth, 0, -0.154, depth / 2, opts.floor ?? opts.mat);
     if (opts.glow) {
       const lightPane = new Mesh(new PlaneGeometry(2.6, 3.8), opts.glow);
       lightPane.position.set(0, 1.9, depth - 0.02);
@@ -331,7 +334,7 @@ export function doorRecess(
       g.add(lightPane);
     }
   } else {
-    box(2.6, 0.3, 0.45, 0, -0.15, 0.225);
+    box(2.6, 0.3, 0.45, 0, -0.154, 0.225);
     for (let k = 1; k <= 6; k++) box(2.6, 1.4, 0.3, 0, -0.2 * k - 0.7, 0.3 + k * 0.3);
   }
   parent.add(g);

@@ -17,6 +17,7 @@ import {
   SRGBColorSpace,
   Vector3,
   type BufferGeometry,
+  type Object3D,
   type Texture,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -27,6 +28,7 @@ import { KitBatch } from '../../scene/kit/KitBatch';
 import type { KitLibrary } from '../../scene/kit/KitLibrary';
 import { doorRecess, polar } from '../../scene/procedural/RoundHall';
 import { Library } from './Library';
+import { ReidMemory } from './ReidMemory';
 import { NightSky } from '../../render/sky/NightSky';
 import { Interactable, type InteractableOptions } from '../../interaction/Interactable';
 import type { ColorGrade } from '../../render/effects/ColorGradeEffect';
@@ -55,6 +57,9 @@ const GRADES: Record<Look, ColorGrade> = {
   // Someone else's memory: faded, warm at the edges, like an old photograph.
   memory: { lift: [0.012, 0.009, 0.004], gamma: [1.02, 1, 0.98], gain: [1.04, 0.99, 0.9], saturation: 0.5, contrast: 1.02, temperature: 0.3, tint: 0.02 },
 };
+
+/** Reid's memory: a crimson dusk, warm and hard, not an old photograph. */
+const REID_GRADE: ColorGrade = { lift: [0.02, 0.006, 0.004], gamma: [1, 1.02, 1.04], gain: [1.08, 0.96, 0.9], saturation: 0.9, contrast: 1.08, temperature: 0.35, tint: 0.03 };
 
 /** Surface colours per look: [floor, walls]. */
 const SURFACES: Record<Look, { floor: Color; floorEmissive: number; wall: Color; wallEmissive: number; wallOpacity: number; rough: number; metal: number }> = {
@@ -90,6 +95,11 @@ class TaygetaArea extends Area {
   private libraryBatch: KitBatch | null = null;
   private libraryRise = 1;
   private books: Library | null = null;
+  /** Reid's book has its own vision (a field of swords under a crimson dusk). */
+  private reidMemory!: ReidMemory;
+  private memoryKind: 'hadrian' | 'reid' = 'hadrian';
+  /** Everyone standing in the library is hidden while a memory is lived. */
+  private readonly hiddenCast: Object3D[] = [];
   private upDoor!: Group;
   private upPlug!: Mesh;
   private upSeal: import('@dimforge/rapier3d-compat').Collider | null = null;
@@ -165,6 +175,8 @@ class TaygetaArea extends Area {
     this.fill = new DirectionalLight(0x9fb4ff, 0);
     this.fill.position.set(2, 10, 4);
     this.root.add(this.hemi, this.fill);
+    this.reidMemory = new ReidMemory();
+    this.root.add(this.reidMemory.root);
     const motes = g.vfx.addEmitter(new ParticleEmitter({ ...ParticlePresets.dustMotes(new Vector3(30, 8, 30), 300), colorA: new Color(0.8, 0.85, 1.0), colorB: new Color(1, 1, 1) }), this.scope);
     motes.anchor.set(0, 4, 0);
     this.root.add(motes);
@@ -179,8 +191,20 @@ class TaygetaArea extends Area {
       else if (id === 'tay.library' && !this.library) {
         this.raiseLibrary(false);
         this.setLook('library', 0);
-      } else if (id === 'lib.memory_begin') this.setLook('memory', 0);
-      else if (id === 'lib.memory_end') this.setLook(this.library ? 'library' : 'white', 0);
+      } else if (id === 'lib.memory_begin') {
+        this.hideCast(true);
+        this.setLook('memory', 0);
+      } else if (id === 'lib.reid_memory') {
+        this.memoryKind = 'reid';
+        this.reidMemory.show(true);
+        this.game.scenes.applyAtmosphere(this, 0);
+      } else if (id === 'lib.reid_pages') this.reidMemory.devour();
+      else if (id === 'lib.memory_end') {
+        this.memoryKind = 'hadrian';
+        this.reidMemory.show(false);
+        this.hideCast(false);
+        this.setLook(this.library ? 'library' : 'white', 0);
+      }
     });
     const rigel = this.trial.star(TRIAL_ANSWER)!;
     this.addSpawn('tay.rigel', rigel.home.x, rigel.home.y, rigel.home.z, 0);
@@ -225,6 +249,9 @@ class TaygetaArea extends Area {
     mark('lib.mem_look', 0, 6.5, -14);
     mark('lib.mem_cam_up', 0, 0.5, -2);
     mark('lib.mem_up', 0, 12, -10);
+    // Reid's: low among the planted swords, looking down the lane to the dusk.
+    mark('lib.reid_mem_cam', 0.8, 0.45, 2.0);
+    mark('lib.reid_mem_look', -0.3, 3.4, -20);
     const party: Array<[string, number, number]> = [
       ['emilia', -1.4, 3.1],
       ['beatrice', 1.2, 2.9],
@@ -237,6 +264,21 @@ class TaygetaArea extends Area {
     for (const [id, x, z] of party) mark(`tay.${id}`, x, 0, z, 180);
   }
 
+  /** A memory is lived alone: the party (and Subaru) leave the frame. */
+  private hideCast(hide: boolean): void {
+    const g = this.game;
+    if (!hide) {
+      for (const o of this.hiddenCast.splice(0)) o.visible = true;
+      return;
+    }
+    const objs = [g.player?.entity.object3D, ...g.party.active.map((a) => a.entity.object3D)];
+    for (const o of objs) {
+      if (!o || !o.visible) continue;
+      o.visible = false;
+      this.hiddenCast.push(o);
+    }
+  }
+
   // ------------------------------------------------------------------ looks
 
   private setLook(look: Look, seconds: number): void {
@@ -246,6 +288,10 @@ class TaygetaArea extends Area {
     if (seconds <= 0) this.trial.presence = this.trial.targetPresence;
     this.lookBlend = seconds;
     if (this.library) this.library.visible = look !== 'memory';
+    // A memory is somewhere else entirely: the tower's doorways go too.
+    this.root.traverse((o) => {
+      if (o.name === 'DoorRecess') o.visible = look !== 'memory';
+    });
     if (seconds <= 0) this.applySurfaces(1);
     this.game.scenes.applyAtmosphere(this, seconds);
   }
@@ -523,6 +569,7 @@ class TaygetaArea extends Area {
     }
     this.libraryBatch?.update(dt, g.render.camera.position);
     this.books?.update(dt);
+    this.reidMemory?.update(dt);
     void damp;
   }
 
@@ -560,7 +607,7 @@ class TaygetaArea extends Area {
         environment: this.skyEnv,
         environmentIntensity: 0.6,
         fog: { density: 0 },
-        grade: GRADES[look],
+        grade: look === 'memory' && this.memoryKind === 'reid' ? REID_GRADE : GRADES[look],
         exposure: 1.45,
         music: look === 'memory' ? 'cinematic' : 'mystery',
         tension: 0.25,
@@ -600,6 +647,8 @@ class TaygetaArea extends Area {
     if (this.upSeal) this.game.physics.removeCollider(this.upSeal);
     this.trial?.dispose();
     this.books?.dispose();
+    this.reidMemory?.dispose();
+    this.hideCast(false);
     this.libraryBatch?.dispose();
     this.sky?.dispose();
     this.skyEnv?.dispose();

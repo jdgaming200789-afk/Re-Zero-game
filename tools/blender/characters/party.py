@@ -279,7 +279,7 @@ def emilia():
         H = j.H
         # The long cloak: round the shoulders and down past the knees, its
         # inside lined in purple.
-        cp, guides = cape("emilia_cloak", j, 0.15, 0.66, m["cloak"], chains=6, bones=4, wrap=228, folds=7, fold_depth=0.014, flare=0.45)
+        cp, guides = cape("emilia_cloak", j, 0.15, 0.66, m["cloak"], chains=6, bones=4, wrap=228, folds=9, fold_depth=0.026, flare=0.45)
         cp["bone"] = "upperChest"
         cp.data.materials.append(m["lining"])
         for poly in cp.data.polygons:

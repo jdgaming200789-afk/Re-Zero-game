@@ -403,6 +403,8 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
 
 **The stair of light, re-directed**: Emilia's ice is a frost sheet with feathered crystal veins racing out from her and a crown of faceted shards bursting up round Reid's sandals — low, and open towards the camera on his feet (`IceBloom`). The stair's treads are panes of light with bright rims and a drifting lattice that flare white-hot as they form; soft halos under them, motes strung along the helix that sparkle hardest at the leading edge, a faint shaft of light revealed from the sky down as the stair descends, and on touchdown a ring of light runs out across the floor with a burst of light at the foot. The scene is cut to it: a side-on two-shot as she casts (her on one side, him on the other, the frost between), his feet as he steps, a low close-up of her face turned up to something we haven't seen yet, her eyeline — the camera riding the leading tread down out of the sky — a wide with everyone small beneath the helix, and the landing over her shoulder as she turns to it.
 
+**Capes**: folds fall from the shoulders and deepen towards the hem, with enough columns to round every ridge, and the hem rides up over each crest — Emilia's long cloak (9 folds) and Subaru's (7) no longer read as flat slabs from behind.
+
 **Mesh audit**: the stairwell recess behind every ring-wall door had its lintel flush with its side walls' outer faces (z-fighting); it now tucks inside them. Alcyone's audit is otherwise clean (wall tops hidden above the ceiling, foliage).
 
 ## Testing

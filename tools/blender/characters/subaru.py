@@ -225,7 +225,7 @@ def arc6_garments(j: Joints, m: dict) -> Garments:
         g.bindings[tails.name] = list(guides)
 
     # The cloak, hood down.
-    cp, cguides = cape("subaru_cloak", j, 0.15, 0.4, m["cloak"], chains=5, bones=4, wrap=176.0, folds=6, fold_depth=0.014, flare=0.45)
+    cp, cguides = cape("subaru_cloak", j, 0.15, 0.4, m["cloak"], chains=5, bones=4, wrap=176.0, folds=7, fold_depth=0.022, flare=0.45)
     cp["bone"] = "upperChest"
     g.objects.append(cp)
     names = []

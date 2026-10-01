@@ -360,7 +360,8 @@ def cape(
     from the shoulders down."""
     H = j.H
     bm = bmesh.new()
-    cols, rows = 26, 20
+    # Enough columns that every fold is a rounded ridge, not a zig-zag.
+    cols, rows = max(26, folds * 6), 20
     drape_rows = 5
     shoulder_rx = width * H
     shoulder_ry = 0.085 * H
@@ -397,9 +398,13 @@ def cape(
         for r in range(1, rows - drape_rows + 1):
             t = r / (rows - drape_rows)
             z = top.z + (rim_z - top.z) * min(1.0, t * 4) - length * H * t
-            fold = fold_depth * H * math.sin(u * folds * 2 * math.pi) * min(1.0, t * 1.5)
+            # Folds fall from the shoulders and deepen towards the hem.
+            fold = fold_depth * H * math.sin(u * folds * 2 * math.pi) * min(1.0, t * 1.5) * (0.6 + 0.4 * t)
             out = flare * 0.12 * H * t + fold
             p = Vector((top.x, top.y, z)) + radial * out
+            if r == rows - drape_rows:
+                # The hem rides up a little over each fold's crest.
+                p.z += 0.35 * max(0.0, fold)
             if tatters > 0 and r == rows - drape_rows:
                 p.z += tatters * H * 0.045 * (0.5 + 0.5 * math.sin(c * 2.7) * math.cos(c * 1.3))
             p = push_outside_torso(j, p, 0.012 * H, torso_x)

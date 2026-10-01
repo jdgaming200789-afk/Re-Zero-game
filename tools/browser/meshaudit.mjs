@@ -59,6 +59,9 @@ function audit() {
     const idx = geo.index;
     const triCount = idx ? idx.count / 3 : pos.count / 3;
     if (triCount > 200000) continue; // terrain: audited by the floor check instead
+    // Crowds of small instanced props (a library's books): too many to pair
+    // up in a page, and too small to read as flicker.
+    if (o.isInstancedMesh && o.count > 300 && o.geometry.boundingSphere.radius < 0.6) continue;
     const count = o.isInstancedMesh ? o.count : 1;
     const doubleSide = (Array.isArray(o.material) ? o.material : [o.material]).some((m) => m.side === 2);
     for (let inst = 0; inst < count; inst++) {

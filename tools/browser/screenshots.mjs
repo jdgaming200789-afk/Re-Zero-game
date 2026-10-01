@@ -132,12 +132,15 @@ try {
   await step(page, 2.5, false);
   await save('chapter-card');
 
-  // Electra: the Sword Saint.
+  // Electra: the Sword Saint. (Dismiss the chapter card first.)
+  await page.evaluate(() => document.querySelector('.rz-titlecard')?.classList.remove('visible'));
   await goto('electra', 'arrive');
   await stepUntil(page, () => window.__game.dialogue.state?.id === 'ele.reid', 60);
   await skipScenes(() => !window.__game.cinematics.playing && !window.__game.dialogue.state);
   await stepUntil(page, () => window.__game.combat.encounterId === 'ele.reid', 10);
   await step(page, 6, false);
+  // Reid and the swordsman facing him: the others step out of shot.
+  await page.evaluate(() => window.__game.party.active.forEach((a) => { if (a.id !== 'julius') a.entity.object3D.visible = false; }));
   const reid = await page.evaluate(() => {
     const a = window.__game.scenes.current.duel.actor;
     return [a.position.x, a.position.y, a.position.z, a.yaw];
@@ -145,6 +148,7 @@ try {
   const f = [Math.sin(reid[3]), Math.cos(reid[3])];
   await frame([reid[0] + f[0] * 3.2 + f[1] * 2.2, reid[1] + 1.5, reid[2] + f[1] * 3.2 - f[0] * 2.2], [reid[0], reid[1] + 1.15, reid[2]], 44);
   await save('electra');
+  await page.evaluate(() => window.__game.party.active.forEach((a) => (a.entity.object3D.visible = true)));
 } catch (err) {
   console.error(err);
 } finally {

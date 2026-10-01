@@ -619,3 +619,7 @@ ROSTER = {
     "shaula": shaula,
     "reid": reid,
 }
+
+from party import UPGRADES  # noqa: E402
+
+ROSTER.update(UPGRADES)

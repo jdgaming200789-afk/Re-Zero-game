@@ -855,3 +855,122 @@ def sandal(name: str, j: Joints, side: int, mat_sole, mat_strap, *, length: floa
     obj = _join(parts, name)
     skin_like_body(obj, j)
     return obj
+
+
+# --------------------------------------------------------------------------- bows, frills
+
+
+def bow(name: str, centre: Vector, forward: Vector, size: float, mat, *, tails: float = 1.0, droop: float = 0.25, knot_mat=None) -> bpy.types.Object:
+    """A ribbon bow: two flattened loops either side of a knot and two tails
+    hanging down at angles. `forward` points out of the surface it sits on;
+    `size` is the half-span in metres."""
+    f = forward.normalized()
+    up = Vector((0, 0, 1))
+    side = up.cross(f)
+    if side.length < 1e-4:
+        side = Vector((1, 0, 0))
+    side.normalize()
+    up = f.cross(side).normalized()
+    parts = []
+    for s in (1, -1):
+        # A cupped lobe: the loop seen face-on, pinched at the knot.
+        n = 20
+        bm = bmesh.new()
+        lobe_c = centre + side * s * size * 0.55 - up * droop * size * 0.35
+        hub = bm.verts.new(lobe_c - f * size * 0.08)
+        ring_v = []
+        for i in range(n):
+            a = 2 * math.pi * i / n
+            r = 0.5 + 0.5 * math.cos(a)  # 1 at the outer end, 0 at the knot
+            lx = s * (size * 0.08 + size * 0.95 * r)
+            ly = size * 0.42 * math.sin(a) * (0.35 + 0.65 * r) - droop * size * r * r
+            ring_v.append(bm.verts.new(centre + side * lx + up * ly + f * size * 0.05 * r))
+        for i in range(n):
+            bm.faces.new((hub, ring_v[i], ring_v[(i + 1) % n]))
+        me = bpy.data.meshes.new(f"{name}_loop{s}")
+        bm.to_mesh(me)
+        bm.free()
+        o = _link(f"{name}_loop{s}", me)
+        sol = o.modifiers.new("Sol", "SOLIDIFY")
+        sol.thickness = size * 0.06
+        sol.use_rim = True
+        _apply(o, sol)
+        o.data.materials.append(mat)
+        parts.append(o)
+        if tails > 0:
+            bm = bmesh.new()
+            rows = []
+            steps = 6
+            for i in range(steps + 1):
+                t = i / steps
+                c = centre + side * s * size * (0.15 + 0.45 * t) - up * size * (0.25 + 1.3 * tails * t) + f * size * 0.1 * math.sin(t * 3)
+                w = size * (0.32 - 0.05 * t)
+                rows.append((bm.verts.new(c - side * w * 0.5 * s * 0.3 - f * w * 0.1), bm.verts.new(c + side * w * 0.5)))
+            for i in range(steps):
+                a, b = rows[i], rows[i + 1]
+                bm.faces.new((a[0], a[1], b[1], b[0]))
+            me = bpy.data.meshes.new(f"{name}_tail{s}")
+            bm.to_mesh(me)
+            bm.free()
+            o = _link(f"{name}_tail{s}", me)
+            sol = o.modifiers.new("Sol", "SOLIDIFY")
+            sol.thickness = size * 0.05
+            sol.use_rim = True
+            _apply(o, sol)
+            o.data.materials.append(mat)
+            parts.append(o)
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=10, v_segments=6, radius=1.0)
+    for v in bm.verts:
+        v.co = centre + side * v.co.x * size * 0.2 + up * v.co.y * size * 0.24 + f * (v.co.z * size * 0.14 + size * 0.06)
+    me = bpy.data.meshes.new(f"{name}_knot")
+    bm.to_mesh(me)
+    bm.free()
+    o = _link(f"{name}_knot", me)
+    o.data.materials.append(knot_mat or mat)
+    parts.append(o)
+    out = _join(parts, name)
+    bm = bmesh.new()
+    bm.from_mesh(out.data)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(out.data)
+    bm.free()
+    for p in out.data.polygons:
+        p.use_smooth = True
+    return out
+
+
+def frill_ring(name: str, centre: Vector, axis: Vector, radius: float, depth: float, mat, waves: int = 18, flare: float = 0.5, segments: int = 72) -> bpy.types.Object:
+    """A ruffled lace ring (cuffs, hems): a short band that flares outward
+    along `axis` with a wavy edge."""
+    axis = axis.normalized()
+    ref = Vector((0, 0, 1)) if abs(axis.z) < 0.9 else Vector((1, 0, 0))
+    u = axis.cross(ref).normalized()
+    v = axis.cross(u).normalized()
+    bm = bmesh.new()
+    rows = []
+    for zi in range(3):
+        k = zi / 2
+        row = []
+        for i in range(segments):
+            a = 2 * math.pi * i / segments
+            wave = math.sin(a * waves)
+            r = radius * (1 + flare * k * (0.8 + 0.2 * wave)) + depth * 0.12 * wave * k
+            d = u * math.cos(a) + v * math.sin(a)
+            row.append(bm.verts.new(centre + d * r + axis * depth * k * (1 - 0.15 * wave)))
+        rows.append(row)
+    for zi in range(2):
+        for i in range(segments):
+            bm.faces.new((rows[zi][i], rows[zi][(i + 1) % segments], rows[zi + 1][(i + 1) % segments], rows[zi + 1][i]))
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    o = _link(name, me)
+    sol = o.modifiers.new("Sol", "SOLIDIFY")
+    sol.thickness = depth * 0.06
+    sol.use_rim = True
+    _apply(o, sol)
+    for p in o.data.polygons:
+        p.use_smooth = True
+    o.data.materials.append(mat)
+    return o

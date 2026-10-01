@@ -129,7 +129,7 @@ def headdress(name: str, head_c: Vector, head_rw: float, head_rh: float, mat, fr
 def sword(name: str, hip: Vector, H: float, mat_blade, mat_hilt, mat_sheath) -> bpy.types.Object:
     """A knight's sword in its scabbard, hanging at the left hip, angled back."""
     parts = []
-    L = 0.55 * H
+    L = 0.47 * H
     bm = bmesh.new()
     bmesh.ops.create_cone(bm, cap_ends=True, segments=8, radius1=0.022, radius2=0.018, depth=L)
     sheath = _obj(name + "_sh", bm, mat_sheath)
@@ -148,8 +148,11 @@ def sword(name: str, hip: Vector, H: float, mat_blade, mat_hilt, mat_sheath) -> 
     pommel = _obj(name + "_p", bm, mat_hilt)
     parts = [sheath, guard, grip, pommel]
     o = join(parts, name)
-    m = Matrix.Translation(hip + Vector((0.02 * H, 0.04 * H, -0.12 * H))) @ Matrix.Rotation(math.radians(160), 4, "X") @ Matrix.Rotation(math.radians(-12), 4, "Y")
-    o.data.transform(m)
+    # Hilt up and forward at the left hip, the scabbard angled back and down.
+    rot = Matrix.Rotation(math.radians(-8), 4, "Y") @ Matrix.Rotation(math.radians(30), 4, "X")
+    hilt_dir = (rot.to_3x3() @ Vector((0, 0, 1))).normalized()
+    centre = hip + Vector((0.035 * H, -0.01 * H, 0.0)) - hilt_dir * (L / 2 + 0.01)
+    o.data.transform(Matrix.Translation(centre) @ rot)
     return o
 
 

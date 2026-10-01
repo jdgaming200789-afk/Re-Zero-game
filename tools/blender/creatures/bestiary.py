@@ -412,16 +412,29 @@ def sand_earthworm() -> CreatureSpec:
     bones = [(f"seg{i}", f"s{i}", f"s{i + 1}" if i < WORM_SEGMENTS else "tip", "root") for i in range(WORM_SEGMENTS + 1)]
 
     def zone(c: ZoneCtx) -> str:
-        p, n = c.p, c.n
-        # Dorsal armour stripe, pale underbelly; ring grooves darker.
+        return "body"
+
+    def paint(p: Vector, n: Vector, b: Builder):
+        def ss(e0, e1, x):
+            t = min(1.0, max(0.0, (x - e0) / (e1 - e0)))
+            return t * t * (3 - 2 * t)
+
+        hide = (0.72, 0.58, 0.41)
+        dorsal = (0.42, 0.31, 0.21)
+        belly = (0.85, 0.76, 0.6)
+        groove = (0.24, 0.16, 0.11)
+        k = ss(0.1, 0.7, n.z)
+        col = tuple(hide[i] + (dorsal[i] - hide[i]) * k for i in range(3))
+        u = ss(-0.2, -0.75, n.z)
+        col = tuple(col[i] + (belly[i] - col[i]) * u for i in range(3))
+        # Mottling: low-frequency blotches over the hide.
+        m = 0.5 + 0.5 * math.sin(p.y * 3.1 + p.x * 2.3) * math.cos(p.y * 1.7 - p.z * 2.9)
+        col = tuple(c * (0.9 + 0.12 * m) for c in col)
+        # Ring grooves darken smoothly towards the pinch.
         band = (p.y / WORM_SEG_LEN) % 1.0
-        if band < 0.1 or band > 0.93:
-            return "groove"
-        if n.z > 0.35:
-            return "plate"
-        if n.z < -0.45:
-            return "belly"
-        return "hide"
+        g = 1 - ss(0.0, 0.12, min(band, 1 - band))
+        col = tuple(col[i] + (groove[i] - col[i]) * g * 0.85 for i in range(3))
+        return col
 
     def sculpt(v: Vector, b: Builder) -> Vector:
         # Rings: each segment bulges in the middle and pinches at the grooves.
@@ -496,6 +509,7 @@ def sand_earthworm() -> CreatureSpec:
         root_node="s0",
         bones=bones,
         palette={
+            "body": ("#ffffff", "cloth"),
             "hide": ("#b89468", "cloth"),
             "plate": ("#7a5a3c", "cloth"),
             "belly": ("#d9c29a", "cloth"),
@@ -506,6 +520,7 @@ def sand_earthworm() -> CreatureSpec:
         zone=zone,
         parts=parts,
         sculpt=sculpt,
+        paint=paint,
         subdiv=1,
         meta={"name": "Sand Earthworm", "kind": "witchbeast", "segments": WORM_SEGMENTS + 1, "segmentLength": WORM_SEG_LEN},
     )

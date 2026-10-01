@@ -1,10 +1,10 @@
 # Re:Zero - Pleiades — Development Status
 
-_Last updated: Phase 12 begun (README and screenshots; all 14 browser suites green)._
+_Last updated: Phase 12 (part 2) — the character and creature art pass, smooth party motion at a sprint, frame-rate work._
 
 ## Current phase
 
-**Phases 1–11 complete; Phase 12 (optimization, bug fixing, polish, final presentation) in progress.** The vertical slice plays end to end from the title screen to the chapter card (`tools/browser/playthrough.mjs`); Phase 11 added the Books of the Dead in Taygeta's library and a new floor above it — Electra, and the Sword Saint's trial. Phase 12 so far: the README rewritten as the project's front page with generated screenshots (`tools/browser/screenshots.mjs`), and the heaviest combat frame cut from 4.4k draw calls to 450. All 14 browser suites and 72 unit tests pass.
+**Phases 1–11 complete; Phase 12 (optimization, bug fixing, polish, final presentation) in progress.** The vertical slice plays end to end from the title screen to the chapter card (`tools/browser/playthrough.mjs`); Phase 11 added the Books of the Dead in Taygeta's library and a new floor above it — Electra, and the Sword Saint's trial. Phase 12 so far: the README rewritten as the project's front page with generated screenshots (`tools/browser/screenshots.mjs`), and the heaviest combat frame cut from 4.4k draw calls to 450; then a full art pass over every character and creature against reference (tailored garments, a canon Subaru in two outfits, Reid redesigned, Patrasche and the jackals rebuilt), the sprint glitches in the party's hair and bodies fixed, and frame-rate work (consolidated models, dynamic resolution). All 14 browser suites and 72 unit tests pass.
 
 Vertical-slice design: [docs/VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) — "The Watchtower in the Sand".
 
@@ -342,7 +342,7 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
 
 ### Phase 11 (part 2) — Content: Electra and the Sword Saint
 
-**Reid Astrea** (a new character, `tools/blender/characters/roster.py` → `reid.glb`, 30k triangles): the first Sword Saint's shade — Astrea-red hair worn wild, blue eyes, a sleeveless dark tunic, a sash, bandaged forearms, a tattered red half-cloak, a sword he never draws, and a pair of chopsticks (an in-hand prop). A lazy, cocky stance; clips for a chopstick flick, a parry, a guard, eating seated, and shaking out his hand when he loses one.
+**Reid Astrea** (a new character, `tools/blender/characters/reid.py` → `reid.glb`; redesigned to his canon look in Phase 12, see below): the first Sword Saint's shade — and a pair of chopsticks (an in-hand prop). A lazy, cocky stance; clips for a chopstick flick, a parry, a guard, eating seated, and shaking out his hand when he loses one.
 
 **Electra** (`src/areas/electra/`) — the second floor has no ceiling: a moonlit disc of pale stone open to the sky, a duelling ring inlaid in the floor, broken columns and fallen drums around the rim, four braziers, wind, the dunes a long way down. Reached by a new stair in Taygeta's library (the far wall stays sealed until the library rises); a stair gate leads back down.
 
@@ -354,6 +354,26 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
 - **The way through**: Subaru's whip snare, from **behind** while Reid is busy with someone else — or while **Shamak** has him in the dark — wraps his wrist and he drops a chopstick. He laughs; the trial is passed; he sits back down to his noodles (and has something rude to say if you talk to him).
 - Party chatter on the windy floor, and Julius's verdict afterwards ("I should like to see the day he isn't bored." — "Please don't. I like having ribs.").
 - Return point on arrival; a rematch is a conversation with him ("You've got the eyes of somebody who's already lost to me once"), with Subaru's own plan as a thought once he knows it.
+
+### Phase 12 (part 2) — Character and creature art pass; motion; frame rate
+
+**Tailoring** (`tools/blender/characters/tailor.py`): garments are real layers, not colour zones painted on the body. A *shell* is cut from the skinned body itself (bisected along planes, trimmed by a predicate, lifted off the skin, hem-flared, fold ridges at elbows/knees/cuffs/waist, a turned-under hem lip) and so carries the body's skin weights. Plus modelled shoes and boots, surface-following trims (zips, piping, stripes, laces), buttons and eyelets, plates (buckles, pockets), raised glyphs, a hood worn down, scarves with spring-chain tails, ribbon bows, ruffled lace rings, tattered hems and zori. Skin hidden under opaque clothing is culled. A muscle sculpt (pecs with a hard shelf, abdominals over the linea alba, obliques, collarbones, deltoids, biceps/triceps, shoulder blades, quads, calves) bakes its grooves into vertex colours that the toon material multiplies in.
+
+**Subaru** (`subaru.py`): Arc 6 travelling clothes by default — grey hooded cloak (the hood swings with it), green jacket open over a beige button-up shirt, belt and brass buckle, orange scarf, loose trousers, laced brown boots — and the tracksuit as a costume (white panel and zip, charcoal yoke and sleeves, orange piping, cuffs and stripes, open collar over a black tee, the "N", drawstring hem, black-and-orange trainers). Amber-brown sanpaku eyes with hard, sharp lids and straight brows; a pointed fringe and spiky back. *Settings › Gameplay › Subaru's outfit* swaps the model live (deferred out of scenes and fights; the whip follows the new rig).
+
+**Reid** (`reid.py`): redesigned to his canon look — a long, wild crimson mane on five spring chains with an ahoge, a round black eyepatch with a white spiral painted into the face, a sharp-toothed grin (new `cocky` expression / `fangGrin` mouth), a bare muscled torso, a red kimono robe slipped off the left shoulder (right sleeve on, dark collar band, white crest, the left half bunched over the black sash with its empty sleeve hanging, torn hem), white fundoshi, bare legs, red zori.
+
+**The party** (`party.py`, a detail pass over the roster specs): Emilia (belled sleeves with purple cuffs, a ribbon bow and gold brooch, side braids tied with ribbons, the lily ornament, longer ears, heeled boots), Beatrice (a tiered frilled petticoat in her open overskirt, bell sleeves ending in lace, the big chest bow, her crown, Mary Janes), Julius (epaulettes with fringe, double row of gold buttons, aiguillette, gold cuffs, tall boots; the sword now hangs hilt-forward from the left hip), Ram and Rem (puffed shoulders over detached white sleeves with frills and bands, a black bow, strapped shoes), Meili, Anastasia (sleeves, lavender sash tied at the back) and Shaula (a clean tailored top and shorts, belt, boots).
+
+**Faces** (`FaceRenderer.ts`): lids are sampled curves (round or sharp), lashes a tapered band with an outer flick, irises get a dark top, radial streaks and a lid shadow; clenched-teeth and fanged-grin mouths; an eyepatch option. Characters no longer receive screen-space AO (it read as grime on cel shading).
+
+**Creatures** (`tools/blender/creatures/`): vertex-colour albedo painting, tack weighted like the body surface under it, and a detail kit (feather/fur blades and fans, curved claws, teeth, straps and girths, rings, studs, shells cut from the body). **Patrasche** (`patrasche.py`): a raptor-like land dragon — long S-neck and horse-long head, keeled chest, drumstick thighs, sickle claws, small clawed hands; black scales banded down the back with a pale throat and belly; gold slit eyes; dark feather plumes (crest, cheeks, neck mane, tail fan); a leather visor ending in a beak, a bridle with gold bit rings and reins, a saddle with pommel and cantle on a red pad, flaps, stirrups, girth and breast collar with gold buckles, tail wraps. **Dune jackals** (`jackal.py`): a rangy witchbeast canid — deep chest and tucked waist, angular legs, long fanged muzzle, tall ragged ears, the swept horn, burning eyes; sandy coat with a dark saddle, pale belly and dark socks; a ragged black mane, ruffs and a bushy dark-tipped tail.
+
+**Sprint glitches fixed**: spring bones simulate partly in the character's own frame (a VRM-style spring center, 35% inertia) and step every frame in equal sub-steps with time-corrected verlet and a travel clamp, instead of a fixed 60 Hz accumulator in pure world space — the hair and cloth no longer judder at high refresh rates or slam into the colliders at a sprint. Follower steering is low-pass filtered, actors ease into a heading instead of bang-bang turning, and the run lean is smoothed and capped. `tools/browser/jitter.mjs` measures it: spring-bone jerk ~6× lower, body twitch about halved, heading jitter at p95 up to 10× lower.
+
+**Frame rate**: characters and creatures are consolidated at export (garment colours baked into vertex colours, everything merged per shading role) — 4–5 meshes per character instead of ~35, which also cuts outline, shadow and AO-mask draws; dynamic resolution (on below Ultra) steps the render scale down under ~50 fps and back up when it recovers; high-DPI screens render at most 1.5× CSS pixels (2× on Ultra); face textures repaint at 30/15/6 Hz by distance.
+
+**Interactions and light**: party chatter lines carry a gesture (explicit or chosen from the expression) and listeners sometimes nod along; the cel ramp has a warm band along skin's light/shadow terminator.
 
 ## Testing
 - `npm run typecheck` — strict TypeScript.
@@ -378,6 +398,9 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
 - `node tools/browser/screenshots.mjs` — stages a frame in each part of the game (the camp, Shaula, the carry, the star trial, the chapter card, Reid) and writes the README's JPEGs to `docs/screenshots/`.
 - `node tools/browser/sheet.mjs <prefix> <out.png> [cols]` — contact sheet of test screenshots for review.
 - `npm run cast` — lineup review: every character spawned side by side plus face close-ups (`test-results/cast_*.png`).
+- `node tools/browser/modelsheet.mjs <id|player> [--costume=tracksuit] [--torso=1]` — one character or creature turned round (front, ¾, side, back, face/head close-up) in a single sheet.
+- `node tools/browser/faces.mjs [id ...]` — every painted face in several expressions (no 3D; needs the dev server).
+- `node tools/browser/jitter.mjs` — party motion smoothness while following a sprinting Subaru at uneven frame times.
   - Celaeno's helical stair verified climbable from floor to the 12 m gallery.
   - The container has no GPU, so the harness steps the simulation at a fixed 60 Hz and renders only for screenshots (`game.advanceAsync`). Screenshots go to `test-results/`.
 
@@ -387,8 +410,9 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
 ## Known issues
 - Kit-to-terrain placement uses the analytic height function; very large pieces on steep dune faces can float slightly at one corner.
 - The tower's buttresses use simple box colliders; the upper tiers have no collision (unreachable).
-- Characters are modelled in an A-pose; garments that cover the shoulders (capes, capelets) can clip the upper arm when the arms swing far out.
-- Belly/throat colour zones on Patrasche follow face boundaries and look slightly blocky up close.
+- Characters are modelled in an A-pose; garments that cover the shoulders (capes, capelets, Subaru's cloak, Ram/Rem's puffed sleeves) can clip the upper arm when the arms swing far out.
+- Garment shells share the body's weights, so they deform with it; at extreme bends (deep crouches, arms raised overhead) the body can show through a seam.
+- Canon details were matched from reference images where available (Subaru, Reid, Patrasche); the other designs follow the series' common look and may differ from a specific arc's outfit in small ways.
 - Party slots are path-based; in very cluttered rooms a companion may briefly take the breadcrumb route before a direct line opens. Warps only happen out of view.
 - `PlaceholderVisual` remains as the fallback if a character model fails to load.
 - Enemy steering is direct (no navmesh); jackals rely on open sand and circling slots. Interiors will need a navigation grid if beasts ever come inside.
@@ -432,7 +456,7 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
 - Shadow-casting local lights must stay within the per-tier budget (`SHADOW_LIGHT_BUDGET`).
 - Trimesh colliders for large kit pieces should use simplified collision proxies (Phase 2 exports them).
 - The two-wave plaza fight (nine jackals, the whole party) was the heaviest frame measured: 4,412 draw calls / 3.06 M triangles across all passes. Merging creature parts by material (a jackal 81 → 11 meshes) and clipping the campfire's cube shadow to its light radius (it was redrawing everything within 500 m, six times) brought it to 450 / 1.19 M. Humanoid characters (13–20 meshes each) could be merged the same way.
-- Characters: ~30–41k triangles each plus an outline shell (≈2× vertex work). A full party on screen is ~300–400k triangles; candidates: outline shells dropped beyond ~25 m, LOD meshes from Blender's decimate, face texture updates throttled for distant characters (already only redrawn on change).
-- Spring bones run on the CPU at 60 Hz sub-steps (≈80 joints for Emilia); fine for a party, would need culling/LOD for crowds.
+- Characters: ~33–56k triangles each (the tailored garments added detail) plus an outline shell (≈2× vertex work), but only 4–5 meshes each after export consolidation. A full party on screen is ~400k triangles; candidates if needed: outline shells dropped beyond ~25 m, LOD meshes from Blender's decimate.
+- Spring bones run on the CPU every frame in ≤1/60 s sub-steps (≈80 joints for Emilia); fine for a party, would need culling/LOD for crowds.
 - Alcyone: ~600k triangles and ~250 draw calls with the whole party in view (the Green Room foliage is ~6k instanced leaves). Candidates: foliage distance culling per room, fewer ivy leaves on Low.
 - Taygeta's library: three tiers of shelves around the wall (≈170 kit instances) and a single merged mesh of book spines; ~200k triangles.

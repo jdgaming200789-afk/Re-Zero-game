@@ -1,4 +1,4 @@
-import { clamp, lerp } from '../../core/math/MathUtil';
+import { clamp, Easing, lerp } from '../../core/math/MathUtil';
 import type { LocomotionState } from '../CharacterVisual';
 import { Pose, type PoseSpec } from './Pose';
 
@@ -165,8 +165,15 @@ export class GaitGenerator {
  * Standing idle: a character-specific stance plus breathing and slow weight
  * shifts. Exhaustion and fear bend the stance (Subaru is not a soldier).
  */
+type Fidget = 'look' | 'shoulders' | 'shift' | 'glance';
+const FIDGETS: Fidget[] = ['look', 'shoulders', 'shift', 'glance', 'look'];
+const FIDGET_TIME: Record<Fidget, number> = { look: 3.2, shoulders: 1.8, shift: 2.6, glance: 1.8 };
+
 export class IdleGenerator {
   private t = Math.random() * 10;
+  /** Occasional small motions while standing (look around, stretch...). */
+  private fidget: { kind: Fidget; t: number; side: number } | null = null;
+  private nextFidget = 4 + Math.random() * 8;
   private readonly base = new Pose();
   private readonly out = new Pose();
   private readonly tired = new Pose();
@@ -247,6 +254,58 @@ export class IdleGenerator {
     this.out.rotate('lowerLegL', Math.max(0, -shift) * 5, 0, 0);
     this.out.rotate('lowerLegR', Math.max(0, shift) * 5, 0, 0);
     this.out.rotate('head', Math.sin(t * 0.21) * 1.5, Math.sin(t * 0.17) * 3, 0);
+    this.applyFidget(dt, loco);
     return this.out;
+  }
+
+  private applyFidget(dt: number, loco: LocomotionState): void {
+    if (loco.speed > 0.2 || loco.tension > 0.5) {
+      this.fidget = null;
+      this.nextFidget = Math.max(this.nextFidget, 3);
+      return;
+    }
+    if (!this.fidget) {
+      this.nextFidget -= dt;
+      if (this.nextFidget > 0) return;
+      this.nextFidget = 7 + Math.random() * 9;
+      this.fidget = { kind: FIDGETS[Math.floor(Math.random() * FIDGETS.length)]!, t: 0, side: Math.random() < 0.5 ? -1 : 1 };
+    }
+    const f = this.fidget;
+    f.t += dt;
+    const dur = FIDGET_TIME[f.kind];
+    const u = f.t / dur;
+    if (u >= 1) {
+      this.fidget = null;
+      return;
+    }
+    // Ease in, hold, ease out.
+    const w = u < 0.25 ? Easing.inOutSine(u / 0.25) : u > 0.72 ? Easing.inOutSine((1 - u) / 0.28) : 1;
+    const o = this.out;
+    switch (f.kind) {
+      case 'look': {
+        // Look one way, then a beat the other way.
+        const s2 = u < 0.5 ? f.side : -f.side * 0.6;
+        o.rotate('neck', 0, 9 * s2 * w, 0);
+        o.rotate('head', -2 * w, 18 * s2 * w, 0);
+        o.rotate('chest', 0, 3 * s2 * w, 0);
+        break;
+      }
+      case 'shoulders':
+        o.rotate('upperChest', -5 * w, 0, 0);
+        o.rotate('shoulderL', 0, 0, 7 * w);
+        o.rotate('shoulderR', 0, 0, -7 * w);
+        o.rotate('head', -6 * w, 0, 4 * f.side * w);
+        break;
+      case 'shift':
+        o.hipsOffset.x += 0.025 * f.side * w;
+        o.rotate('hips', 0, 0, 3 * f.side * w);
+        o.rotate('spine', 0, 0, -2.5 * f.side * w);
+        o.rotate(f.side > 0 ? 'lowerLegR' : 'lowerLegL', 9 * w, 0, 0);
+        break;
+      case 'glance':
+        o.rotate('neck', 5 * w, 0, 0);
+        o.rotate('head', 10 * w, 6 * f.side * w, 0);
+        break;
+    }
   }
 }

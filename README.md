@@ -39,6 +39,11 @@ with a pair of chopsticks.
 
 ![Reid Astrea on Electra](docs/screenshots/electra.jpg)
 
+Every character, Patrasche and the witchbeasts are built procedurally in
+Blender with tailored, layered clothing and painted anime faces — Subaru in
+his Arc 6 travelling clothes (or the tracksuit: *Settings › Gameplay ›
+Subaru's outfit*), Reid as the wild-haired, eyepatched first Sword Saint.
+
 Around all of it: a party that follows, fights and banters; telegraphed combat
 with Subaru's whip, Shamak and E·M·M; data-driven dialogue with choices that
 only open up because of what Subaru learned by dying; cinematics; quests and a
@@ -83,6 +88,7 @@ npm run typecheck    # strict TypeScript
 npm test             # unit tests (Vitest): combat, dialogue, quests, saves, data validation...
 npm run smoke        # drives the real game in Chromium and asserts on state (14 suites)
 npm run cast         # character lineup screenshots
+node tools/browser/modelsheet.mjs <id>   # one character turned round, with a face close-up
 node tools/browser/screenshots.mjs   # regenerate the screenshots in this README
 ```
 

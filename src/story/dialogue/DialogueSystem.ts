@@ -535,7 +535,7 @@ export class DialogueSystem implements GameSystem {
     // A bowed head needs the lens below it: re-cover a downcast line from
     // low even mid-run, and come back up afterwards.
     const low = !!line.speaker && !line.thought && DOWNCAST.has(line.anim ?? '');
-    if (kind === 'keep' && line.speaker && low !== a.lowShot) kind = 'single';
+    if (kind === 'keep' && line.speaker && !line.thought && low !== a.lowShot) kind = 'single';
     if (kind === 'keep') return;
     const group = a.def.cast.map((id) => this.head(id, new Vector3())).filter((p): p is Vector3 => !!p);
     const speakerHead = this.head(line.speaker, new Vector3()) ?? group[0];

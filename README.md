@@ -41,7 +41,9 @@ chopsticks and asks for one thing: make him take a step. Only Emilia does, and a
 stair of light comes down out of the sky for her alone. Then Subaru opens the
 Sword Saint's Book of the Dead, and something of Gluttony's is reading with him.
 
-![Reid Astrea on Electra](docs/screenshots/electra.jpg)
+| | |
+|---|---|
+| ![Reid Astrea on Electra](docs/screenshots/electra.jpg) | ![The stair of light, come down for Emilia](docs/screenshots/stair.jpg) |
 
 Every character, Patrasche and the witchbeasts are built procedurally in
 Blender with tailored, layered clothing and painted anime faces — Subaru in

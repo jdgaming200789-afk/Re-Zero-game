@@ -93,7 +93,7 @@ export class Library {
     if (entry.mat) return;
     const g = this.game;
     const grp = entry.group;
-    grp.name = `Book:${def.id}`;
+    grp.name = `${def.id[0]!.toUpperCase()}${def.id.slice(1)}Book`;
     grp.position.copy(polar(SHELF_RADIUS - 0.34, def.angle, def.height));
     // Facing into the room, the spine towards the reader.
     grp.rotation.y = def.angle + Math.PI;

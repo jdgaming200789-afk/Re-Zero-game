@@ -149,6 +149,26 @@ try {
   await frame([reid[0] + f[0] * 3.2 + f[1] * 2.2, reid[1] + 1.5, reid[2] + f[1] * 3.2 - f[0] * 2.2], [reid[0], reid[1] + 1.15, reid[2]], 44);
   await save('electra');
   await page.evaluate(() => window.__game.party.active.forEach((a) => (a.entity.object3D.visible = true)));
+
+  // The stair of light, come down out of the sky for Emilia alone.
+  const foot = await page.evaluate(() => {
+    const g = window.__game;
+    g.state.set('ele.emilia_passed', true);
+    g.events.emit('story:event', { id: 'ele.stair_full' });
+    const a = g.scenes.current;
+    const f = a.spawns.get('ele.stair_foot').position;
+    const V = f.constructor;
+    g.party.active.forEach((m) => { if (m.id !== 'emilia') m.entity.object3D.visible = false; });
+    if (a.duel?.actor) a.duel.actor.entity.object3D.visible = false;
+    g.player.entity.object3D.visible = false;
+    const em = g.actors.get('emilia');
+    const at = new V(f.x - 0.5, f.y, f.z + 2.3);
+    em?.placeAt(at, Math.atan2(f.x - at.x, f.z - at.z));
+    return [f.x, f.y, f.z];
+  });
+  await step(page, 1.5, false);
+  await frame([foot[0] - 3.4, 1.05, foot[2] + 6.2], [foot[0] + 0.6, 4.2, foot[2] - 2.4], 52);
+  await save('stair');
 } catch (err) {
   console.error(err);
 } finally {

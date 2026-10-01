@@ -472,7 +472,8 @@ class ElectraArea extends Area {
   override dispose(): void {
     this.duel?.dispose();
     this.stair?.dispose();
-    this.thaw();
+    this.ice?.dispose();
+    this.ice = null;
     this.sky?.dispose();
     this.env?.dispose();
     for (const o of this.owned) o.dispose();

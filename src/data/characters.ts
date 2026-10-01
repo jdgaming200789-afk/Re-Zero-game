@@ -111,7 +111,12 @@ export const CHARACTERS: Record<string, CharacterDefinition> = {
       blushColor: '#f29db2',
     },
     defaultExpression: 'neutral',
-    springs: [...chains(HAIR_LONG, 'hair_back'), ...chains(HAIR_SIDE, 'hair_side'), ...chains(SKIRT, 'skirt')],
+    // Arc 6: the braid and the long cloak; the classic outfit: loose hair and a skirt.
+    springs: [...chains(HAIR_LONG, 'hair_back', 'hair_braid'), ...chains(HAIR_SIDE, 'hair_side'), ...chains(SKIRT, 'skirt'), ...chains(CAPE, 'cape')],
+    costumes: {
+      arc6: { label: 'Arc 6 — hooded cloak', model: 'assets/models/characters/emilia.glb' },
+      classic: { label: 'Classic', model: 'assets/models/characters/emilia_classic.glb' },
+    },
     voice: { pitch: 260, rate: 10, timbre: 'soft' },
     nameColor: '#c9b4f4',
     outline: '#3a3346',
@@ -187,7 +192,11 @@ export const CHARACTERS: Record<string, CharacterDefinition> = {
       lashWeight: 1.2,
     },
     defaultExpression: 'neutral',
-    springs: [...chains(SKIRT, 'skirt'), ...chains(COAT, 'apron')],
+    springs: [...chains(SKIRT, 'skirt'), ...chains(COAT, 'apron'), ...chains(CAPE, 'cape')],
+    costumes: {
+      arc6: { label: 'Arc 6 — travelling capelet', model: 'assets/models/characters/ram.glb' },
+      classic: { label: 'Maid uniform', model: 'assets/models/characters/ram_maid.glb' },
+    },
     voice: { pitch: 240, rate: 10, timbre: 'crisp' },
     nameColor: '#f2a7bb',
     outline: '#2c2630',

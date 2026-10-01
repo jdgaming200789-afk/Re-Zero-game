@@ -217,6 +217,9 @@ class TaygetaArea extends Area {
     // Hadrian's book: the reader stands before the shelf by the stair.
     const hb = polar(17.6, 10.4 * DEG);
     mark('lib.hadrian_read', hb.x, 0, hb.z, 10.4);
+    // Where Subaru wakes after Reid's book (beside its shelf).
+    const rb = polar(17.4, -32 * DEG);
+    mark('lib.reid_read', rb.x, 0, rb.z, -32);
     // His memory: low over the dark mirror of a floor, towards Orion.
     mark('lib.mem_cam', 0, 0.9, 4);
     mark('lib.mem_look', 0, 6.5, -14);
@@ -314,7 +317,8 @@ class TaygetaArea extends Area {
     }
     await g.scheduler.wait(1.1, false);
     if (g.rbd.dying) return;
-    await g.dialogue.play('tay.fail');
+    await g.dialogue.play(s.key === 'orion.betelgeuse' && !g.state.bool('tay.burned_betelgeuse') ? 'tay.fail_betelgeuse' : 'tay.fail');
+    if (s.key === 'orion.betelgeuse') g.state.set('tay.burned_betelgeuse', true);
   }
 
   // ------------------------------------------------------------------ the library

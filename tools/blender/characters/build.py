@@ -29,7 +29,7 @@ from hair import HairStyle, build_hair  # noqa: E402
 from outfit import Garments, Rule, make_material, hex3, zone  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
-OUT_DIR = os.path.join(ROOT, "public", "assets", "models", "characters")
+OUT_DIR = os.environ.get("CHAR_OUT_DIR") or os.path.join(ROOT, "public", "assets", "models", "characters")
 
 
 @dataclass
@@ -217,6 +217,8 @@ def build(spec: CharacterSpec) -> str:
 
     # Garments drape onto the finished body (collars, capes).
     j.body = body
+    # Hair chain guides, for accessories that ride a hair spring chain (braids).
+    j.hair_chains = hmeta["chains"]
     garments = spec.garments(j, mats) if spec.garments else Garments()
     acc = spec.accessories(j, mats, head) if spec.accessories else []
 
@@ -230,6 +232,11 @@ def build(spec: CharacterSpec) -> str:
     for o in acc:
         if o.get("skinned"):
             skinned(o, arm)
+        elif o.get("chain") in hair_names:
+            # A braid or ornament that swings with a hair chain.
+            c = o["chain"]
+            rigid(o, arm, "head")
+            assign_along_chain(o, "head", hair_names[c], hair_chains[c])
         else:
             rigid(o, arm, o.get("bone", "head"))
 
@@ -296,6 +303,37 @@ def build(spec: CharacterSpec) -> str:
     tris = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in bpy.data.objects if o.type == "MESH")
     print(f"{spec.id}: {tris} tris, {len(arm.data.bones)} bones → {os.path.relpath(path, ROOT)} ({os.path.getsize(path) / 1024:.0f} KB)")
     return path
+
+
+def assign_along_chain(obj, base_bone: str, bones: list[str], guide: list[Vector]):
+    """Weights by arc length along one chain's guide (a ponytail that arcs up
+    and back before it falls: height can't say how far along a vertex is)."""
+    base = obj.vertex_groups[base_bone]
+    groups = [obj.vertex_groups.get(b) or obj.vertex_groups.new(name=b) for b in bones]
+    seg = [(guide[i], guide[i + 1]) for i in range(len(guide) - 1)]
+    lens = [(b - a).length for a, b in seg]
+    total = max(1e-6, sum(lens))
+    for v in obj.data.vertices:
+        p = v.co
+        best, best_s = 1e9, 0.0
+        acc_len = 0.0
+        for (a, b), L in zip(seg, lens):
+            d = b - a
+            t = 0.0 if L < 1e-9 else max(0.0, min(1.0, (p - a).dot(d) / (L * L)))
+            dist = (a + d * t - p).length
+            if dist < best:
+                best, best_s = dist, (acc_len + t * L) / total
+            acc_len += L
+        s = best_s
+        if s < 0.06:
+            continue
+        base.add([v.index], max(0.0, 1.0 - s * 3.0), "REPLACE")
+        f = min(0.999, s) * len(bones)
+        i0 = int(f)
+        frac = f - i0
+        groups[i0].add([v.index], 1 - frac * 0.5, "ADD")
+        if i0 + 1 < len(bones):
+            groups[i0 + 1].add([v.index], frac * 0.5, "ADD")
 
 
 def assign_nearest_chain(obj, arm, base_bone: str, chains: dict[str, tuple[list[str], list[Vector]]]):

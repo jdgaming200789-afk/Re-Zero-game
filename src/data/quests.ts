@@ -56,9 +56,20 @@ export const QUESTS: QuestDef[] = [
     summary: 'Above the library, a stair climbs to Electra — the second floor, and the second trial. Whatever waits up there, it’s one floor closer to the Sage.',
     objectives: [
       { id: 'climb', text: 'Climb to Electra', done: "$area == 'electra'", marker: { area: 'taygeta', at: [0, 0, -19] } },
-      { id: 'reid', text: 'Make the Sword Saint take you seriously', done: 'ele.trial_cleared', show: 'ele.met_reid', hint: 'Nothing gets past those chopsticks head-on. Not even Julius.' },
+      { id: 'reid', text: 'Make the Sword Saint take one step', done: 'ele.trial_cleared', show: 'ele.met_reid', hint: 'Nothing gets past those chopsticks head-on. Not even Julius.' },
     ],
-    epilogue: 'The first Sword Saint dropped a chopstick, and laughed like it was the best thing that had happened in four hundred years.',
+    epilogue: 'Only Emilia made Reid Astrea take a step. A stair of light came down from the sky for her alone — and for now, it waits.',
+  },
+  {
+    id: 'the_book_of_reid',
+    title: 'The Sword Saint’s Book',
+    kind: 'main',
+    summary: 'Reid Astrea is dead — so his Book of the Dead is somewhere in Taygeta. If his life holds a way past his trial, the rest of us can follow Emilia up the stair.',
+    objectives: [
+      { id: 'find', text: 'Find Reid Astrea’s book in the library', done: 'lib.reid_found', marker: { area: 'taygeta', at: [0, 0, 0] } },
+      { id: 'read', text: 'Read the Sword Saint’s book', done: 'lib.read_reid', show: 'lib.reid_found' },
+    ],
+    epilogue: 'Something was waiting inside the book. Natsuki Subaru woke up in the library remembering nothing since the night he walked home from a convenience store.',
   },
   {
     id: 'the_library',

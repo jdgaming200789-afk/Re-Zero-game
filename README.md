@@ -29,20 +29,26 @@ title screen to the chapter card:
 - **Celaeno** — Shaula, the Star Guardian, and the tower's rules (break one and
   she keeps her word).
 - **Alcyone** — carrying Rem up the stair to the Green Room.
-- **Taygeta** — a white room that becomes a sky full of stars within reach, and a
-  riddle only someone from Earth can answer.
+- **Taygeta** — a white room, a riddle only someone from Earth can answer, and
+  Subaru reasoning it out in his mind's eye (Shaula, the scorpion's stinger; the
+  hunter it killed; his brightest star) before the room becomes a sky full of
+  stars within reach.
 
-**And beyond it** (Phase 11): Taygeta's library of the **Books of the Dead** —
-look for Rem's book and find none, read a stranger's last morning — and
-**Electra**, where the first Sword Saint, Reid Astrea, fights the whole party
-with a pair of chopsticks.
+**And beyond it**: Taygeta's library of the **Books of the Dead** — look for
+Rem's book and find none, read a stranger's last morning — and **Electra**,
+where the first Sword Saint, Reid Astrea, fights the whole party with a pair of
+chopsticks and asks for one thing: make him take a step. Only Emilia does, and a
+stair of light comes down out of the sky for her alone. Then Subaru opens the
+Sword Saint's Book of the Dead, and something of Gluttony's is reading with him.
 
 ![Reid Astrea on Electra](docs/screenshots/electra.jpg)
 
 Every character, Patrasche and the witchbeasts are built procedurally in
 Blender with tailored, layered clothing and painted anime faces — Subaru in
 his Arc 6 travelling clothes (or the tracksuit: *Settings › Gameplay ›
-Subaru's outfit*), Reid as the wild-haired, eyepatched first Sword Saint.
+Subaru's outfit*), Emilia in her cat-eared hooded cloak and Ram in her mint
+capelet (or their classic dress and maid uniform: *Party outfits*), Shaula with
+her stinger braid, Reid as the wild-haired, eyepatched first Sword Saint.
 
 Around all of it: a party that follows, fights and banters; telegraphed combat
 with Subaru's whip, Shamak and E·M·M; data-driven dialogue with choices that

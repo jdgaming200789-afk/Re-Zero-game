@@ -29,6 +29,7 @@ import { registerStoryDevCommands } from '../debug/storyCommands';
 import { CharacterFactory } from '../characters/CharacterFactory';
 import { CharacterLighting } from '../characters/render/AnimeMaterial';
 import { FaceRenderer } from '../characters/face/FaceRenderer';
+import { StarVision } from '../ui/overlay/StarVision';
 import { ActorManager } from '../actors/ActorManager';
 import { PartyManager } from '../party/PartyManager';
 import { ChatterSystem } from '../party/Chatter';
@@ -220,6 +221,9 @@ export class Game implements GameContext {
     });
     // Costume changes wait for a calm moment (not mid-scene or mid-fight).
     this.addSystem({ name: 'costume', update: () => this.applyCostume() });
+    // Subaru's mind's eye (the night sky of his world), paced by `vision.*` story events.
+    const vision = new StarVision(this.ui.layers.dialogue, this.events);
+    this.addSystem({ name: 'vision', update: () => vision.update(this.time.unscaledDt) });
 
     window.addEventListener('resize', () => this.render.onResize());
     document.addEventListener('visibilitychange', () => {

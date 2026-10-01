@@ -278,19 +278,19 @@ try {
   await stepUntil(page, () => window.__game.mode === 'exploration', 20);
   await step(page, 3, false);
   const live = await page.evaluate(() => ({ started: window.__game.state.bool('tay.trial_started'), live: window.__game.scenes.current.trial.live, insight: window.__game.state.bool('know.sky.shaula_star') }));
-  check('reading the monolith turns Taygeta into the sky and starts the trial', monoFocus === 'tay.monolith' && live.started && live.live && !live.insight, JSON.stringify(live));
+  check('reading the monolith: Subaru reasons it out (Shaula → Orion → Rigel) and the room becomes the sky', monoFocus === 'tay.monolith' && live.started && live.live && live.insight, JSON.stringify(live));
   // A wrong star: Betelgeuse, the red giant at Orion's shoulder.
   const aimB = await aimAt('orion.betelgeuse');
   await settleLook();
   await shot(page, 'tower-08-orion');
   const hp0 = await hp();
   await interact();
-  await stepUntil(page, () => window.__game.dialogue.state?.id === 'tay.fail', 10);
+  await stepUntil(page, () => window.__game.dialogue.state?.id === 'tay.fail_betelgeuse', 10);
   const hp1 = await hp();
-  check('looking at a star aims at it; a wrong one burns', aimB.aimed === 'orion.betelgeuse' && aimB.focused === 'tay.star' && hp1 < hp0 && (await flag('tay.fails')) === 1, `${JSON.stringify(aimB)} hp ${hp0}→${hp1}`);
+  check('looking at a star aims at it; a wrong one burns (Betelgeuse, of all stars)', aimB.aimed === 'orion.betelgeuse' && aimB.focused === 'tay.star' && hp1 < hp0 && (await flag('tay.fails')) === 1, `${JSON.stringify(aimB)} hp ${hp0}→${hp1}`);
   await readThrough(() => 0, null, cinematicOver);
   await page.evaluate(() => window.__game.camera.release(0, window.__game.player.followTarget));
-  // Two more wrong guesses: the hints sharpen until Subaru remembers on his own.
+  // Two more wrong guesses: the hints sharpen (belt first, then down to his foot).
   for (const key of ['scorpius.shaula', 'dipper.dubhe']) {
     await page.evaluate((key) => {
       const a = window.__game.scenes.current;
@@ -299,8 +299,8 @@ try {
     await stepUntil(page, () => window.__game.dialogue.state?.id === 'tay.fail', 10);
     await readThrough(() => 0, null, cinematicOver);
   }
-  const knows = await page.evaluate(() => window.__game.state.bool('know.sky.shaula_star') && window.__game.state.bool('know.sky.orion_myth'));
-  check('after the third burn Subaru remembers what Shaula is', knows && (await flag('tay.fails')) === 3 && (await hp()) > 0);
+  const knows = await page.evaluate(() => window.__game.state.bool('know.sky.shaula_star') && window.__game.state.bool('know.sky.orion_myth') && window.__game.state.bool('dlg.tay.fail.third'));
+  check('three burns in, the hints have walked him to the hunter’s foot', knows && (await flag('tay.fails')) === 3 && (await hp()) > 0);
   // The fourth guess kills him: Return by Death to the Green Room.
   await page.evaluate(() => {
     const a = window.__game.scenes.current;
@@ -337,8 +337,8 @@ try {
   await stepUntil(page, () => window.__game.cinematics.playing === 'tay.monolith', 10);
   await readThrough(() => 0, null, cinematicOver);
   await stepUntil(page, () => window.__game.mode === 'exploration', 20);
-  const insight = await page.evaluate(() => ({ insight: window.__game.state.bool('dlg.tay.monolith.insight'), puzzled: window.__game.state.bool('dlg.tay.monolith.puzzled') }));
-  check('what he learned by dying answers the riddle at once', insight.insight && !insight.puzzled, JSON.stringify(insight));
+  const insight = await page.evaluate(() => ({ answer: window.__game.state.bool('know.sky.taygeta_answer'), started: window.__game.state.bool('tay.trial_started') }));
+  check('in the next loop he already knows the answer and goes straight to the sky', insight.answer && insight.started, JSON.stringify(insight));
   await step(page, 3, false);
   const aimR = await aimAt('orion.rigel');
   await interact();

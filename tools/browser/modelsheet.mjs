@@ -2,7 +2,7 @@
 // front, three-quarter, side and back full-body views plus a face close-up —
 // composed into a single image, test-results/sheet_<id>.png.
 //
-//   node tools/browser/modelsheet.mjs <id> [id ...] [--expr=smug] [--face=0.7]
+//   node tools/browser/modelsheet.mjs <id> [id ...] [--expr=smug] [--face=0.7] [--outfits=classic]
 import { launch, waitReady, step, devCommand } from './harness.mjs';
 import { join } from 'node:path';
 import { OUT_DIR } from './harness.mjs';
@@ -51,6 +51,8 @@ try {
       if (done) break;
     }
   }
+  // Emilia's / Ram's outfit set: --outfits=classic
+  if (opt.outfits) await page.evaluate((o) => window.__game.settings.set('gameplay', 'partyOutfits', o), opt.outfits);
   for (const id of ids) {
     await devCommand(page, 'cast clear');
     if (id !== 'player') {

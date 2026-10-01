@@ -523,8 +523,11 @@ export class DialogueSystem implements GameSystem {
       a.sameSpeakerLines = 0;
       kind = 'ots';
     } else {
+      // A run of lines from one speaker: push in to a single, hold, then a
+      // two-shot for the listener's reaction, hold, and round again.
       a.sameSpeakerLines++;
-      kind = a.sameSpeakerLines === 1 ? 'single' : 'keep';
+      const beat = (['single', 'keep', 'two', 'keep'] as const)[(a.sameSpeakerLines - 1) % 4]!;
+      kind = beat;
     }
     if (kind === 'keep') return;
     const group = a.def.cast.map((id) => this.head(id, new Vector3())).filter((p): p is Vector3 => !!p);
@@ -544,6 +547,17 @@ export class DialogueSystem implements GameSystem {
         }
       }
     }
+    // Track the subject (people shift, turn to face each other, gesture):
+    // the camera follows the head it was composed on, gently.
+    const speakerId = line.speaker;
+    if (shot.kind === 'single' || shot.kind === 'ots') shot.track = () => this.head(speakerId, _trk);
+    else if (shot.kind === 'two' && listenerId) {
+      shot.track = () => {
+        const p = this.head(speakerId, _trk);
+        const q = this.head(listenerId, _trk2);
+        return p && q ? p.add(q).multiplyScalar(0.5) : null;
+      };
+    }
     if (a.shots === 0) g.camera.blendTo(shot, 0.9, 'inOutCubic');
     else g.camera.cut(shot);
     a.shots++;
@@ -552,6 +566,8 @@ export class DialogueSystem implements GameSystem {
 }
 
 const _h1 = new Vector3();
+const _trk = new Vector3();
+const _trk2 = new Vector3();
 const _seg = new Vector3();
 const _pt = new Vector3();
 const _h2 = new Vector3();

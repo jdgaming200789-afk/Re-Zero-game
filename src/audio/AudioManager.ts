@@ -308,7 +308,28 @@ export class AudioManager implements GameSystem, VoiceProvider {
         s.thump(sfx, t, 90, 30, 1.2, 0.5);
         break;
       case 'lib.hadrian_found':
+      case 'lib.reid_found':
         s.bell(sfx, 86, t, 0.04, 3);
+        break;
+      case 'lib.memory_eaten':
+        // Something closes its mouth: a low swallow and a dead silence after.
+        s.thump(sfx, t, 60, 24, 1.4, 0.6);
+        s.noiseHit(sfx, t, { type: 'lowpass', freq: 400, level: 0.4, attack: 0.02, decay: 1.2 });
+        break;
+      case 'ele.ice':
+        // Frost racing over stone: a glassy hiss and crackle.
+        s.noiseHit(sfx, t, { type: 'highpass', freq: 4200, level: 0.28, attack: 0.05, decay: 1.4 });
+        [93, 98, 101].forEach((n, i) => s.bell(sfx, n, t + 0.25 + i * 0.18, 0.02, 1.2));
+        break;
+      case 'ele.reid_step':
+        s.noiseHit(sfx, t, { type: 'bandpass', freq: 2600, q: 3, level: 0.2, decay: 0.12 });
+        break;
+      case 'ele.stair':
+        // Bells far overhead, coming closer.
+        [84, 88, 91, 96].forEach((n, i) => s.bell(sfx, n, t + i * 0.7, 0.035, 4));
+        break;
+      case 'ele.stair_step':
+        s.bell(sfx, 91 + Math.floor(Math.random() * 5), t, 0.012, 1.6);
         break;
       default:
         break;

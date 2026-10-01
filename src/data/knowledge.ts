@@ -71,6 +71,21 @@ export const KNOWLEDGE: Record<string, KnowledgeDef> = {
     text: 'Back home, Orion the hunter was stung to death by a scorpion the gods sent after him. They hang on opposite sides of the sky. Orion’s brightest star is Rigel, blue-white at his foot — brighter than red Betelgeuse at his shoulder.',
     category: 'lore',
   },
+  'tower.light_stair': {
+    title: 'The stair of light',
+    text: 'When Emilia made Reid take a step, a stair of light came down out of the sky to Electra — to the floor above, and the Divine Dragon Volcanica. Only she can climb it. We decided she shouldn’t go alone. Not yet.',
+    category: 'lore',
+  },
+  'people.gluttony_book': {
+    title: 'What was in Reid’s book',
+    text: 'Opening the Sword Saint’s Book of the Dead, something of Gluttony’s was reading with me. It ate. I woke up on the library floor remembering nothing since the night I walked home from the convenience store.',
+    category: 'people',
+  },
+  'sky.taygeta_answer': {
+    title: 'Taygeta’s answer',
+    text: 'Shaula is the stinger at the tip of the scorpion’s tail; the hero the scorpion killed is Orion; his greatest splendour is his brightest star, Rigel — blue-white at the hunter’s foot. Find the three stars of his belt, then go down to his foot.',
+    category: 'lore',
+  },
   'sky.shaula_star': {
     title: 'The scorpion’s stinger',
     text: 'In my world, the star at the tip of the scorpion’s tail — the stinger that killed Orion — is called Shaula. The same name as the Star Guardian. A coincidence. Probably.',

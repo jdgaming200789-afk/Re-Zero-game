@@ -1,6 +1,7 @@
 import {
   BoxGeometry,
   CircleGeometry,
+  ConeGeometry,
   Color,
   CylinderGeometry,
   DoubleSide,
@@ -26,11 +27,15 @@ import { SHADOW_MAP_SIZE } from '../../settings/Settings';
 import type { ColorGrade } from '../../render/effects/ColorGradeEffect';
 import { Rng } from '../../core/math/MathUtil';
 import { ReidDuel } from './ReidDuel';
+import { LightStair } from './LightStair';
 
 const R = 22;
 const DEG = Math.PI / 180;
 /** Half-angle of the stair gate's gap in the parapet (south, +Z). */
 const GATE_HALF = 6 * DEG;
+
+/** Where the stair of light comes down: north-east of Reid's stone. */
+const STAIR_CENTER = new Vector3(6.5, 0, -8);
 
 const GRADE: ColorGrade = { lift: [0.004, 0.008, 0.02], gamma: [1, 1, 1.02], gain: [0.98, 1, 1.06], saturation: 0.9, contrast: 1.1, temperature: -0.18, tint: 0.01 };
 
@@ -48,6 +53,9 @@ class ElectraArea extends Area {
   private env: Texture | null = null;
   private moon!: FollowShadowLight;
   duel!: ReidDuel;
+  /** The stair of light that comes down for whoever passes (Emilia). */
+  stair!: LightStair;
+  private ice: { disc: Mesh; spikes: Mesh[]; t: number; clear: number } | null = null;
   private readonly owned: Array<{ dispose(): void }> = [];
 
   async build(onProgress: (p: number) => void): Promise<void> {
@@ -196,13 +204,27 @@ class ElectraArea extends Area {
     this.root.add(wind);
     onProgress(0.8);
 
+    // The stair of light (dark and folded away until someone passes). Its
+    // light exists from the start: adding one later recompiles every material.
+    this.stair = new LightStair(STAIR_CENTER, {
+      onStep: (i) => {
+        if (i % 3 === 0) g.events.emit('story:event', { id: 'ele.stair_step' });
+      },
+    });
+    this.root.add(this.stair.root);
+
     this.addSpawn('default', 0, 0, R - 2.4, 180);
     this.addSpawn('arrive', 0, 0, R - 2.4, 180);
     this.addMarkers();
     this.addInteractables();
     this.duel = new ReidDuel(g, this.scope, new Vector3(0, 0, 0));
     this.listen('story:event', ({ id }) => {
-      if (id === 'ele.sit') this.duel.sitDown();
+      if (id === 'ele.sit') this.sitReid();
+      else if (id === 'ele.ice') this.freeze();
+      else if (id === 'ele.ice_clear') this.thaw();
+      else if (id === 'ele.reid_step') this.reidSteps();
+      else if (id === 'ele.stair') this.stair.descend(6.2);
+      else if (id === 'ele.stair_full') this.stair.descend(0);
     });
     // The duel starts once control is back: after the first meeting, or
     // after "Again." in a rematch.
@@ -239,10 +261,137 @@ class ElectraArea extends Area {
     mark('ele.cam_reid', 1.3, 1.25, -0.9);
     mark('ele.cam_party', -1.4, 1.6, -0.2);
     mark('ele.party_look', 0, 1.3, 6);
+    // Emilia's turn: she walks out to face him; everyone else watches.
+    mark('ele.emilia_try', 0, 0, 2.2, 180);
+    mark('ele.subaru_watch', -1.6, 0, 4.6, 180);
+    const watch: Array<[string, number, number]> = [
+      ['julius', -2.8, 3.9],
+      ['beatrice', -0.6, 5.0],
+      ['ram', 1.5, 4.8],
+      ['anastasia', 2.6, 5.4],
+      ['meili', 0.6, 5.8],
+      ['patrasche', 3.8, 6.4],
+    ];
+    for (const [id, x, z] of watch) mark(`ele.watch_${id}`, x, 0, z, 180);
+    mark('ele.cam_ice', -4.6, 1.7, 4.4);
+    mark('ele.ice_look', 0, 0.7, -0.6);
+    mark('ele.cam_feet', 1.1, 0.35, -0.9);
+    mark('ele.feet_look', 0, 0.14, -2.6);
+    // The stair: looking up from among the party, then a wide of the whole helix.
+    mark('ele.cam_up', 2.2, 1.3, 2.8);
+    mark('ele.stair_top', STAIR_CENTER.x, 52, STAIR_CENTER.z);
+    mark('ele.stair_mid', STAIR_CENTER.x, 16, STAIR_CENTER.z);
+    mark('ele.cam_stair_wide', -9, 3.2, 13);
+    mark('ele.stair_foot', STAIR_CENTER.x, 0, STAIR_CENTER.z + 4.2);
+  }
+
+  /** Back to the stone and the bowl (from wherever the trial left him). */
+  private sitReid(): void {
+    const seat = this.spawns.get('ele.reid_seat');
+    if (seat && this.duel.actor) this.duel.actor.placeAt(seat.position.clone(), seat.yaw);
+    this.duel.sitDown();
+  }
+
+  /** Emilia's ice: a sheet of frost runs out across the floor, and spikes rise round his feet. */
+  private freeze(): void {
+    if (this.ice) return;
+    const g = this.game;
+    const sheet = new MeshStandardMaterial({ color: 0xd4ecff, roughness: 0.06, metalness: 0.05, transparent: true, opacity: 0.8, emissive: 0x29507f, emissiveIntensity: 0.3 });
+    const disc = new Mesh(new CircleGeometry(1, 72), sheet);
+    disc.rotation.x = -Math.PI / 2;
+    disc.position.set(0, 0.014, -0.6);
+    disc.scale.setScalar(0.01);
+    disc.receiveShadow = true;
+    this.root.add(disc);
+    const spikeMat = new MeshStandardMaterial({ color: 0xc4e4ff, roughness: 0.12, transparent: true, opacity: 0.92, emissive: 0x3466a8, emissiveIntensity: 0.4 });
+    const spikes: Mesh[] = [];
+    const rng = new Rng(31);
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + rng.range(-0.1, 0.1);
+      const h = rng.range(0.55, 1.25);
+      const m = new Mesh(new ConeGeometry(rng.range(0.12, 0.2), h, 6), spikeMat);
+      const r = rng.range(0.85, 1.25);
+      m.position.set(Math.cos(a) * r, -h / 2, -2.6 + Math.sin(a) * r);
+      m.rotation.set(rng.range(-0.25, 0.25), rng.range(0, 6.28), rng.range(-0.25, 0.25));
+      m.userData.h = h;
+      m.userData.delay = 0.5 + rng.range(0, 0.7);
+      m.castShadow = true;
+      this.root.add(m);
+      spikes.push(m);
+    }
+    this.ice = { disc, spikes, t: 0, clear: -1 };
+    g.render.chromaticPulse = Math.max(g.render.chromaticPulse, 0.6);
+  }
+
+  private thaw(): void {
+    if (this.ice && this.ice.clear < 0) this.ice.clear = 0;
+  }
+
+  private updateIce(dt: number): void {
+    const ice = this.ice;
+    if (!ice) return;
+    const g = this.game;
+    ice.t += dt;
+    const grow = Math.min(1, ice.t / 1.3);
+    const r = 0.01 + 8.5 * (1 - Math.pow(1 - grow, 3));
+    ice.disc.scale.setScalar(r);
+    // Frost glitter along the advancing edge.
+    if (grow < 1 && Math.floor(ice.t * 12) !== Math.floor((ice.t - dt) * 12)) {
+      const a = Math.random() * Math.PI * 2;
+      g.combat.impacts.burst('ice', new Vector3(Math.cos(a) * r, 0.1, -0.6 + Math.sin(a) * r), 6);
+    }
+    for (const m of ice.spikes) {
+      const k = Math.max(0, Math.min(1, (ice.t - (m.userData.delay as number)) / 0.35));
+      const h = m.userData.h as number;
+      m.position.y = -h / 2 + h * (1 - Math.pow(1 - k, 3)) - 0.05;
+    }
+    if (ice.clear >= 0) {
+      ice.clear += dt;
+      const fade = Math.max(0, 1 - ice.clear / 2.5);
+      (ice.disc.material as MeshStandardMaterial).opacity = 0.8 * fade;
+      (ice.spikes[0]!.material as MeshStandardMaterial).opacity = 0.92 * fade;
+      if (fade <= 0) {
+        for (const o of [ice.disc, ...ice.spikes]) {
+          o.removeFromParent();
+          o.geometry.dispose();
+        }
+        (ice.disc.material as MeshStandardMaterial).dispose();
+        (ice.spikes[0]!.material as MeshStandardMaterial).dispose();
+        this.ice = null;
+      }
+    }
+  }
+
+  /** On the ice, a dead man's sandals finally move. */
+  private reidSteps(): void {
+    const actor = this.duel.actor;
+    if (!actor) return;
+    actor.release();
+    actor.dash(new Vector3(0, 0, -1), 0.6, 0.38, false);
+    void actor.visual.play('stagger', { fadeIn: 0.04 });
+    this.game.combat.impacts.burst('ice', actor.position.clone().setY(0.1), 24);
   }
 
   private addInteractables(): void {
     const g = this.game;
+    // The foot of the stair of light: hers, not his.
+    const foot = g.world.spawn('ele.stair', this.scope, { parent: this.root });
+    foot.object3D.position.set(STAIR_CENTER.x, 1.0, STAIR_CENTER.z + 4.2);
+    foot.add(
+      new Interactable({
+        id: 'ele.stair',
+        kind: 'inspect',
+        verb: 'Look',
+        label: 'Stair of light',
+        range: 2.6,
+        angle: 90,
+        condition: (game) => game.state.bool('ele.emilia_passed') && !game.combat.inCombat && !game.cinematics.playing,
+        handler: async (ctx) => {
+          await ctx.contact;
+          await ctx.game.dialogue.play('ele.stair_touch');
+        },
+      }),
+    );
     const down = g.world.spawn('ele.to_taygeta', this.scope, { parent: this.root });
     down.object3D.position.copy(polar(R - 0.2, 0, 1.6));
     down.add(
@@ -270,6 +419,7 @@ class ElectraArea extends Area {
   /** Reid on his stone (and, once he's met, something to say to him). */
   private async populate(): Promise<void> {
     const g = this.game;
+    if (g.state.bool('ele.emilia_passed')) this.stair.descend(0);
     const seat = this.spawns.get('ele.reid_seat')!;
     await this.duel.spawn(seat.position.clone(), seat.yaw, true);
     const actor = this.duel.actor;
@@ -296,6 +446,8 @@ class ElectraArea extends Area {
   override update(dt: number): void {
     const g = this.game;
     this.duel?.update(dt);
+    this.stair?.update(dt);
+    this.updateIce(dt);
     const p = g.player?.entity.object3D.position;
     if (p) this.moon.update(p);
     this.sky.update(g.time.elapsed, g.render.camera.position);
@@ -348,6 +500,8 @@ class ElectraArea extends Area {
 
   override dispose(): void {
     this.duel?.dispose();
+    this.stair?.dispose();
+    this.thaw();
     this.sky?.dispose();
     this.env?.dispose();
     for (const o of this.owned) o.dispose();

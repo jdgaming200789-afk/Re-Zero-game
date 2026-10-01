@@ -1,8 +1,10 @@
 // Electra, the second trial: up the library's new stair, Reid Astrea eating
-// on the open floor, a duel against a man who parries everything with a pair
-// of chopsticks. Head-on he flicks Subaru to death (Return by Death, and a
-// lesson); from behind, while he's busy with Julius, the whip snare makes
-// him drop a chopstick — and the trial is passed.
+// on the open floor — "make me take one step". A duel against a man who
+// parries everything with a pair of chopsticks. Head-on he flicks Subaru to
+// death (Return by Death, and a lesson); from behind, while he's busy with
+// Julius, the whip snare makes him drop a chopstick — not a step. Emilia
+// makes him move; a stair of light comes down for her alone; the party
+// decides she waits. Then Reid's Book of the Dead, and what was inside it.
 import { launch, waitReady, step, devCommand, stepUntil, shot, press } from './harness.mjs';
 
 const BASE = process.env.GAME_URL ?? 'http://127.0.0.1:5173/';
@@ -190,7 +192,51 @@ try {
     reid: window.__game.scenes.current.duel?.state,
     inCombat: window.__game.combat.inCombat,
   }));
-  check('from behind, while he duels Julius, the snare makes him drop a chopstick: the trial is passed', snared && won.cleared && won.how === 'behind' && won.quest === 'done' && won.reid === 'seated' && !won.inCombat, JSON.stringify(won));
+  check('from behind, while he duels Julius, the snare makes him drop a chopstick — but not a step', snared && won.how === 'behind' && !won.inCombat, JSON.stringify(won));
+  const canon = await page.evaluate(() => {
+    const g = window.__game;
+    const a = g.scenes.current;
+    return {
+      emilia: g.state.bool('ele.emilia_passed'),
+      cleared: g.state.bool('ele.trial_cleared'),
+      quest: g.quests.status('the_sword_saint'),
+      next: g.quests.status('the_book_of_reid'),
+      stair: a.stair?.done ?? false,
+      reid: a.duel?.state,
+      stairKnown: g.state.bool('know.tower.light_stair'),
+    };
+  });
+  check('only Emilia passes: she makes him step, the stair of light comes down for her, and they agree she waits', canon.emilia && canon.cleared && canon.quest === 'done' && canon.next === 'active' && canon.stair && canon.reid === 'seated' && canon.stairKnown, JSON.stringify(canon));
+
+  // ---------------------------------------------------------------- Reid's book
+  await page.evaluate(() => { void window.__game.scenes.goto('taygeta', 'from_electra'); });
+  await stepUntil(page, () => window.__game.scenes.current?.id === 'taygeta' && window.__game.mode === 'exploration', 60);
+  await step(page, 1, false);
+  await page.evaluate(() => void window.__game.dialogue.play('lib.lectern'));
+  await readThrough(option('Reid Astrea'));
+  await step(page, 0.5, false);
+  const found = await page.evaluate(() => window.__game.state.bool('lib.reid_found'));
+  check('at the lectern, Ram finds the Sword Saint’s book', found);
+  await page.evaluate(() => void window.__game.cinematics.play('lib.reid_book'));
+  await stepUntil(page, () => window.__game.cinematics.playing === 'lib.reid_book', 5);
+  await step(page, 6, false);
+  await step(page, 0.2, true);
+  await shot(page, 'electra-04-amnesia');
+  await readThrough(() => 0, scenesOver);
+  await stepUntil(page, () => window.__game.mode === 'exploration', 30);
+  const amn = await page.evaluate(() => {
+    const g = window.__game;
+    const talk = g.systems.find((s) => s.name === 'talk');
+    return {
+      amnesia: g.state.bool('subaru.amnesia'),
+      read: g.state.bool('lib.read_reid'),
+      quest: g.quests.status('the_book_of_reid'),
+      rp: g.checkpoints.current?.id,
+      talk: talk?.current('emilia') ?? null,
+      julius: talk?.current('julius') ?? null,
+    };
+  });
+  check('reading it, something of Gluttony’s eats his memories: he wakes remembering no one', amn.amnesia && amn.read && amn.quest === 'done' && amn.rp === 'library_amnesia' && amn.talk === 'amn.talk.emilia' && amn.julius === 'amn.talk.julius', JSON.stringify(amn));
 } catch (err) {
   console.error(err);
   results.push({ name: 'no exception', ok: false });

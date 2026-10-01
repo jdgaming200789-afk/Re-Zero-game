@@ -60,7 +60,9 @@ export const CINEMATICS: CinematicDef[] = [
     ],
   },
   {
-    // Reading the question; the white room becomes the night sky.
+    // Reading the question. Subaru thinks it through in his mind's eye —
+    // the scorpion, its stinger, the hunter it killed, the hunter's
+    // brightest star — then touches the stone and the room becomes the sky.
     id: 'tay.monolith',
     letterbox: true,
     steps: [
@@ -69,14 +71,82 @@ export const CINEMATICS: CinematicDef[] = [
       { do: 'shot', shot: { from: '@tay.cam_monolith', at: '@tay.monolith_face', fov: 36, drift: [0, 0.02, -0.04] } },
       { do: 'wait', seconds: 1 },
       { do: 'dialogue', id: 'tay.monolith', camera: 'auto' },
-      { do: 'music', state: 'mystery' },
+      { do: 'shot', shot: { from: { of: 'subaru', offset: [0.55, 0.05, 1.5], socket: 'head' }, at: { of: 'subaru', socket: 'head' }, fov: 30, drift: [0, 0, -0.03] }, blend: 0.8, ease: 'inOutSine' },
+      {
+        // The first time he works it out: the whole sky, in his mind's eye.
+        // In a later loop he already knows, and simply says so.
+        do: 'if',
+        cond: '!know.sky.taygeta_answer',
+        then: [
+          { do: 'expr', who: 'subaru', expression: 'thinking' },
+          { do: 'say', lines: [{ speaker: 'subaru', text: 'Shaula. I know that name — not from her. From home.', thought: true }] },
+          { do: 'music', state: 'mystery' },
+          { do: 'effects', effects: [{ event: 'vision.open' }] },
+          { do: 'wait', seconds: 1.0 },
+          { do: 'say', lines: [{ speaker: 'subaru', text: 'My name is a star cluster. Subaru — the Pleiades. Of course I learned the sky around it.', thought: true }] },
+          { do: 'effects', effects: [{ event: 'vision.scorpius' }] },
+          { do: 'wait', seconds: 2.4 },
+          { do: 'say', lines: [{ speaker: 'subaru', text: 'Scorpius. Antares burning red at its heart, and the tail curling down and round, all the way to—', thought: true }] },
+          { do: 'effects', effects: [{ event: 'vision.shaula' }, { learn: 'sky.shaula_star' }] },
+          { do: 'wait', seconds: 0.8 },
+          {
+            do: 'say',
+            lines: [
+              { speaker: 'subaru', text: '—the stinger. Shaula: the star at the very tip of the scorpion’s tail.', thought: true },
+              { speaker: 'subaru', text: 'A girl with a braid that ends in a hook, named after a stinger. Whoever named her knew exactly what he was doing.', thought: true },
+            ],
+          },
+          { do: 'effects', effects: [{ event: 'vision.orion' }] },
+          { do: 'wait', seconds: 2.2 },
+          { do: 'say', lines: [{ speaker: 'subaru', text: 'And the scorpion is famous for one kill. Orion, the hunter who boasted no beast on earth could ever bring him down — so the earth sent a scorpion.', thought: true }] },
+          { do: 'effects', effects: [{ event: 'vision.myth' }, { learn: 'sky.orion_myth' }] },
+          { do: 'wait', seconds: 2.6 },
+          { do: 'say', lines: [{ speaker: 'subaru', text: 'They were hung on opposite sides of the sky. Even now, the hunter sinks in the west the moment the scorpion rises in the east.', thought: true }] },
+          { do: 'effects', effects: [{ event: 'vision.myth_end' }, { event: 'vision.focus_orion' }] },
+          { do: 'wait', seconds: 1.4 },
+          { do: 'say', lines: [{ speaker: 'subaru', text: 'The hero destroyed by Shaula is Orion. And his greatest splendour — his brightest star...', thought: true }] },
+          { do: 'effects', effects: [{ event: 'vision.betelgeuse' }] },
+          { do: 'wait', seconds: 0.8 },
+          { do: 'say', lines: [{ speaker: 'subaru', text: 'Not Betelgeuse. It got the alpha, but it’s a red giant that flickers and fades — and one Betelgeuse in my life was plenty.', thought: true }] },
+          { do: 'effects', effects: [{ event: 'vision.not_betelgeuse' }, { event: 'vision.rigel' }] },
+          { do: 'wait', seconds: 1.0 },
+          { do: 'say', lines: [{ speaker: 'subaru', text: 'Rigel. The blue-white one at his foot — outshining everything else in the hunter.', thought: true }] },
+          { do: 'effects', effects: [{ event: 'vision.close' }] },
+          { do: 'wait', seconds: 0.7 },
+          { do: 'effects', effects: [{ learn: 'sky.taygeta_answer' }] },
+        ],
+        else: [
+          { do: 'expr', who: 'subaru', expression: 'determined' },
+          {
+            do: 'say',
+            lines: [
+              { speaker: 'subaru', text: 'I’ve been here before. Shaula, the stinger. The scorpion killed Orion. His brightest star is Rigel — at his foot.', thought: true },
+              { speaker: 'subaru', text: 'And not Betelgeuse. Never Betelgeuse.', thought: true },
+            ],
+          },
+        ],
+      },
+      { do: 'expr', who: 'subaru', expression: 'determined' },
+      { do: 'dialogue', id: 'tay.answer', camera: 'auto' },
       { do: 'shot', shot: { from: '@tay.cam_sky', at: '@tay.sky_look', fov: 62, drift: [0, 0.05, 0] }, blend: 2.5, ease: 'inOutSine' },
       { do: 'wait', seconds: 3.4 },
       {
         do: 'say',
-        lines: [{ speaker: 'subaru', text: 'The walls are gone. It’s the night sky — all of it — and the stars are coming down. Close enough to touch.', thought: true }],
+        lines: [
+          { speaker: 'subaru', text: 'The walls are gone. It’s the night sky — all of it — and the stars are coming down. Close enough to touch.', thought: true },
+          { speaker: 'subaru', text: 'Find the hunter. Three stars in a row for his belt — then down to his foot.', thought: true },
+        ],
       },
       { do: 'follow', blend: 1.5 },
+    ],
+    // Watched or skipped: the vision is closed, he knows the answer, and the sky is up.
+    onEnd: [
+      { event: 'vision.close' },
+      { learn: 'sky.shaula_star' },
+      { learn: 'sky.orion_myth' },
+      { learn: 'sky.taygeta_answer' },
+      { set: 'tay.trial_started' },
+      { event: 'tay.sky' },
     ],
   },
   {
@@ -126,21 +196,103 @@ export const CINEMATICS: CinematicDef[] = [
     onEnd: [{ set: 'ele.met_reid' }, { learn: 'people.reid' }, { checkpoint: 'electra' }],
   },
   {
-    // Electra: one chopstick on the stone. Reid laughs; the trial is passed.
+    // Electra: Subaru's snare drops a chopstick — not a step. Emilia makes
+    // Reid move; she alone passes, and a stair of light comes down for her.
     id: 'ele.cleared',
     letterbox: true,
     steps: [
       { do: 'wait', seconds: 0.9 },
       { do: 'shot', shot: { from: { of: 'reid', offset: [0.6, 0.15, 1.8], socket: 'head' }, at: { of: 'reid', socket: 'chest' }, fov: 38 }, blend: 0.6, ease: 'outCubic' },
       { do: 'say', lines: [{ speaker: 'reid', text: '...Ha. Hahaha! Look at that — made me drop one!', expression: 'joy' }] },
+      { do: 'dialogue', id: 'ele.not_a_step', camera: 'auto' },
+      // Everyone regroups; Emilia walks out to face him.
+      { do: 'place', who: 'subaru', at: '@ele.subaru_watch', face: '@ele.reid_seat' },
+      ...PARTY.filter((id) => id !== 'emilia').map((id) => ({ do: 'place' as const, who: id, at: `@ele.watch_${id}`, face: '@ele.reid_seat' })),
+      { do: 'shot', shot: { from: '@ele.cam_ice', at: '@ele.ice_look', fov: 44, drift: [0.03, 0, -0.03] }, blend: 1.0, ease: 'inOutSine' },
+      { do: 'move', who: 'emilia', to: '@ele.emilia_try', speed: 'walk' },
+      { do: 'face', who: 'emilia', to: '@ele.reid_seat' },
+      { do: 'dialogue', id: 'ele.emilia_turn', camera: 'auto' },
+      { do: 'music', state: 'tension' },
+      { do: 'shot', shot: { from: '@ele.cam_ice', at: '@ele.ice_look', fov: 46, drift: [0.02, 0.01, -0.05] }, blend: 0.5, ease: 'outCubic' },
+      { do: 'anim', who: 'emilia', clip: 'castForward' },
+      { do: 'effects', effects: [{ event: 'ele.ice' }] },
+      { do: 'wait', seconds: 1.8 },
+      { do: 'shot', shot: { from: '@ele.cam_feet', at: '@ele.feet_look', fov: 40, drift: [0, 0, -0.02] } },
+      { do: 'say', lines: [{ speaker: 'reid', text: 'Oh, now that’s nasty. Freezing a man’s footing right out from under his—', expression: 'surprised' }] },
+      { do: 'effects', effects: [{ event: 'ele.reid_step' }] },
+      { do: 'wait', seconds: 0.9 },
+      { do: 'shot', shot: { from: { of: 'reid', offset: [-0.8, 0.1, 2.0], socket: 'head' }, at: { of: 'reid', socket: 'chest' }, fov: 40 }, blend: 0.4, ease: 'outCubic' },
+      { do: 'say', lines: [{ speaker: 'reid', text: '—whoa! ...Ha! HAHAHA! Look at that. A step!', expression: 'joy', anim: 'laugh' }] },
+      { do: 'dialogue', id: 'ele.emilia_passed', camera: 'auto' },
+      // The sky answers: a stair of light winds down to her.
+      { do: 'music', state: 'cinematic' },
+      { do: 'shake', strength: 0.25, seconds: 1.4 },
+      { do: 'shot', shot: { from: '@ele.cam_up', at: '@ele.stair_top', fov: 58, drift: [0, -0.04, 0] }, blend: 1.2, ease: 'inOutSine' },
+      { do: 'effects', effects: [{ event: 'ele.stair' }] },
+      { do: 'wait', seconds: 3.6 },
+      { do: 'shot', shot: { from: '@ele.cam_up', at: '@ele.stair_mid', fov: 58, drift: [0, -0.03, 0] }, blend: 2.6, ease: 'inOutSine' },
+      { do: 'wait', seconds: 2.6 },
+      { do: 'shot', shot: { from: '@ele.cam_stair_wide', at: '@ele.stair_mid', fov: 50, drift: [0.05, 0.02, -0.04] }, blend: 1.6, ease: 'inOutSine' },
+      { do: 'wait', seconds: 1.8 },
+      { do: 'face', who: 'emilia', to: '@ele.stair_foot' },
+      { do: 'dialogue', id: 'ele.stair', camera: 'auto' },
       { do: 'music', state: 'safe' },
-      { do: 'dialogue', id: 'ele.yield', camera: 'auto' },
       { do: 'fade', to: 1, seconds: 0.6 },
       { do: 'effects', effects: [{ event: 'ele.sit' }] },
       { do: 'follow', blend: 0 },
       { do: 'fade', to: 0, seconds: 0.8 },
     ],
-    onEnd: [{ set: 'ele.trial_cleared' }, { event: 'ele.sit' }],
+    onEnd: [{ set: 'ele.emilia_passed' }, { set: 'ele.trial_cleared' }, { event: 'ele.sit' }, { event: 'ele.stair_full' }, { event: 'ele.ice_clear' }, { learn: 'tower.light_stair' }, { quest: 'the_book_of_reid' }],
+  },
+  {
+    // Reid Astrea's Book of the Dead. A swaggering life — and then the
+    // pages turn on their own, and something else is reading too.
+    id: 'lib.reid_book',
+    letterbox: true,
+    steps: [
+      { do: 'fade', to: 1, seconds: 0.9, color: '#f1d9b8' },
+      { do: 'effects', effects: [{ event: 'lib.memory_begin' }] },
+      { do: 'music', state: 'cinematic' },
+      { do: 'shot', shot: { from: '@lib.mem_cam', at: '@lib.mem_look', fov: 50, drift: [0, 0.03, -0.1] } },
+      { do: 'fade', to: 0, seconds: 2.0, color: '#f1d9b8', wait: false },
+      { do: 'wait', seconds: 1.2 },
+      {
+        do: 'say',
+        lines: [
+          { speaker: null, text: 'A wooden sword first. Then a borrowed one. Then mine. Nobody ever taught me a thing — I just hit stuff until it stopped hitting back.' },
+          { speaker: null, text: 'A sage who never stopped smiling. A dragon too big for the sky. A girl with a tail who wouldn’t stop following him around. And a shadow at the end of the world.' },
+        ],
+      },
+      { do: 'shot', shot: { from: '@lib.mem_cam_up', at: '@lib.mem_up', fov: 58, drift: [0, 0.02, -0.05] }, blend: 2.6, ease: 'inOutSine' },
+      { do: 'say', lines: [{ speaker: null, text: 'Wait. The pages are turning by themselves. Faster. Faster than I can—' }] },
+      { do: 'music', state: 'silence' },
+      { do: 'fade', to: 0.85, seconds: 1.4, color: '#000000' },
+      {
+        do: 'say',
+        lines: [
+          { speaker: null, text: '“Ahaha. Found you, Onii-san.”' },
+          { speaker: null, text: '“You taste like so many yesterdays. A silver-haired girl. A blue-haired maid. A little spirit in a library. Mmm.”' },
+          { speaker: 'subaru', text: 'Stop— those are mine — Emilia — Rem — Beako — give them BACK—', expression: 'fear' },
+          { speaker: null, text: '“Itadakimasu.”' },
+        ],
+      },
+      { do: 'effects', effects: [{ event: 'lib.memory_eaten' }] },
+      { do: 'fade', to: 1, seconds: 0.1, color: '#000000' },
+      { do: 'shake', strength: 0.5, seconds: 0.5 },
+      { do: 'wait', seconds: 2.4 },
+      { do: 'effects', effects: [{ event: 'lib.memory_end' }, { set: 'subaru.amnesia' }] },
+      { do: 'place', who: 'subaru', at: '@lib.reid_read' },
+      { do: 'shot', shot: { from: { of: 'subaru', offset: [0.5, 0.1, 1.4], socket: 'head' }, at: { of: 'subaru', socket: 'head' }, fov: 34 } },
+      { do: 'expr', who: 'subaru', expression: 'surprised' },
+      { do: 'fade', to: 0, seconds: 2.2, color: '#000000' },
+      { do: 'music', state: 'mystery' },
+      { do: 'dialogue', id: 'lib.amnesia', camera: 'auto' },
+      { do: 'shot', shot: { from: '@tay.cam_high', at: '@tay.center', fov: 56, drift: [0.04, 0.02, 0.05] }, blend: 2.5, ease: 'inOutSine' },
+      { do: 'wait', seconds: 2.0 },
+      { do: 'title', kicker: 'Re:Zero · Pleiades', title: 'Natsuki Subaru, Who Remembers No One', sub: 'End of the slice — the Watchtower’s story continues.', seconds: 4.2 },
+      { do: 'follow', blend: 1.5 },
+    ],
+    onEnd: [{ set: 'lib.read_reid' }, { set: 'subaru.amnesia' }, { learn: 'people.gluttony_book' }, { event: 'lib.memory_end' }, { checkpoint: 'library_amnesia' }],
   },
   {
     // A Book of the Dead: Hadrian's last morning, lived. The library dreams

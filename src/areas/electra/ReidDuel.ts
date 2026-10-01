@@ -27,9 +27,11 @@ export type DuelState = 'seated' | 'duel' | 'yielded';
  * one opponent at a time (whoever last came at him, else Julius, the other
  * swordsman) and flicks away anyone in front of him.
  *
- * The way through isn't to win: it's to make him drop a chopstick. Subaru's
- * whip snare lands only where Reid isn't looking — from behind while he's
- * busy with someone else, or while Shamak has him in the dark.
+ * The trial is to make him take one step off his spot — and he never moves
+ * his feet. Subaru's best effort, a whip snare from where Reid isn't looking
+ * (from behind while he's busy with someone else, or while Shamak has him in
+ * the dark), only makes him drop a chopstick. That ends the round; it's
+ * Emilia who passes (the `ele.cleared` cinematic).
  */
 export class ReidDuel {
   state: DuelState = 'seated';
@@ -212,16 +214,12 @@ export class ReidDuel {
     }
     this.blindBarked = false;
 
+    // Rooted: he turns on the spot to face whoever has his attention, but
+    // his feet never leave it — that's the whole trial.
     const target = this.focusTarget();
     if (target) {
       this.faceAt.copy(target.entity.object3D.position);
       actor.faceTarget = this.faceAt;
-      // Keep a lazy sword's distance from whoever has his attention.
-      const d = actor.position.distanceTo(this.faceAt);
-      if (!actor.hasMoveGoal && !this.windup && this.recover <= 0) {
-        if (d > 3.2) void actor.moveTo(this.faceAt.clone().sub(this.faceAt.clone().sub(actor.position).setY(0).normalize().multiplyScalar(2)), 'run', 0.4, 2);
-        else if (d < 1.1) void actor.moveTo(actor.position.clone().add(actor.position.clone().sub(this.faceAt).setY(0).normalize().multiplyScalar(1.2)), 'walk', 0.3, 1.5);
-      }
     }
 
     if (this.recover > 0) {

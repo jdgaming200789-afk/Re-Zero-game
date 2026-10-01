@@ -1,7 +1,7 @@
 import type { GameContext } from '../../game/GameContext';
 import { BUTTON_ACTIONS, type ButtonAction } from '../../input/Actions';
 import { bindingLabel } from '../../input/InputManager';
-import type { AntiAliasing, ButtonPromptStyle, SubaruCostume, Difficulty, PostQuality, QualityPreset, ShadowQuality, TextSpeed, TierQuality, ViewDistance } from '../../settings/Settings';
+import type { AntiAliasing, ButtonPromptStyle, PartyOutfits, SubaruCostume, Difficulty, PostQuality, QualityPreset, ShadowQuality, TextSpeed, TierQuality, ViewDistance } from '../../settings/Settings';
 import { el } from '../dom';
 import { MenuList, cycle, stepNum, type MenuRow } from './MenuList';
 import { Screen } from './Screen';
@@ -25,6 +25,8 @@ const DIFF: Difficulty[] = ['story', 'normal', 'hard'];
 const PROMPTS: ButtonPromptStyle[] = ['auto', 'keyboard', 'xbox', 'playstation'];
 const PROMPT_NAMES: Record<ButtonPromptStyle, string> = { auto: 'Auto', keyboard: 'Keyboard', xbox: 'Xbox', playstation: 'PlayStation' };
 const COSTUMES: SubaruCostume[] = ['arc6', 'tracksuit'];
+const OUTFITS: PartyOutfits[] = ['arc6', 'classic'];
+const OUTFIT_NAMES: Record<PartyOutfits, string> = { arc6: 'Arc 6', classic: 'Classic' };
 const COSTUME_NAMES: Record<SubaruCostume, string> = { arc6: 'Travelling clothes', tracksuit: 'Tracksuit' };
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -185,6 +187,14 @@ export class SettingsScreen extends Screen {
         kind: 'option',
         value: () => COSTUME_NAMES[gp().subaruCostume],
         adjust: (d) => s.set('gameplay', 'subaruCostume', cycle(COSTUMES, gp().subaruCostume, d)),
+      },
+      {
+        id: 'outfits',
+        label: 'Party outfits',
+        hint: 'Emilia’s hooded cloak and Ram’s capelet, or the classic dress and maid uniform (from the next area you enter)',
+        kind: 'option',
+        value: () => OUTFIT_NAMES[gp().partyOutfits],
+        adjust: (d) => s.set('gameplay', 'partyOutfits', cycle(OUTFITS, gp().partyOutfits, d)),
       },
       { id: 'diff', label: 'Difficulty', hint: 'Story: gentler fights. The rules of the tower never change.', kind: 'option', value: () => cap(gp().difficulty), adjust: (d) => s.set('gameplay', 'difficulty', cycle(DIFF, gp().difficulty, d)) },
       { id: 'h2', label: 'Camera', kind: 'header' },

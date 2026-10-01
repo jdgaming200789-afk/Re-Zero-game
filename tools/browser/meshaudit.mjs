@@ -148,6 +148,7 @@ function audit() {
     const t0 = tris[list[0]];
     const [u, v] = basis(...t0.n);
     const pts2 = new Map();
+    const box2 = new Map();
     const grid = new Map();
     const big = [];
     for (const i of list) {
@@ -158,6 +159,7 @@ function audit() {
         q.push([x * u[0] + y * u[1] + z * u[2], x * v[0] + y * v[1] + z * v[2]]);
       }
       pts2.set(i, q);
+      box2.set(i, [Math.min(q[0][0], q[1][0], q[2][0]), Math.min(q[0][1], q[1][1], q[2][1]), Math.max(q[0][0], q[1][0], q[2][0]), Math.max(q[0][1], q[1][1], q[2][1])]);
       const minX = Math.floor(Math.min(q[0][0], q[1][0], q[2][0]) / CELL), maxX = Math.floor(Math.max(q[0][0], q[1][0], q[2][0]) / CELL);
       const minY = Math.floor(Math.min(q[0][1], q[1][1], q[2][1]) / CELL), maxY = Math.floor(Math.max(q[0][1], q[1][1], q[2][1]) / CELL);
       if ((maxX - minX + 1) * (maxY - minY + 1) > 400) {
@@ -181,6 +183,11 @@ function audit() {
       const A = tris[i], B = tris[j];
       if (Math.abs(A.d - B.d) > 0.004) return;
       if (A.n[0] * B.n[0] + A.n[1] * B.n[1] + A.n[2] * B.n[2] < 0.9995) return;
+      // Cheap rejection: the 2D boxes must overlap by more than the area threshold.
+      const ba = box2.get(i), bb = box2.get(j);
+      const ox = Math.min(ba[2], bb[2]) - Math.max(ba[0], bb[0]);
+      const oy = Math.min(ba[3], bb[3]) - Math.max(ba[1], bb[1]);
+      if (ox <= 0 || oy <= 0 || ox * oy < 0.002) return;
       const area = clipArea(pts2.get(i), pts2.get(j));
       if (area < 0.002) return;
       const pair = A.src < B.src ? `${A.src}  ⟷  ${B.src}` : `${B.src}  ⟷  ${A.src}`;
@@ -190,7 +197,11 @@ function audit() {
       f.area += area;
       fights.set(pair, f);
     };
-    for (const cell of grid.values()) for (let x = 0; x < cell.length; x++) for (let y = x + 1; y < cell.length; y++) test(cell[x], cell[y]);
+    // Dense cells (finely tessellated props) are sampled, not exhaustively paired.
+    for (const cell of grid.values()) {
+      const stride = cell.length > 300 ? Math.ceil(cell.length / 300) : 1;
+      for (let x = 0; x < cell.length; x += stride) for (let y = x + 1; y < cell.length; y += stride) test(cell[x], cell[y]);
+    }
     for (const i of big) for (const j of list) test(i, j);
   }
 

@@ -551,9 +551,10 @@ def shaula() -> CharacterSpec:
     clumps = fringe([-52, -34, -16, 0, 16, 34, 52], 58, 0.58, width=0.38) + side_locks(1.3, chain=False) + crown_flow(0.6, 0.42)
     # High ponytail: springs up from the crown, arcs back and falls down
     # the back like a scorpion's tail.
-    for k in range(9):
+    # (party.py braids it: these few slim locks set the chain and the gathered root.)
+    for k in range(5):
         a = math.radians(160 + k * 5)
-        clumps.append(Clump(az=180 + (k - 4) * 6, el=62 + (k % 3) * 3, direction=(math.sin(a) * 0.2, 0.75, 0.6), length=3.6, width=0.42, thickness=0.12, stiffness=0.35, gravity=1.4, curl=0.0, lift=0.02, chain="hair_tail", hold=0.6))
+        clumps.append(Clump(az=180 + (k - 2) * 7, el=62 + (k % 3) * 3, direction=(math.sin(a) * 0.2, 0.75, 0.6), length=3.6, width=0.26, thickness=0.1, stiffness=0.35, gravity=1.4, curl=0.0, lift=0.02, chain="hair_tail", hold=0.6))
     hair = HairStyle(clumps=clumps, hairline_front=0.46, chains={"hair_tail": 6})
 
     def top(c):

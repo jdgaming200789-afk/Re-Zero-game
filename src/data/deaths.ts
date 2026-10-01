@@ -46,6 +46,7 @@ export const CHECKPOINTS: Record<string, CheckpointDef> = {
   celaeno: { id: 'celaeno', area: 'celaeno', spawn: 'gate', name: 'Celaeno, inside the tower' },
   alcyone: { id: 'alcyone', area: 'alcyone', spawn: 'green_room', name: 'The Green Room, at Rem’s side' },
   library: { id: 'library', area: 'taygeta', spawn: 'tay.read', name: 'Taygeta’s library, the first trial behind us' },
+  library_amnesia: { id: 'library_amnesia', area: 'taygeta', spawn: 'lib.reid_read', name: 'The library floor, remembering no one' },
   electra: { id: 'electra', area: 'electra', spawn: 'arrive', name: 'Electra, under the open sky' },
   gym: { id: 'gym', area: 'dev_gym', spawn: 'default', name: 'The practice hall' },
 };

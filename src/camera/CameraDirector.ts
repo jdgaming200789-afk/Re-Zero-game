@@ -15,6 +15,17 @@ export interface CameraShot {
   focusRange?: number;
   /** Slow drift applied while the shot holds (dolly/push-in), metres/second in camera space. */
   drift?: Vector3;
+  /**
+   * The drift eases out over about this many seconds (the move is bounded:
+   * a line left on screen must never carry the camera off its subjects).
+   */
+  driftTime?: number;
+  /**
+   * Keep a moving subject framed: called every frame for the point the
+   * shot was composed on (a head). The camera pans to follow it, smoothed
+   * and limited to a small correction like an operator's hand.
+   */
+  track?: () => Vector3 | null;
   /** Handheld sway amount for tension. */
   sway?: number;
 }
@@ -42,6 +53,9 @@ export class CameraDirector {
   private blend: Blend | null = null;
   private readonly lastPose: CameraPose = { position: new Vector3(), quaternion: new Quaternion(), fov: 55 };
   private readonly shakeOffset = new Vector3();
+  /** Smoothed tracking correction for the current shot's look-at. */
+  private readonly trackOffset = new Vector3();
+  private readonly trackBase = new Vector3();
   private readonly shakeRot = new Euler();
   onDepthOfField?: (enabled: boolean, distance: number, range: number) => void;
 
@@ -63,6 +77,7 @@ export class CameraDirector {
     this.mode = 'shot';
     this.shot = shot;
     this.shotTime = 0;
+    this.beginTracking(shot);
     this.blend = null;
     this.shake.sway = shot.sway ?? 0;
     this.applyDof(shot);
@@ -74,6 +89,7 @@ export class CameraDirector {
     this.mode = 'shot';
     this.shot = shot;
     this.shotTime = 0;
+    this.beginTracking(shot);
     this.shake.sway = shot.sway ?? 0;
     this.applyDof(shot);
   }
@@ -94,6 +110,25 @@ export class CameraDirector {
     this.shot = null;
   }
 
+  private beginTracking(shot: CameraShot): void {
+    this.trackOffset.set(0, 0, 0);
+    const p = shot.track?.();
+    if (p) this.trackBase.copy(p);
+  }
+
+  /** Follow the tracked subject: smoothed, and never more than a small correction. */
+  private updateTracking(dt: number): void {
+    const shot = this.shot;
+    if (!shot?.track || !shot.lookAt) return;
+    const p = shot.track();
+    if (!p) return;
+    _t.subVectors(p, this.trackBase);
+    const max = 0.6;
+    if (_t.length() > max) _t.setLength(max);
+    const k = 1 - Math.exp(-dt / 0.35);
+    this.trackOffset.lerp(_t, k);
+  }
+
   private applyDof(shot: CameraShot): void {
     if (shot.focusDistance !== undefined) this.onDepthOfField?.(true, shot.focusDistance, shot.focusRange ?? 1.5);
     else this.onDepthOfField?.(false, 0, 0);
@@ -105,7 +140,8 @@ export class CameraDirector {
 
     if (this.mode === 'shot' && this.shot) {
       this.shotTime += unscaledDt;
-      pose = shotPose(this.shot, this.shotTime, _shotPose);
+      this.updateTracking(unscaledDt);
+      pose = shotPose(this.shot, this.shotTime, _shotPose, this.trackOffset);
     } else if (followPose) {
       pose = followPose;
     } else {
@@ -148,15 +184,25 @@ const _shotPose: CameraPose = { position: new Vector3(), quaternion: new Quatern
 const _blended: CameraPose = { position: new Vector3(), quaternion: new Quaternion(), fov: 50 };
 const _up = new Vector3(0, 1, 0);
 
-function shotPose(shot: CameraShot, t: number, out: CameraPose): CameraPose {
+function shotPose(shot: CameraShot, t: number, out: CameraPose, track?: Vector3): CameraPose {
   out.position.copy(shot.position);
   if (shot.quaternion) out.quaternion.copy(shot.quaternion);
-  else if (shot.lookAt) out.quaternion.setFromRotationMatrix(_m.lookAt(shot.position, shot.lookAt, _up));
-  if (shot.drift) out.position.add(_v.copy(shot.drift).multiplyScalar(t).applyQuaternion(out.quaternion));
+  else if (shot.lookAt) {
+    const at = track ? _la.copy(shot.lookAt).add(track) : shot.lookAt;
+    out.quaternion.setFromRotationMatrix(_m.lookAt(shot.position, at, _up));
+  }
+  if (shot.drift) {
+    // Linear at first, easing out: the whole move is bounded by drift * T.
+    const T = shot.driftTime ?? 4;
+    const travelled = T * (1 - Math.exp(-t / T));
+    out.position.add(_v.copy(shot.drift).multiplyScalar(travelled).applyQuaternion(out.quaternion));
+  }
   out.fov = shot.fov;
   return out;
 }
 const _v = new Vector3();
+const _la = new Vector3();
+const _t = new Vector3();
 
 function clonePose(p: CameraPose): CameraPose {
   return { position: p.position.clone(), quaternion: p.quaternion.clone(), fov: p.fov };

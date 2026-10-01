@@ -53,7 +53,8 @@ export class ActorManager implements GameSystem {
 
   private async create(id: string, opts: SpawnActorOptions): Promise<ActorController> {
     const def = actorDef(id);
-    const visual = await this.factory.create(id);
+    // Emilia and Ram wear the outfit the settings ask for (others ignore it).
+    const visual = await this.factory.create(id, this.game.settings.gameplay.partyOutfits);
     const scope = opts.scope ?? this.game.scenes.current?.scope ?? 'persistent';
     const entity = this.game.world.spawn(`actor:${id}`, scope, { tags: ['actor', 'character', ...(opts.tags ?? [])] });
     entity.object3D.position.copy(opts.position);

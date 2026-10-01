@@ -7,9 +7,32 @@ import { polar } from '../../scene/procedural/RoundHall';
 const log = createLogger('Library');
 const DEG = Math.PI / 180;
 
-/** Where Hadrian's book waits: a low shelf just left of the stair down. */
-const HADRIAN_ANGLE = 10.4 * DEG;
 const SHELF_RADIUS = 20 - 0.4;
+
+/** The Books of the Dead the story needs, where they wait once found. */
+interface BookDef {
+  id: string;
+  label: string;
+  /** Around the room (radians) and how high on the shelf. */
+  angle: number;
+  height: number;
+  cover: number;
+  found: string;
+  read: string;
+  event: string;
+  cinematic: string;
+}
+
+const BOOKS: BookDef[] = [
+  // A low shelf just left of the stair down.
+  { id: 'hadrian', label: 'Hadrian’s book', angle: 10.4 * DEG, height: 0.83, cover: 0x2a1a12, found: 'lib.hadrian_found', read: 'lib.read_hadrian', event: 'lib.hadrian_found', cinematic: 'lib.hadrian' },
+  // Shelved high, as if put out of reach (Ram fetched it down to the reading desk).
+  { id: 'reid', label: 'Reid Astrea’s book', angle: -32 * DEG, height: 1.02, cover: 0x7a1a14, found: 'lib.reid_found', read: 'lib.read_reid', event: 'lib.reid_found', cinematic: 'lib.reid_book' },
+];
+
+/** Where Hadrian's book waits (the memory staging uses it). */
+export const HADRIAN_ANGLE = BOOKS[0]!.angle;
+export const REID_ANGLE = BOOKS[1]!.angle;
 
 /**
  * Taygeta's library once the trial is cleared: the Books of the Dead.
@@ -23,15 +46,17 @@ const SHELF_RADIUS = 20 - 0.4;
  * - Shaula's rule: "Don't damage the books." Violence between the shelves
  *   earns a warning, and then her light.
  *
+ * - After Electra, Ram finds Reid Astrea's book, shelved out of reach.
+ *   Reading it is where something of Gluttony's is waiting
+ *   (`lib.reid_book`): Subaru wakes up remembering no one.
+ *
  * State (world flags, so it rewinds): lib.searched_rem, lib.hadrian_found,
- * lib.read_hadrian, lib.warned.
+ * lib.read_hadrian, lib.reid_found, lib.read_reid, lib.warned.
  */
 export class Library {
   private readonly offs: Array<() => void> = [];
   private readonly owned: Array<{ dispose(): void }> = [];
-  private book: Group | null = null;
-  private glow: PointLight | null = null;
-  private glowMat: MeshStandardMaterial | null = null;
+  private readonly books = new Map<string, { def: BookDef; group: Group; glow: PointLight; mat: MeshStandardMaterial | null }>();
   private pulse = 0;
 
   constructor(
@@ -41,16 +66,18 @@ export class Library {
     /** Is the library standing (and not being dreamed away by a memory)? */
     private readonly open: () => boolean,
   ) {
-    // The glow exists from the start (dark): adding a light later would make
-    // every material recompile mid-scene.
-    const light = new PointLight(0xffd9a0, 0, 2.6, 2);
-    light.position.copy(polar(SHELF_RADIUS - 0.7, HADRIAN_ANGLE, 0.93));
-    root.add(light);
-    this.glow = light;
+    // Each book's glow exists from the start (dark): adding a light later
+    // would make every material recompile mid-scene.
+    for (const def of BOOKS) {
+      const light = new PointLight(0xffd9a0, 0, 2.6, 2);
+      light.position.copy(polar(SHELF_RADIUS - 0.7, def.angle, def.height + 0.1));
+      root.add(light);
+      this.books.set(def.id, { def, group: new Group(), glow: light, mat: null });
+    }
     const ev = game.events;
     this.offs.push(
       ev.on('story:event', ({ id }) => {
-        if (id === 'lib.hadrian_found') this.showBook();
+        for (const def of BOOKS) if (id === def.event) this.showBook(def);
       }),
       ev.on('combat:playerAction', () => this.violence()),
     );
@@ -58,20 +85,20 @@ export class Library {
 
   /** Put the library into the state the flags describe (entry, the library rising). */
   populate(): void {
-    if (this.game.state.bool('lib.hadrian_found')) this.showBook();
+    for (const def of BOOKS) if (this.game.state.bool(def.found)) this.showBook(def);
   }
 
-  private showBook(): void {
-    if (this.book) return;
+  private showBook(def: BookDef): void {
+    const entry = this.books.get(def.id)!;
+    if (entry.mat) return;
     const g = this.game;
-    const grp = new Group();
-    grp.name = 'HadrianBook';
-    const p = polar(SHELF_RADIUS - 0.34, HADRIAN_ANGLE, 0.83);
-    grp.position.copy(p);
+    const grp = entry.group;
+    grp.name = `Book:${def.id}`;
+    grp.position.copy(polar(SHELF_RADIUS - 0.34, def.angle, def.height));
     // Facing into the room, the spine towards the reader.
-    grp.rotation.y = HADRIAN_ANGLE + Math.PI;
-    const cover = new MeshStandardMaterial({ color: 0x2a1a12, roughness: 0.6, emissive: 0xffd9a0, emissiveIntensity: 0 });
-    this.glowMat = cover;
+    grp.rotation.y = def.angle + Math.PI;
+    const cover = new MeshStandardMaterial({ color: def.cover, roughness: 0.6, emissive: 0xffd9a0, emissiveIntensity: 0 });
+    entry.mat = cover;
     const pages = new MeshStandardMaterial({ color: 0xe8dcc0, roughness: 0.9 });
     const body = new Mesh(new BoxGeometry(0.05, 0.3, 0.22), [cover, cover, cover, cover, cover, pages] as Material[]);
     // Pulled half out of the row, tilted, as if someone had just touched it.
@@ -80,26 +107,25 @@ export class Library {
     body.castShadow = true;
     grp.add(body);
     this.root.add(grp);
-    this.book = grp;
     this.owned.push(body.geometry, cover, pages);
 
-    const e = g.world.spawn('lib.hadrian_book', this.scope, { parent: grp });
+    const e = g.world.spawn(`lib.${def.id}_book`, this.scope, { parent: grp });
     e.add(
       new Interactable({
-        id: 'lib.hadrian_book',
+        id: `lib.${def.id}_book`,
         kind: 'read',
         verb: 'Read',
-        label: 'Hadrian’s book',
+        label: def.label,
         range: 2.2,
         angle: 70,
-        condition: (game) => this.open() && !game.cinematics.playing,
+        condition: (game) => this.open() && !game.cinematics.playing && !game.state.bool(def.read),
         handler: async (ctx) => {
           await ctx.contact;
-          await ctx.game.cinematics.play('lib.hadrian');
+          await ctx.game.cinematics.play(def.cinematic);
         },
       }),
     );
-    log.info('Hadrian’s book is on its shelf');
+    log.info(`${def.label} is on its shelf`);
   }
 
   /** "Don't damage the books." Beatrice warns once a loop; Shaula doesn't. */
@@ -116,23 +142,27 @@ export class Library {
   }
 
   update(dt: number): void {
-    if (!this.glow || !this.glowMat || !this.book) return;
-    // It belongs to the shelves: gone while a memory dreams them away.
+    // They belong to the shelves: gone while a memory dreams them away.
     const here = this.open();
-    this.book.visible = here;
-    // Unread, it breathes a warm light; read, it's just a book again.
-    const unread = here && !this.game.state.bool('lib.read_hadrian');
     this.pulse += dt;
-    const target = unread ? 0.9 + Math.sin(this.pulse * 2.2) * 0.35 : 0;
-    this.glow.intensity += (target * 1.6 - this.glow.intensity) * Math.min(1, dt * 4);
-    this.glowMat.emissiveIntensity += (target * 0.9 - this.glowMat.emissiveIntensity) * Math.min(1, dt * 4);
+    for (const { def, group, glow, mat } of this.books.values()) {
+      if (!mat) continue;
+      group.visible = here;
+      // Unread, a book breathes a warm light; read, it's just a book again.
+      const unread = here && !this.game.state.bool(def.read);
+      const target = unread ? 0.9 + Math.sin(this.pulse * 2.2) * 0.35 : 0;
+      glow.intensity += (target * 1.6 - glow.intensity) * Math.min(1, dt * 4);
+      mat.emissiveIntensity += (target * 0.9 - mat.emissiveIntensity) * Math.min(1, dt * 4);
+    }
   }
 
   dispose(): void {
     for (const off of this.offs.splice(0)) off();
     for (const o of this.owned.splice(0)) o.dispose();
-    this.glow?.removeFromParent();
-    this.book?.removeFromParent();
-    this.book = null;
+    for (const b of this.books.values()) {
+      b.glow.removeFromParent();
+      b.group.removeFromParent();
+    }
+    this.books.clear();
   }
 }

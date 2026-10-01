@@ -47,6 +47,8 @@ export interface AnimeMaterialOptions {
   fade?: Uniform<number>;
   /** Self-illumination (glowing eyes). */
   emissive?: Color;
+  /** Multiply by baked vertex colours (anatomy / fold shading). */
+  vertexColors?: boolean;
 }
 
 /** Ordered-dither discard: screen-door transparency that needs no sorting. */
@@ -77,7 +79,7 @@ const SHADOW_TINTS: Record<AnimeRole, [number, number, number]> = {
  * adds a view-dependent rim light and, for hair, the anime "angel ring".
  */
 export function createAnimeMaterial(o: AnimeMaterialOptions): MeshToonMaterial {
-  const mat = new MeshToonMaterial({ color: o.color, map: o.map ?? null });
+  const mat = new MeshToonMaterial({ color: o.color, map: o.map ?? null, vertexColors: !!o.vertexColors });
   if (o.emissiveMap) {
     mat.emissiveMap = o.emissiveMap;
     mat.emissive = new Color(0.55, 0.55, 0.55);

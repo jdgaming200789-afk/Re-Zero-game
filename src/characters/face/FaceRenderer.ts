@@ -24,6 +24,8 @@ export interface FaceStyle {
   eyeHeight?: number;
   /** Eyebrow thickness multiplier. */
   browWeight?: number;
+  /** An eyepatch over one eye (+1 the character's left, -1 right). */
+  eyepatch?: 1 | -1;
   lashWeight?: number;
   eyeLine?: number;
   /** Horizontal distance of each eye from centre (UV units). */
@@ -218,7 +220,8 @@ export class FaceRenderer {
     for (const side of [1, -1]) {
       const cx = (0.5 + side * spread) * SIZE;
       const cy = (1 - eyeLine) * SIZE;
-      this.drawEye(cx, cy, side, open, e);
+      if (s.eyepatch === side) this.drawEyepatch(cx, cy, side);
+      else this.drawEye(cx, cy, side, open, e);
       this.drawBrow(cx, cy, side, e);
     }
     // Nose hint (a tiny shadow tick)
@@ -504,6 +507,45 @@ export class FaceRenderer {
     gg.restore();
   }
 
+  /** A round black patch with a white spiral, its strap running to the temple and up over the brow. */
+  private drawEyepatch(cx: number, cy: number, side: number): void {
+    const g = this.ctx;
+    const r = 0.105 * (this.style.eyeSize ?? 1) * SIZE;
+    const py = cy - r * 0.08;
+    g.strokeStyle = '#141216';
+    g.lineCap = 'round';
+    g.lineWidth = 0.022 * SIZE;
+    g.beginPath();
+    g.moveTo(cx + side * r * 0.7, py - r * 0.6);
+    g.quadraticCurveTo(cx + side * r * 1.6, py - r * 1.2, cx + side * SIZE * 0.36, py - r * 1.5);
+    g.moveTo(cx - side * r * 0.6, py - r * 0.75);
+    g.quadraticCurveTo(cx - side * r * 1.5, py - r * 2.0, cx - side * SIZE * 0.3, py - r * 3.2);
+    g.stroke();
+    g.fillStyle = '#141216';
+    g.beginPath();
+    g.ellipse(cx, py, r, r * 0.92, 0, 0, Math.PI * 2);
+    g.fill();
+    // Rim highlight and the spiral.
+    g.strokeStyle = 'rgba(255,255,255,0.18)';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.ellipse(cx, py, r * 0.9, r * 0.82, 0, Math.PI * 1.1, Math.PI * 1.6);
+    g.stroke();
+    g.strokeStyle = '#f4f1ea';
+    g.lineWidth = r * 0.085;
+    g.beginPath();
+    for (let i = 0; i <= 80; i++) {
+      const t = i / 80;
+      const a = t * Math.PI * 2 * 2.6 * side;
+      const rr = r * 0.08 + r * 0.66 * t;
+      const x = cx + Math.cos(a) * rr;
+      const y = py + Math.sin(a) * rr * 0.92;
+      if (i === 0) g.moveTo(x, y);
+      else g.lineTo(x, y);
+    }
+    g.stroke();
+  }
+
   private drawBrow(cx: number, cy: number, side: number, e: ExpressionParams): void {
     const g = this.ctx;
     const size = (this.style.eyeSize ?? 1) * SIZE;
@@ -625,6 +667,7 @@ export class FaceRenderer {
         break;
       }
       case 'fangGrin': {
+        const w = SIZE * 0.085;
         // A wide, cocky grin full of sharp teeth (Reid).
         g.fillStyle = '#5a2226';
         g.beginPath();

@@ -274,7 +274,152 @@ def build_body(name: str, s: BodySpec, j: Joints) -> bpy.types.Object:
     bpy.ops.object.modifier_apply(modifier=skin.name)
     bpy.ops.object.modifier_apply(modifier=sub.name)
     shape_body(obj, s, j)
+    if s.extra.get("muscle"):
+        sculpt_muscles(obj, s, j, float(s.extra["muscle"]))
     return obj
+
+
+def sculpt_muscles(obj, s: BodySpec, j: Joints, amount: float) -> None:
+    """Anatomy for a bare, muscular torso and arms (Reid): the torso and
+    shoulders are refined once, then pecs with a hard lower shelf, a
+    sternum groove, six abdominal blocks over the linea alba, obliques,
+    collarbones, trapezius, deltoids, biceps and triceps, shoulder blades
+    and the spinal groove are pushed into the surface."""
+    H = j.H
+    me = obj.data
+    bm = bmesh.new()
+    bm.from_mesh(me)
+
+    def region(p: Vector) -> bool:
+        return j.hip_l.z - 0.02 * H < p.z < j.neck_top.z and (abs(p.x) < 0.17 * H or p.z > j.elbow_l.z)
+
+    edges = [e for e in bm.edges if region(e.verts[0].co) and region(e.verts[1].co)]
+    bmesh.ops.subdivide_edges(bm, edges=edges, cuts=1, use_grid_fill=True, smooth=1.0)
+    bm.normal_update()
+
+    def bump(p, c, rx, ry, rz):
+        d = ((p.x - c.x) / rx) ** 2 + ((p.y - c.y) / ry) ** 2 + ((p.z - c.z) / rz) ** 2
+        return max(0.0, 1.0 - d) ** 2
+
+    side_arm = []
+    for side in (1, -1):
+        a = Vector((j.arm_l.x * side, j.arm_l.y, j.arm_l.z))
+        e = Vector((j.elbow_l.x * side, j.elbow_l.y, j.elbow_l.z))
+        side_arm.append((side, a, e))
+    shade_vals = {}
+    for v in bm.verts:
+        p = v.co
+        n = v.normal
+        d = 0.0
+        dark = 0.0
+        front = p.y < 0
+        sx = 1 if p.x >= 0 else -1
+        on_torso = abs(p.x) < 0.13 * H
+        if on_torso and front:
+            # Pectorals: a broad dome with a crisp lower edge.
+            c = Vector((sx * 0.052 * H, -0.06 * H, j.chest.z + 0.012 * H))
+            u = (p.x - c.x) / (0.062 * H)
+            w = (p.z - c.z) / (0.045 * H)
+            if u * u + w * w < 1.0:
+                shelf = 1.0 if w > -0.45 else max(0.0, 1.0 - (-0.45 - w) / 0.3)
+                d += 0.016 * H * (1 - u * u - w * w) ** 0.6 * shelf
+                # The shadow under the pec's lower edge.
+                if -1.0 < w < -0.55 and abs(u) < 0.95:
+                    dark = max(dark, (1 - abs(w + 0.78) / 0.23) * (1 - abs(u) ** 3))
+            # Sternum groove.
+            if abs(p.x) < 0.012 * H and j.chest.z - 0.04 * H < p.z < j.upper_chest.z:
+                d -= 0.004 * H * (1 - abs(p.x) / (0.012 * H))
+                dark = max(dark, 0.5 * (1 - abs(p.x) / (0.012 * H)))
+            # Abdominals: three rows of paired blocks, the lowest the longest.
+            for row, (z0, z1) in enumerate(((j.chest.z - 0.058 * H, j.chest.z - 0.03 * H), (j.waist.z + 0.006 * H, j.chest.z - 0.064 * H), (j.waist.z - 0.04 * H, j.waist.z))):
+                cz = (z0 + z1) / 2
+                hz = (z1 - z0) / 2 + 0.001 * H
+                cxa = sx * 0.023 * H
+                u = (p.x - cxa) / (0.02 * H)
+                w = (p.z - cz) / hz
+                if u * u + w * w < 1.0:
+                    k = 1 - u * u - w * w
+                    d += 0.008 * H * k ** 0.7
+                    # Grooves between the blocks.
+                    if k < 0.3 and j.waist.z - 0.05 * H < p.z < j.chest.z - 0.026 * H:
+                        dark = max(dark, 0.7 * (1 - k / 0.3))
+            # Linea alba.
+            if abs(p.x) < 0.007 * H and j.waist.z - 0.05 * H < p.z < j.chest.z - 0.025 * H:
+                d -= 0.003 * H
+                dark = max(dark, 0.8 * (1 - abs(p.x) / (0.007 * H)))
+            # Obliques and the iliac furrow (the "V").
+            ob = bump(p, Vector((sx * 0.07 * H, -0.03 * H, j.waist.z - 0.01 * H)), 0.03 * H, 0.06 * H, 0.05 * H)
+            d += 0.004 * H * ob
+            vline = abs((p.z - (j.hip_l.z + 0.02 * H)) - (abs(p.x) - 0.03 * H) * 1.3)
+            if abs(p.x) < 0.075 * H and j.hip_l.z - 0.02 * H < p.z < j.waist.z - 0.02 * H and vline < 0.008 * H:
+                d -= 0.003 * H * (1 - vline / (0.008 * H))
+                dark = max(dark, 0.6 * (1 - vline / (0.008 * H)))
+            # Collarbones.
+            cl = abs(p.z - (j.neck_base.z - 0.012 * H - abs(p.x) * 0.12))
+            if 0.012 * H < abs(p.x) < 0.085 * H and cl < 0.006 * H:
+                d += 0.0032 * H * (1 - cl / (0.006 * H))
+            if 0.012 * H < abs(p.x) < 0.075 * H and 0.006 * H < (j.neck_base.z - 0.012 * H - abs(p.x) * 0.12) - p.z < 0.014 * H:
+                dark = max(dark, 0.35)
+        if on_torso and not front:
+            # Shoulder blades and the spinal groove.
+            d += 0.006 * H * bump(p, Vector((sx * 0.05 * H, 0.06 * H, j.chest.z + 0.02 * H)), 0.045 * H, 0.06 * H, 0.06 * H)
+            if abs(p.x) < 0.01 * H and j.waist.z - 0.04 * H < p.z < j.upper_chest.z:
+                d -= 0.004 * H * (1 - abs(p.x) / (0.01 * H))
+            # Lats flare under the arms.
+            d += 0.005 * H * bump(p, Vector((sx * 0.085 * H, 0.03 * H, j.chest.z - 0.02 * H)), 0.03 * H, 0.06 * H, 0.08 * H)
+        # Trapezius: the slope from neck to shoulder.
+        d += 0.008 * H * bump(p, Vector((sx * 0.05 * H, 0.012 * H, j.neck_base.z - 0.006 * H)), 0.05 * H, 0.04 * H, 0.03 * H)
+        for side, a, e in side_arm:
+            if side != sx:
+                continue
+            # Deltoid cap over the shoulder joint.
+            d += 0.011 * H * bump(p, a + Vector((side * 0.012 * H, 0, 0.006 * H)), 0.05 * H, 0.05 * H, 0.05 * H)
+            # Biceps (front) and triceps (back) along the upper arm.
+            mid = a.lerp(e, 0.5)
+            ax = (e - a).normalized()
+            rel = p - mid
+            along = rel.dot(ax)
+            if abs(along) < 0.09 * H:
+                radial = rel - ax * along
+                k = (1 - (along / (0.09 * H)) ** 2)
+                if radial.length > 1e-6:
+                    r = radial.normalized()
+                    d += 0.011 * H * k * max(0.0, -r.y) ** 1.5  # biceps
+                    d += 0.008 * H * k * max(0.0, r.y) ** 1.5  # triceps
+            # Deltoid's lower edge.
+            rel = p - a
+            along = rel.dot((e - a).normalized())
+            if 0.05 * H < along < 0.075 * H:
+                dark = max(dark, 0.35 * (1 - abs(along - 0.062 * H) / (0.013 * H)))
+        # Legs: quads, the knee, a calf that tapers into a slim ankle.
+        if p.z < j.hip_l.z and abs(p.x) > 0.006 * H:
+            sxl = 1 if p.x >= 0 else -1
+            hip = Vector((j.hip_l.x * sxl, j.hip_l.y, j.hip_l.z))
+            knee = Vector((j.knee_l.x * sxl, j.knee_l.y, j.knee_l.z))
+            ank = Vector((j.ankle_l.x * sxl, j.ankle_l.y, j.ankle_l.z))
+            if p.z > knee.z:
+                c = hip.lerp(knee, 0.55)
+                d += 0.01 * H * bump(p, c + Vector((sxl * 0.01 * H, -0.03 * H, 0)), 0.05 * H, 0.04 * H, 0.12 * H)  # quads
+                d += 0.006 * H * bump(p, c + Vector((sxl * 0.035 * H, 0.0, 0.02 * H)), 0.03 * H, 0.05 * H, 0.1 * H)  # outer thigh
+            d += 0.004 * H * bump(p, knee + Vector((0, -0.03 * H, 0.004 * H)), 0.022 * H, 0.02 * H, 0.022 * H)  # kneecap
+            if ank.z < p.z < knee.z:
+                calf_c = knee.lerp(ank, 0.3) + Vector((sxl * 0.004 * H, 0.03 * H, 0))
+                d += 0.012 * H * bump(p, calf_c, 0.04 * H, 0.04 * H, 0.1 * H)
+                # Slimmer lower shin and ankle.
+                k = t_ = (knee.z - p.z) / (knee.z - ank.z)
+                d -= 0.006 * H * max(0.0, (k - 0.55) / 0.45) ** 1.2
+                _ = t_
+        shade_vals[v.index] = dark
+        v.co = p + n * d * amount
+    bm.verts.index_update()
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    # Anatomy shading baked into a vertex colour (the toon material multiplies it).
+    col = me.color_attributes.new("Col", "FLOAT_COLOR", "POINT")
+    for i in range(len(me.vertices)):
+        k = 1.0 - 0.5 * min(1.0, shade_vals.get(i, 0.0) * 1.3)
+        col.data[i].color = (k, k * 0.96, k * 0.95, 1.0)
 
 
 def shape_body(obj, s: BodySpec, j: Joints) -> None:

@@ -219,6 +219,9 @@ def shell(
     me = src.data.copy()
     obj = _link(name, me)
     obj.matrix_world = src.matrix_world.copy()
+    # The body's baked anatomy shading doesn't belong on the cloth.
+    for ca in list(me.color_attributes):
+        me.color_attributes.remove(ca)
     # Vertex groups (skin weights) come with a copied object; copy them over.
     for g in src.vertex_groups:
         obj.vertex_groups.new(name=g.name)
@@ -770,3 +773,85 @@ def _join(objs, name):
     out.name = name
     out.data.name = name
     return out
+
+
+# --------------------------------------------------------------------------- robes, sandals
+
+
+def tatter_hem(obj: bpy.types.Object, j: Joints, top_z: float, length: float, amount: float, teeth: int = 22, seed: float = 0.0) -> None:
+    """Rip a hem into ragged points: vertices in the lowest fifth of a
+    skirt/cloak are pulled up by a jagged, uneven saw-tooth around it."""
+    H = j.H
+    bottom = top_z - length
+    for v in obj.data.vertices:
+        p = v.co
+        k = 1 - (p.z - bottom) / max(1e-6, length * 0.22)
+        if k <= 0:
+            continue
+        a = math.atan2(p.x, p.y)
+        f = (a / (2 * math.pi) * teeth + seed) % 1.0
+        tri = abs(2 * f - 1)
+        vary = 0.55 + 0.45 * math.sin(a * 3.7 + seed * 5.1) * math.cos(a * 1.9 - seed)
+        p.z += amount * H * tri * vary * min(1.0, k)
+
+
+def sandal(name: str, j: Joints, side: int, mat_sole, mat_strap, *, length: float = 1.22, width: float = 1.1, thickness: float = 0.014) -> bpy.types.Object:
+    """A zori: a flat oval sole under the bare foot and a V-shaped thong
+    strap from between the toes back to either side of the arch."""
+    H = j.H
+    heel = Vector((j.heel_l.x, j.heel_l.y + 0.012 * H, 0.0))
+    toe = Vector((j.toe_l.x, j.toe_l.y - 0.01 * H, 0.0))
+    fwd = toe - heel
+    L0 = fwd.length
+    fwd.normalize()
+    L = L0 * length
+    start = heel - fwd * (L - L0) * 0.3
+    lat = Vector((1, 0, 0))
+    bm = bmesh.new()
+    ring = []
+    n = 28
+    for i in range(n):
+        a = 2 * math.pi * i / n
+        t = 0.5 - 0.5 * math.cos(a)  # 0 heel .. 1 toe
+        w = (0.024 + 0.008 * math.sin(math.pi * min(1.0, t * 1.15))) * H * width
+        x = math.sin(a) * w * (1 - 0.25 * (1 - t) ** 3)
+        ring.append(start + fwd * L * t + lat * x)
+    bot = [bm.verts.new(p) for p in ring]
+    top = [bm.verts.new(p + Vector((0, 0, thickness * H))) for p in ring]
+    bm.faces.new(list(reversed(bot)))
+    bm.faces.new(top)
+    for i in range(n):
+        k = (i + 1) % n
+        bm.faces.new((bot[i], bot[k], top[k], top[i]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    sole = _link(name, me)
+    bv = sole.modifiers.new("Bevel", "BEVEL")
+    bv.width = thickness * H * 0.3
+    bv.segments = 2
+    _apply(sole, bv)
+    sole.data.materials.append(mat_sole)
+    parts = [sole]
+    # Thong: from between the big toe and the next, over the instep, to the sides.
+    if side < 0:
+        for o in parts:
+            o.data.transform(Matrix.Scale(-1, 4, Vector((1, 0, 0))))
+            o.data.flip_normals()
+        start = Vector((-start.x, start.y, start.z))
+        lat = Vector((-1, 0, 0))
+    post = start + fwd * L * 0.8 + lat * (-0.006 * H)
+    for s in (-1, 1):
+        path = []
+        for i in range(9):
+            t = i / 8
+            q = post.lerp(start + fwd * L * 0.46 + lat * s * 0.026 * H, t)
+            path.append((Vector((q.x, q.y, 0.06 * H)), Vector((0, 0, -1))))
+        st = trim(f"{name}_strap{s}", j, path, 0.009, mat_strap, lift=0.004, thickness=0.004)
+        if st is not None:
+            st.vertex_groups.clear()
+            parts.append(st)
+    obj = _join(parts, name)
+    skin_like_body(obj, j)
+    return obj

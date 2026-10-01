@@ -120,7 +120,7 @@ export class AnimeCharacter implements CharacterVisual {
         const role = ((src.userData.role as AnimeRole) ?? 'cloth') as AnimeRole;
         if (role === 'face' && this.face)
           return createAnimeMaterial({ color: new Color(1, 1, 1), role: 'face', map: this.face.texture, emissiveMap: this.face.glow, envShadow: this.envShadow, fade: this.fade });
-        return createAnimeMaterial({ color: src.color.clone(), role, envShadow: role === 'hair' ? this.envShadow : undefined, fade: this.fade });
+        return createAnimeMaterial({ color: src.color.clone(), role, envShadow: role === 'hair' ? this.envShadow : undefined, fade: this.fade, vertexColors: !!mesh.geometry.attributes.color });
       };
       const firstMat = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as MeshStandardMaterial;
       const isHair = firstMat.userData.role === 'hair';

@@ -103,6 +103,19 @@ try {
       await step(page, 0.05, true);
       await page.waitForTimeout(100);
       shots.push(['face', (await page.screenshot({ timeout: 150000 })).toString('base64')]);
+      if (opt.torso) {
+        await page.evaluate((id) => {
+          const g = window.__game;
+          const a = g.actors.get(id);
+          const V = a.position.constructor;
+          const chest = a.visual.socketPosition('chest', new V());
+          const fwd = new V(Math.sin(a.yaw - 0.3), 0, Math.cos(a.yaw - 0.3));
+          g.camera.cut({ position: chest.clone().addScaledVector(fwd, 1.25).add(new V(0, 0.05, 0)), lookAt: chest.clone().add(new V(0, -0.08, 0)), fov: 34 });
+        }, id);
+        await step(page, 0.05, true);
+        await page.waitForTimeout(100);
+        shots.push(['torso', (await page.screenshot({ timeout: 150000 })).toString('base64')]);
+      }
     }
     if (id === 'player') await page.evaluate(() => (window.__game.player.visual.root.visible = true));
     const sheet = await browser.newPage({ viewport: { width: 640 * shots.length / 2, height: 820 / 2 + 24 } });

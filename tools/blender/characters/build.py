@@ -191,6 +191,10 @@ def build(spec: CharacterSpec) -> str:
     for side, bone in ((1, "hand.L"), (-1, "hand.R")):
         hand = build_hand(f"{spec.id}_hand{side}", spec.body, j, side)
         zone(hand, j, spec.zones, mats, spec.default_zone)
+        if body.data.color_attributes.get("Col"):
+            col = hand.data.color_attributes.new("Col", "FLOAT_COLOR", "POINT")
+            for c in col.data:
+                c.color = (1, 1, 1, 1)
         rigid(hand, arm, bone)
         select_only(hand, body)
         bpy.ops.object.join()
@@ -283,6 +287,9 @@ def build(spec: CharacterSpec) -> str:
         export_materials="EXPORT",
         export_animations=False,
         export_def_bones=False,
+        export_vertex_color="ACTIVE",
+        export_all_vertex_colors=False,
+        export_active_vertex_color_when_no_material=True,
     )
     tris = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in bpy.data.objects if o.type == "MESH")
     print(f"{spec.id}: {tris} tris, {len(arm.data.bones)} bones → {os.path.relpath(path, ROOT)} ({os.path.getsize(path) / 1024:.0f} KB)")

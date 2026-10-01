@@ -2,6 +2,7 @@ import { Frustum, Matrix4, Vector3 } from 'three';
 import type { ActorController } from '../actors/ActorController';
 import { createLogger } from '../core/Log';
 import { PARTY_MEMBERS, PARTY_ORDER } from '../data/party';
+import { CHARACTERS } from '../data/characters';
 import type { GameContext, GameSystem } from '../game/GameContext';
 import type { PartyOrder } from '../core/events/GameEvents';
 import { Masks } from '../physics/Physics';
@@ -51,6 +52,32 @@ export class PartyManager implements GameSystem {
     ev.on('rbd:returned', () => this.requestReconcile());
     ev.on('player:placed', ({ position, yaw }) => this.onPlayerPlaced(position, yaw));
     ev.on('game:modeChanged', ({ to }) => this.setHeld(to === 'dialogue' || to === 'cinematic'));
+    ev.on('settings:changed', ({ key }) => {
+      if (key === 'gameplay.partyOutfits' || key === '*') this.outfitsPending = true;
+    });
+  }
+
+  /** The outfit setting changed: re-dress whoever has outfits, at a quiet moment. */
+  private outfitsPending = false;
+  /** The outfit setting each companion was spawned in. */
+  private readonly dressedIn = new Map<string, string>();
+
+  private applyOutfits(): void {
+    if (!this.outfitsPending || this.reconciling) return;
+    const g = this.game;
+    if (g.mode !== 'exploration' || g.combat.inCombat || g.cinematics.playing) return;
+    this.outfitsPending = false;
+    let changed = false;
+    const outfit = g.settings.gameplay.partyOutfits;
+    for (const [id, f] of this.followers) {
+      if (!CHARACTERS[id]?.costumes || this.dressedIn.get(id) === outfit) continue;
+      f.actor.brain = null;
+      g.actors.despawn(id);
+      this.followers.delete(id);
+      changed = true;
+    }
+    // They step back in at their places in the formation, newly dressed.
+    if (changed) this.requestReconcile();
   }
 
   get time(): number {
@@ -137,6 +164,7 @@ export class PartyManager implements GameSystem {
   update(dt: number): void {
     const player = this.game.player;
     if (!player) return;
+    this.applyOutfits();
     this.leaderPosition.copy(player.entity.object3D.position);
     this.leaderSpeed = player.followTarget.speed;
     this.leaderStillFor = this.leaderSpeed < 0.25 ? this.leaderStillFor + dt : 0;
@@ -215,6 +243,7 @@ export class PartyManager implements GameSystem {
       const brain = new FollowerBrain(this, def, 0);
       const pos = new Vector3();
       this.slotAt(def.followDistance, def.lateral, pos);
+      this.dressedIn.set(id, this.game.settings.gameplay.partyOutfits);
       const actor = await this.game.actors.spawn(id, {
         position: pos,
         yaw: Math.atan2(this.leaderForward.x, this.leaderForward.z),

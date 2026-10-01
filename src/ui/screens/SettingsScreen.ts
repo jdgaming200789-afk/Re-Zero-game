@@ -191,7 +191,7 @@ export class SettingsScreen extends Screen {
       {
         id: 'outfits',
         label: 'Party outfits',
-        hint: 'Emilia’s hooded cloak and Ram’s capelet, or the classic dress and maid uniform (from the next area you enter)',
+        hint: 'Emilia’s hooded cloak and Ram’s capelet, or the classic dress and maid uniform (they change as soon as you’re back in the game)',
         kind: 'option',
         value: () => OUTFIT_NAMES[gp().partyOutfits],
         adjust: (d) => s.set('gameplay', 'partyOutfits', cycle(OUTFITS, gp().partyOutfits, d)),

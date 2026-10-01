@@ -1,7 +1,7 @@
 // Party follow test: companions join, keep up while Subaru runs, route
 // around obstacles, settle without crowding him when he stops, are placed
 // with him on teleports, and leave cleanly.
-import { launch, waitReady, step, hold, shot, devCommand, setYaw, down, up } from './harness.mjs';
+import { launch, waitReady, step, stepUntil, hold, shot, devCommand, setYaw, down, up } from './harness.mjs';
 
 const BASE = process.env.GAME_URL ?? 'http://127.0.0.1:5173/';
 const { browser, page, errors } = await launch({ url: `${BASE}?area=dev_gym&dev=1` });
@@ -100,6 +100,22 @@ try {
   await page.evaluate(() => window.__game.events.emit('interaction:completed', { interactableId: 'gym.book', kind: 'inspect' }));
   await step(page, 0.2, false);
   check('a played exchange does not repeat', (await page.evaluate(() => window.__game.chatter.current)) === null);
+
+  // Party outfits: changing the setting re-dresses Emilia at once, and only her.
+  const dress = () =>
+    page.evaluate(() => ({ model: window.__game.actors.get('emilia')?.visual.def?.model ?? null, bea: window.__game.actors.get('beatrice')?.entity.id ?? null }));
+  const before = await dress();
+  await page.evaluate(() => {
+    const g = window.__game;
+    g.settings.set('gameplay', 'partyOutfits', g.settings.gameplay.partyOutfits === 'classic' ? 'arc6' : 'classic');
+  });
+  await stepUntil(page, (m) => { const a = window.__game.actors.get('emilia'); return !!a && a.visual.def?.model !== m; }, 30, before.model);
+  const redressed = await dress();
+  check('changing Party outfits re-dresses Emilia right away (Beatrice untouched)', !!redressed.model && redressed.model !== before.model && redressed.bea === before.bea, `${before.model} → ${redressed.model}`);
+  await page.evaluate(() => {
+    const g = window.__game;
+    g.settings.set('gameplay', 'partyOutfits', g.settings.gameplay.partyOutfits === 'classic' ? 'arc6' : 'classic');
+  });
 
   console.log(await devCommand(page, 'party leave all'));
   await step(page, 0.2, false);

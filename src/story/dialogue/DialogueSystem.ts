@@ -45,6 +45,8 @@ interface Active {
   voiceLeft: number;
   shotSpeaker: string | null;
   sameSpeakerLines: number;
+  /** The current shot was taken from below a bowed head. */
+  lowShot: boolean;
   shots: number;
   prevMode: GameMode;
   prevLetterbox: boolean;
@@ -212,6 +214,7 @@ export class DialogueSystem implements GameSystem {
         voiceLeft: 0,
         shotSpeaker: null,
         sameSpeakerLines: 0,
+        lowShot: false,
         shots: 0,
         prevMode,
         prevLetterbox,
@@ -529,18 +532,22 @@ export class DialogueSystem implements GameSystem {
       const beat = (['single', 'keep', 'two', 'keep'] as const)[(a.sameSpeakerLines - 1) % 4]!;
       kind = beat;
     }
+    // A bowed head needs the lens below it: re-cover a downcast line from
+    // low even mid-run, and come back up afterwards.
+    const low = !!line.speaker && !line.thought && DOWNCAST.has(line.anim ?? '');
+    if (kind === 'keep' && line.speaker && low !== a.lowShot) kind = 'single';
     if (kind === 'keep') return;
     const group = a.def.cast.map((id) => this.head(id, new Vector3())).filter((p): p is Vector3 => !!p);
     const speakerHead = this.head(line.speaker, new Vector3()) ?? group[0];
     if (!speakerHead) return;
     const listenerId = line.speaker ? this.addressee(line) : null;
     const listenerHead = this.head(listenerId, new Vector3());
-    let shot = this.conv.compose(kind, speakerHead, listenerHead, group);
+    let shot = this.conv.compose(kind, speakerHead, listenerHead, group, { low });
     // Someone else standing in the way? Try other coverage before settling.
     if (kind !== 'wide' && this.blocked(shot.position, speakerHead, [line.speaker, listenerId])) {
       for (const alt of ['single', 'two', 'wide'] as ShotKind[]) {
         if (alt === kind) continue;
-        const s2 = this.conv.compose(alt, speakerHead, listenerHead, group);
+        const s2 = this.conv.compose(alt, speakerHead, listenerHead, group, { low });
         if (alt === 'wide' || !this.blocked(s2.position, speakerHead, [line.speaker, listenerId])) {
           shot = s2;
           break;
@@ -562,8 +569,12 @@ export class DialogueSystem implements GameSystem {
     else g.camera.cut(shot);
     a.shots++;
     a.shotSpeaker = line.speaker;
+    a.lowShot = low && shot.kind !== 'two' && shot.kind !== 'wide';
   }
 }
+
+/** Gestures that bow the head (see GestureClips). */
+const DOWNCAST = new Set(['lookDown', 'sigh']);
 
 const _h1 = new Vector3();
 const _trk = new Vector3();

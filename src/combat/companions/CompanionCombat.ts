@@ -202,6 +202,10 @@ export class CompanionCombat extends Component {
       return;
     }
     if (!this.health.canAct) return;
+    // A scene has the floor: nobody starts a swing (or dodges out of their
+    // mark) while a cutscene or conversation is directing them.
+    const mode = this.game.mode;
+    if (mode === 'cinematic' || mode === 'dialogue') return;
     if (this.tryDodge(dt)) return;
     this.thinkTimer -= dt;
     if (this.thinkTimer > 0) return;

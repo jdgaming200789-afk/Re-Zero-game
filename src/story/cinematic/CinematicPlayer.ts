@@ -6,6 +6,7 @@ import type { GameContext, GameSystem } from '../../game/GameContext';
 import { evaluate, type ConditionContext } from '../Conditions';
 import { applyEffects } from '../Effects';
 import type { CinematicDef, CineStep, PlaceRef, ShotSpec } from './Cinematic';
+import type { CameraShot } from '../../camera/CameraDirector';
 
 const log = createLogger('Cinematic');
 const SKIP_HOLD = 0.8;
@@ -374,10 +375,10 @@ export class CinematicPlayer implements GameSystem {
     if (h !== null) p.y = h;
   }
 
-  private shot(s: ShotSpec): { position: Vector3; lookAt: Vector3; fov: number; drift?: Vector3; sway?: number; focusDistance?: number; focusRange?: number } {
+  private shot(s: ShotSpec): CameraShot {
     const from = this.point(s.from, 'head');
     const at = this.point(s.at, 'head');
-    return {
+    const shot: CameraShot = {
       position: from,
       lookAt: at,
       fov: s.fov ?? 40,
@@ -386,6 +387,19 @@ export class CinematicPlayer implements GameSystem {
       focusDistance: s.dof ? from.distanceTo(at) : undefined,
       focusRange: s.dof ? 1.4 : undefined,
     };
+    if (s.follow) {
+      const target = s.at;
+      shot.track = () => {
+        try {
+          return this.point(target, 'head');
+        } catch {
+          return null;
+        }
+      };
+      shot.trackLimit = Infinity;
+      shot.trackLag = 0.2;
+    }
+    return shot;
   }
 }
 

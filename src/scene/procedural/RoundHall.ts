@@ -307,7 +307,9 @@ export function doorRecess(
   box(0.4, 4.4, depth, -1.5, 2.1, depth / 2);
   box(0.4, 4.4, depth, 1.5, 2.1, depth / 2);
   box(3.4, 4.4, 0.4, 0, 2.1, depth + 0.2);
-  box(3.4, 0.4, depth + 0.4, 0, 4.1, depth / 2);
+  // The lintel slab tucks inside the side walls (not flush with their outer
+  // faces) so no two faces share a plane.
+  box(3.36, 0.42, depth + 0.36, 0, 4.11, depth / 2);
   if (opts.dir === 'up') {
     box(2.6, 0.3, depth, 0, -0.15, depth / 2);
     for (let k = 0; k < 6; k++) {

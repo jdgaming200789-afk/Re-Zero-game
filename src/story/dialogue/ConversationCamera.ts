@@ -11,6 +11,9 @@ export type ShotKind = 'ots' | 'single' | 'two' | 'wide';
  * of action (the 180° rule) so the eyelines match across cuts, and shots are
  * pulled in front of walls rather than clipping through them.
  */
+/** How far below eye level a downcast line's camera drops (m). */
+const LOW_ANGLE = 0.24;
+
 export class ConversationCamera {
   /** Unit vector pointing to the side of the line of action the camera lives on. */
   private readonly side = new Vector3(1, 0, 0);
@@ -32,13 +35,17 @@ export class ConversationCamera {
    * (a wall behind the listener turns an over-the-shoulder into a single,
    * a cramped single into a two-shot, and so on down to the wide).
    */
-  compose(kind: ShotKind, speaker: Vector3, listener: Vector3 | null, group: Vector3[]): ConvShot {
+  compose(kind: ShotKind, speaker: Vector3, listener: Vector3 | null, group: Vector3[], opts: { low?: boolean } = {}): ConvShot {
     if (kind === 'wide' || !listener) return this.wide(group.length ? group : [speaker]) ?? this.wide(group.length ? group : [speaker], true)!;
     const d = _a.subVectors(speaker, listener).setY(0).length();
     if (kind === 'ots' && d > 5) kind = 'single';
+    // A downcast line (head bowed, eyes on the floor) is shot from below
+    // eye level, looking up into the face — from above it's a hood or a
+    // fringe and no face at all.
+    const low = opts.low ? LOW_ANGLE : 0;
     const order: ShotKind[] = kind === 'ots' ? ['ots', 'single', 'two'] : kind === 'single' ? ['single', 'ots', 'two'] : ['two', 'single', 'ots'];
     for (const k of order) {
-      const s = k === 'ots' ? this.ots(speaker, listener) : k === 'single' ? this.single(speaker, listener) : this.two(speaker, listener);
+      const s = k === 'ots' ? this.ots(speaker, listener, low) : k === 'single' ? this.single(speaker, listener, low) : this.two(speaker, listener);
       if (s) {
         s.kind = k;
         return s;
@@ -48,29 +55,31 @@ export class ConversationCamera {
   }
 
   /** Behind the listener's shoulder, looking at the speaker. */
-  private ots(speaker: Vector3, listener: Vector3): ConvShot | null {
+  private ots(speaker: Vector3, listener: Vector3, low = 0): ConvShot | null {
     const axis = this.axis(listener, speaker);
     const perp = this.perp(axis);
     // Aim a little to the listener's side so the speaker sits on the far third
     // and the listener's shoulder frames the near edge.
     const at = _at.copy(speaker).addScaledVector(perp, 0.18);
-    at.y -= 0.07;
+    at.y -= 0.07 + low * 0.25;
     const from = _from.copy(listener).addScaledVector(axis, -1.35).addScaledVector(perp, 0.78);
-    from.y = Math.max(listener.y, speaker.y) + 0.04;
+    // At the speaker's eye line (nudged towards a taller listener's, so the
+    // shoulder still frames): never looking down on a shorter speaker.
+    from.y = speaker.y + 0.03 + Math.max(-0.1, Math.min(0.1, listener.y - speaker.y)) * 0.4 - low;
     return this.finish(from, at, 32, new Vector3(0, 0, -0.025), true, perp, 0.85);
   }
 
   /** Medium close-up of the speaker from the listener's side of the room. */
-  private single(speaker: Vector3, listener: Vector3): ConvShot | null {
+  private single(speaker: Vector3, listener: Vector3, low = 0): ConvShot | null {
     const axis = this.axis(speaker, listener);
     const perp = this.perp(axis);
     // A medium close-up — head and chest, the head about a quarter of the
     // frame — never a face filling the screen.
     const dist = 2.15;
     const from = _from.copy(speaker).addScaledVector(axis, dist * 0.86).addScaledVector(perp, dist * 0.5);
-    from.y = speaker.y + 0.02;
+    from.y = speaker.y + 0.02 - low;
     const at = _at.copy(speaker);
-    at.y -= 0.1;
+    at.y -= 0.1 + low * 0.25;
     return this.finish(from, at, 28, new Vector3(0, 0, -0.025), true, perp, 0.75);
   }
 

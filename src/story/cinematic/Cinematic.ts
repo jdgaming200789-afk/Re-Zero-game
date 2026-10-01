@@ -25,6 +25,11 @@ export interface ShotSpec {
   sway?: number;
   /** Focus on the `at` point. */
   dof?: boolean;
+  /**
+   * Keep panning to hold the `at` point as it moves (a marker the area
+   * moves, a walking character) — an operator following the action.
+   */
+  follow?: boolean;
 }
 
 export type CineStep =

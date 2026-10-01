@@ -47,6 +47,11 @@ export interface ParticleConfig {
   worldSpace: boolean;
   /** Brightness multiplier (HDR, drives bloom). */
   intensity: number;
+  /**
+   * Particles fade out closer to the camera than this (m). Big, dark,
+   * opaque puffs need more room than motes, or the lens fills with them.
+   */
+  nearFade: number;
 }
 
 const DEFAULTS: ParticleConfig = {
@@ -72,6 +77,7 @@ const DEFAULTS: ParticleConfig = {
   followCamera: false,
   worldSpace: true,
   intensity: 1,
+  nearFade: 1.4,
 };
 
 const vertex = /* glsl */ `
@@ -80,14 +86,18 @@ attribute vec4 aColor;
 attribute vec3 aVel;
 uniform float uScale;
 uniform float uStreak;
+uniform float uNear;
 varying vec4 vColor;
 varying float vStreak;
 varying vec2 vVelDir;
 void main() {
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * mv;
-  gl_PointSize = aSize * uScale / max(0.05, -mv.z);
+  // Capped, and faded out right at the lens: a mote drifting past the
+  // camera must never become a disc across half the screen.
+  gl_PointSize = min(aSize * uScale / max(0.05, -mv.z), uScale * 0.3);
   vColor = aColor;
+  vColor.a *= smoothstep(uNear * 0.25, uNear, -mv.z);
   vStreak = uStreak;
   vec3 vv = (viewMatrix * vec4(aVel, 0.0)).xyz;
   vVelDir = length(vv.xy) > 1e-4 ? normalize(vv.xy) : vec2(1.0, 0.0);
@@ -167,6 +177,7 @@ export class ParticleEmitter extends Points {
         uScale: { value: 600 },
         uStreak: { value: cfg.streak },
         uIntensity: { value: cfg.intensity },
+        uNear: { value: cfg.nearFade },
       },
     });
     super(geo, mat);

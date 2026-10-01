@@ -277,6 +277,8 @@ export class SubaruCombat extends Component {
           additive: false,
           size: [0.9, 1.7],
           alpha: 0.85,
+          // The cloud surrounds Subaru, so the follow camera is often in it.
+          nearFade: 3.2,
           lifetime: [1.4, 2.4],
           rate: 110,
           velocityMin: new Vector3(-0.3, 0.1, -0.3),

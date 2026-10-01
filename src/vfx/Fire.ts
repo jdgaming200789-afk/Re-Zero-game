@@ -98,7 +98,7 @@ export class Fire extends Group implements VfxUpdatable {
         ? { core: new Color(0.8, 0.95, 1.0), edge: new Color(0.15, 0.4, 1.0), light: 0x7fb4ff }
         : opts.color === 'green'
           ? { core: new Color(0.85, 1.0, 0.8), edge: new Color(0.2, 0.8, 0.4), light: 0x8cffb0 }
-          : { core: new Color(1.0, 0.85, 0.55), edge: new Color(1.0, 0.32, 0.06), light: 0xff9a4a };
+          : { core: new Color(1.0, 0.85, 0.55), edge: new Color(1.0, 0.32, 0.06), light: 0xffb87a };
     for (let i = 0; i < 2; i++) {
       const mat = new ShaderMaterial({
         vertexShader: flameVertex,

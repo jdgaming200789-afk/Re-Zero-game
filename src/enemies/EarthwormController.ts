@@ -80,6 +80,7 @@ export class EarthwormController extends Component {
       additive: false,
       alpha: 0.9,
       size: [0.15, 0.4],
+      nearFade: 2.2,
       lifetime: [0.8, 1.8],
       velocityMin: new Vector3(-5, 4, -5),
       velocityMax: new Vector3(5, 11, 5),

@@ -26,6 +26,10 @@ export interface CameraShot {
    * and limited to a small correction like an operator's hand.
    */
   track?: () => Vector3 | null;
+  /** How far tracking may pan from the composed look-at (m; default 0.6). */
+  trackLimit?: number;
+  /** Tracking smoothing time constant (s; default 0.35). */
+  trackLag?: number;
   /** Handheld sway amount for tension. */
   sway?: number;
 }
@@ -123,9 +127,9 @@ export class CameraDirector {
     const p = shot.track();
     if (!p) return;
     _t.subVectors(p, this.trackBase);
-    const max = 0.6;
+    const max = shot.trackLimit ?? 0.6;
     if (_t.length() > max) _t.setLength(max);
-    const k = 1 - Math.exp(-dt / 0.35);
+    const k = 1 - Math.exp(-dt / (shot.trackLag ?? 0.35));
     this.trackOffset.lerp(_t, k);
   }
 

@@ -209,6 +209,7 @@ export const CINEMATICS: CinematicDef[] = [
       { do: 'place', who: 'subaru', at: '@ele.subaru_watch', face: '@ele.reid_seat' },
       ...PARTY.filter((id) => id !== 'emilia').map((id) => ({ do: 'place' as const, who: id, at: `@ele.watch_${id}`, face: '@ele.reid_seat' })),
       { do: 'shot', shot: { from: '@ele.cam_ice', at: '@ele.ice_look', fov: 44, drift: [0.03, 0, -0.03] }, blend: 1.0, ease: 'inOutSine' },
+      { do: 'place', who: 'emilia', at: '@ele.emilia_step_out', face: '@ele.reid_seat' },
       { do: 'move', who: 'emilia', to: '@ele.emilia_try', speed: 'walk' },
       { do: 'face', who: 'emilia', to: '@ele.reid_seat' },
       { do: 'dialogue', id: 'ele.emilia_turn', camera: 'auto' },
@@ -224,17 +225,28 @@ export const CINEMATICS: CinematicDef[] = [
       { do: 'shot', shot: { from: { of: 'reid', offset: [-0.8, 0.1, 2.0], socket: 'head' }, at: { of: 'reid', socket: 'chest' }, fov: 40 }, blend: 0.4, ease: 'outCubic' },
       { do: 'say', lines: [{ speaker: 'reid', text: '—whoa! ...Ha! HAHAHA! Look at that. A step!', expression: 'joy', anim: 'laugh' }] },
       { do: 'dialogue', id: 'ele.emilia_passed', camera: 'auto' },
-      // The sky answers: a stair of light winds down to her.
+      // The sky answers: a stair of light winds down to her (7.2 s, cut to it).
       { do: 'music', state: 'cinematic' },
       { do: 'shake', strength: 0.25, seconds: 1.4 },
-      { do: 'shot', shot: { from: '@ele.cam_up', at: '@ele.stair_top', fov: 58, drift: [0, -0.04, 0] }, blend: 1.2, ease: 'inOutSine' },
+      // Her face first, turned up to something we haven't seen yet.
+      { do: 'look', who: 'emilia', at: '@ele.stair_top' },
+      // (From the side she turns to — the stair's side — and below her eyes.)
+      { do: 'shot', shot: { from: { of: 'emilia', offset: [-0.75, -0.38, 1.05], socket: 'head' }, at: { of: 'emilia', socket: 'head' }, fov: 34, drift: [0, 0, -0.03] }, blend: 0.5, ease: 'outCubic' },
       { do: 'effects', effects: [{ event: 'ele.stair' }] },
-      { do: 'wait', seconds: 3.6 },
-      { do: 'shot', shot: { from: '@ele.cam_up', at: '@ele.stair_mid', fov: 58, drift: [0, -0.03, 0] }, blend: 2.6, ease: 'inOutSine' },
-      { do: 'wait', seconds: 2.6 },
-      { do: 'shot', shot: { from: '@ele.cam_stair_wide', at: '@ele.stair_mid', fov: 50, drift: [0.05, 0.02, -0.04] }, blend: 1.6, ease: 'inOutSine' },
-      { do: 'wait', seconds: 1.8 },
-      { do: 'face', who: 'emilia', to: '@ele.stair_foot' },
+      { do: 'wait', seconds: 1.3 },
+      // Her eyeline: far overhead, treads of light forming one after
+      // another — and the camera rides the leading one down.
+      { do: 'shot', shot: { from: '@ele.cam_up', at: '@ele.stair_head', fov: 60, follow: true } },
+      { do: 'wait', seconds: 3.4 },
+      // The whole of it: a helix out of the sky, everyone small beneath it.
+      { do: 'shot', shot: { from: '@ele.cam_stair_wide', at: '@ele.stair_head', fov: 52, follow: true, drift: [0.04, 0.02, -0.03] }, blend: 1.2, ease: 'inOutSine' },
+      { do: 'wait', seconds: 1.6 },
+      // Touchdown, over her shoulder: she turns to it as it lands.
+      { do: 'look', who: 'emilia', at: '@ele.stair_foot' },
+      { do: 'face', who: 'emilia', to: '@ele.stair_foot', wait: false },
+      { do: 'shot', shot: { from: '@ele.cam_landing', at: '@ele.landing_look', fov: 46, drift: [0, 0.01, -0.04] } },
+      { do: 'wait', seconds: 2.4 },
+      { do: 'look', who: 'emilia', at: null },
       { do: 'dialogue', id: 'ele.stair', camera: 'auto' },
       { do: 'music', state: 'safe' },
       { do: 'fade', to: 1, seconds: 0.6 },

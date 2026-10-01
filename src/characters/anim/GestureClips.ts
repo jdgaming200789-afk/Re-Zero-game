@@ -181,8 +181,8 @@ add(
     2.2,
     [
       { t: 0, pose: {} },
-      { t: 0.25, pose: { neck: [8, 0, 0], head: [18, 0, 0], chest: [4, 0, 0] }, ease: 'outCubic' },
-      { t: 0.8, pose: { neck: [8, 0, 0], head: [20, 3, 0], chest: [4, 0, 0] } },
+      { t: 0.25, pose: { neck: [7, 0, 0], head: [14, 0, 0], chest: [4, 0, 0] }, ease: 'outCubic' },
+      { t: 0.8, pose: { neck: [7, 0, 0], head: [16, 3, 0], chest: [4, 0, 0] } },
       { t: 1, pose: {}, ease: 'inOutSine' },
     ],
     { mask: HEAD_CHEST, fadeIn: 0.2, fadeOut: 0.3 },

@@ -85,14 +85,18 @@ class TowerFootArea extends Area {
     const shadowSize = SHADOW_MAP_SIZE[g.settings.graphics.shadowQuality];
     this.moon = new FollowShadowLight(0xc4cbe0, 1.6, moonDir, 42, shadowSize, 180);
     this.moon.addTo(this.root);
-    this.root.add(new HemisphereLight(0x27304a, 0x3a2e22, 0.5));
+    // Night fill: shadows read deep blue, never black.
+    this.root.add(new HemisphereLight(0x3a4a72, 0x4a3a2a, 0.95));
 
     // ---- Architecture
     const tower = new KitBatch(towerKit, g.physics, 400);
     tower.place('TowerBase', TOWER_CENTER.x, 0, TOWER_CENTER.z);
     tower.place('TowerUpper', TOWER_CENTER.x, 0, TOWER_CENTER.z, { collide: false });
     tower.place('TowerGlass', TOWER_CENTER.x, 0, TOWER_CENTER.z, { collide: false });
-    tower.build(this.root);
+    // The tower casts no moon shadow into the follow-the-player shadow map:
+    // its silhouette would black out the plaza, and pop in and out as the
+    // shadow frustum follows Subaru around (the "black flash" in fights).
+    tower.build(this.root, { castShadow: false });
     this.addBatch(tower);
 
     const b = new KitBatch(kit, g.physics, 28);
@@ -105,7 +109,7 @@ class TowerFootArea extends Area {
     onProgress(0.8);
 
     // ---- Effects
-    const fire = g.vfx.add(new Fire({ scale: 1.1, lightIntensity: 32, lightDistance: 20, castShadow: shadowSize >= 2048 }), this.scope);
+    const fire = g.vfx.add(new Fire({ scale: 1.1, lightIntensity: 32, lightDistance: 20 }), this.scope);
     fire.position.set(CAMP.x - 3, heightAt(CAMP.x - 3, CAMP.z - 6) + 0.15, CAMP.z - 6);
     this.root.add(fire);
     const lantern = new PointLight(0xffb46b, 4, 7, 2);
@@ -443,10 +447,10 @@ class TowerFootArea extends Area {
       environment: this.env,
       environmentIntensity: 0.55,
       fog: {
-        color: new Color(0x0c1220),
-        glowColor: new Color(0x1c2644),
+        color: new Color(0x141d33),
+        glowColor: new Color(0x26335a),
         lightDir: this.sky.moonDirection,
-        density: 0.009,
+        density: 0.0072,
         heightFalloff: 0.018,
         baseHeight: -2,
         glowPower: 5,

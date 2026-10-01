@@ -172,9 +172,13 @@ export class WormVisual implements CharacterVisual {
       bone.quaternion.copy(parent.getWorldQuaternion(_q3).invert()).multiply(world);
       bone.updateMatrixWorld(true);
     }
+    // Fade by the nearest segment, not just the head: a breach that sweeps
+    // the body through the camera must never fill the screen with hull.
     const view = CharacterLighting.viewPosition;
-    const d = this.headPos.distanceTo(view);
-    this.fade.value = damp(this.fade.value, clamp((d - 1.2) / 1.5, 0, 1), 0.06, dt);
+    let d = this.headPos.distanceTo(view);
+    for (const bone of this.segs) d = Math.min(d, bone.getWorldPosition(_a).distanceTo(view));
+    const target = clamp((d - 1.2) / 1.5, 0, 1);
+    this.fade.value = target < this.fade.value ? target : damp(this.fade.value, target, 0.06, dt);
   }
 }
 

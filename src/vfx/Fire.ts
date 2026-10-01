@@ -67,7 +67,6 @@ export interface FireOptions {
   lightDistance?: number;
   lightColor?: number;
   embers?: boolean;
-  castShadow?: boolean;
   /** Stronger, colder, magical flame. */
   color?: 'warm' | 'blue' | 'green';
 }
@@ -121,16 +120,10 @@ export class Fire extends Group implements VfxUpdatable {
     this.baseIntensity = opts.lightIntensity ?? 14 * scale;
     this.light = new PointLight(opts.lightColor ?? palette.light, this.baseIntensity, opts.lightDistance ?? 9 * Math.sqrt(scale), 2);
     this.light.position.y = 0.5 * scale;
-    this.light.castShadow = opts.castShadow ?? false;
-    if (this.light.castShadow) {
-      this.light.shadow.mapSize.set(512, 512);
-      this.light.shadow.bias = -0.002;
-      this.light.shadow.radius = 3;
-      // Only what the fire can light can cast its shadows (three's default
-      // reaches 500 m: every face of the cube would redraw the whole scene).
-      this.light.shadow.camera.near = 0.1;
-      this.light.shadow.camera.far = this.light.distance;
-    }
+    // No cube shadows: a point-light shadow redraws the scene six more times
+    // a frame, and three's frozen cube maps rendered every lit material
+    // black on some GPUs (the "black flash" mid-fight at the camp).
+    this.light.castShadow = false;
     this.add(this.light);
     if (opts.embers !== false) {
       this.embers = new ParticleEmitter(ParticlePresets.embers());
@@ -154,14 +147,6 @@ export class Fire extends Group implements VfxUpdatable {
     this.light.position.x = noise1D(this.t * 3 + this.seed, 2) * 0.03;
     this.light.position.z = noise1D(this.t * 3 + this.seed, 3) * 0.03;
     this.embers?.update(dt, camera.position);
-    if (this.light.castShadow) {
-      // Far from the fire its shadows can't be seen: stop redrawing the cube
-      // map (freezing it rather than turning shadows off, which would make
-      // every material recompile).
-      const near = camera.position.distanceTo(wp) < this.light.distance * 3;
-      if (near && !this.light.shadow.autoUpdate) this.light.shadow.needsUpdate = true;
-      this.light.shadow.autoUpdate = near;
-    }
   }
 
   override dispose(): void {

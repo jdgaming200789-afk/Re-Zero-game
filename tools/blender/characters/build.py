@@ -48,6 +48,9 @@ class CharacterSpec:
     # Planes (point, normal) the body is cut along before zoning, so colour
     # boundaries follow clean lines instead of the stair-step of whole faces.
     cuts: Callable[[Joints], list] | None = None
+    # Body faces hidden under opaque garments (deleted after tailoring, so
+    # they can't poke through the clothes when joints bend).
+    hidden: Callable[[object], bool] | None = None
 
 
 def reset():
@@ -70,6 +73,33 @@ def rigid(obj, arm, bone: str):
     obj.parent = arm
     mod = obj.modifiers.new("Armature", "ARMATURE")
     mod.object = arm
+
+
+def skinned(obj, arm):
+    """Parent a pre-weighted mesh (tailored garment) to the armature."""
+    obj.parent = arm
+    if not any(m.type == "ARMATURE" for m in obj.modifiers):
+        mod = obj.modifiers.new("Armature", "ARMATURE")
+        mod.object = arm
+    else:
+        for m in obj.modifiers:
+            if m.type == "ARMATURE":
+                m.object = arm
+
+
+def hide_under(body, j, pred) -> None:
+    from outfit import ZoneContext
+
+    bm = bmesh.new()
+    bm.from_mesh(body.data)
+    bm.normal_update()
+    kill = [f for f in bm.faces if pred(ZoneContext(j, f.calc_center_median(), f.normal.copy()))]
+    bmesh.ops.delete(bm, geom=kill, context="FACES")
+    loose = [v for v in bm.verts if not v.link_faces]
+    bmesh.ops.delete(bm, geom=loose, context="VERTS")
+    bm.to_mesh(body.data)
+    bm.free()
+    body.data.update()
 
 
 def resample(line: list[Vector], n: int) -> list[Vector]:
@@ -189,12 +219,15 @@ def build(spec: CharacterSpec) -> str:
     # Spring chains: hair under the head, cloth under hips/chest.
     hair_chains = {k: v for k, v in hmeta["chains"].items()}
     hair_names = add_chains(arm, hair_chains, spec.hair.chains, lambda c: "head")
-    cloth_names = add_chains(arm, garments.chains, {k: 3 for k in garments.chains}, lambda c: "upperChest" if c.startswith("cape") else "hips")
+    cloth_names = add_chains(arm, garments.chains, {k: 3 for k in garments.chains}, lambda c: "upperChest" if c.startswith(("cape", "scarf", "hood", "robe")) else "hips")
 
     for o in (head, ears):
         rigid(o, arm, "head")
     for o in acc:
-        rigid(o, arm, o.get("bone", "head"))
+        if o.get("skinned"):
+            skinned(o, arm)
+        else:
+            rigid(o, arm, o.get("bone", "head"))
 
     # Hair: rigid to head, chain-bound vertex runs blended along their chain.
     rigid(hair, arm, "head")
@@ -218,12 +251,19 @@ def build(spec: CharacterSpec) -> str:
     for o in garments.objects:
         chains = garments.bindings.get(o.name, [])
         base_bone = o.get("bone", "hips")
+        if o.get("skinned"):
+            # Tailored layers carry the body's own skin weights.
+            skinned(o, arm)
+            continue
         if not chains:
             rigid(o, arm, base_bone)
             continue
         rigid(o, arm, base_bone)
         # Each vertex follows its nearest chain(s), blended by height.
         assign_nearest_chain(o, arm, base_bone, {c: (cloth_names[c], garments.chains[c]) for c in chains})
+
+    if spec.hidden:
+        hide_under(body, j, spec.hidden)
 
     arm["character"] = spec.id
     arm["meta"] = json.dumps(spec.meta)

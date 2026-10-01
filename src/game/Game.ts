@@ -212,7 +212,10 @@ export class Game implements GameContext {
         this.environment.materials.setAnisotropy(this.render.maxAnisotropy);
       }
       if (key.startsWith('gameplay') || key.startsWith('bindings') || key === '*') this.applyInputSettings();
+      if (key === 'gameplay.subaruCostume' || key === '*') this.costumePending = true;
     });
+    // Costume changes wait for a calm moment (not mid-scene or mid-fight).
+    this.addSystem({ name: 'costume', update: () => this.applyCostume() });
 
     window.addEventListener('resize', () => this.render.onResize());
     document.addEventListener('visibilitychange', () => {
@@ -274,6 +277,22 @@ export class Game implements GameContext {
 
   get paused(): boolean {
     return this.modeBeforePause !== null;
+  }
+
+  private costumePending = false;
+  private costumeLoading = false;
+
+  /** Swap the player's model when the outfit setting changed and it's quiet. */
+  private applyCostume(): void {
+    if (!this.costumePending || this.costumeLoading || !this.player) return;
+    if (this.cinematics.playing || this.combat.inCombat) return;
+    this.costumePending = false;
+    this.costumeLoading = true;
+    const player = this.player;
+    void this.characters
+      .create(player.characterId, this.settings.gameplay.subaruCostume)
+      .then((v) => player.setVisual(v))
+      .finally(() => (this.costumeLoading = false));
   }
 
   addSystem(system: GameSystem): void {

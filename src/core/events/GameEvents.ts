@@ -32,6 +32,8 @@ export interface GameEvents {
 
   // ---- Player / characters -------------------------------------------------
   'player:spawned': { characterId: string };
+  /** The player's model was replaced (costume change). */
+  'player:visualChanged': { characterId: string };
   /** Player teleported/placed (spawns, checkpoints, Return by Death). */
   'player:placed': { position: Vector3; yaw: number };
   'party:joined': { characterId: string };

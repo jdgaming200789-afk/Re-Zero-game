@@ -16,6 +16,8 @@ export const CharacterLighting = {
    * characters' colours readable under a red hall or a blue moon.
    */
   paletteKeep: new Uniform(0.35),
+  /** Characters dither out as the camera nears them (off for review shots). */
+  cameraFade: true,
   /** Camera position (updated by the game each frame) for LOD decisions. */
   viewPosition: new Vector3(),
   /** Direction *towards* the key light (moon/sun), world space. Areas set it. */

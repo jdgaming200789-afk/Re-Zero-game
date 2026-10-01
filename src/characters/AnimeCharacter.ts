@@ -129,6 +129,8 @@ export class AnimeCharacter implements CharacterVisual {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.frustumCulled = false; // skinned bounds are unreliable when posed
+      // Cel shading carries its own form shadow; screen-space AO only adds grime.
+      mesh.userData.cannotReceiveAO = true;
       if (isFace) {
         sphericalNormals(mesh.geometry);
         // Hair/fringe self-shadowing bands across an anime face read as dirt.
@@ -288,7 +290,7 @@ export class AnimeCharacter implements CharacterVisual {
     // Nearest of chest / head to the camera: fade before it clips inside.
     const view = CharacterLighting.viewPosition;
     const d = Math.min(this.rig.bone('chest').getWorldPosition(_v).distanceTo(view), this.rig.bone('head').getWorldPosition(_v).distanceTo(view));
-    const target = Math.min(clamp((d - 0.45) / 0.75, 0, 1), this.occluding ? 0.35 : 1);
+    const target = CharacterLighting.cameraFade ? Math.min(clamp((d - 0.45) / 0.75, 0, 1), this.occluding ? 0.35 : 1) : 1;
     this.fade.value = damp(this.fade.value, target, 0.06, dt);
   }
 

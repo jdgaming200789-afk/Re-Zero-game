@@ -32,7 +32,7 @@ export class WhipProp {
   length = 3.4;
 
   constructor(
-    private readonly visual: CharacterVisual,
+    private visual: CharacterVisual,
     parent: Object3D,
   ) {
     this.geo = new BufferGeometry();
@@ -58,6 +58,11 @@ export class WhipProp {
     this.coil = new Mesh(new TorusGeometry(0.075, 0.016, 6, 16), mat);
     this.coil.castShadow = true;
     parent.add(this.coil);
+  }
+
+  /** Follow a new model (the player changed costume). */
+  setVisual(v: CharacterVisual): void {
+    this.visual = v;
   }
 
   get active(): boolean {

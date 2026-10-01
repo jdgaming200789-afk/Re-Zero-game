@@ -12,6 +12,7 @@ export type TextSpeed = 'slow' | 'normal' | 'fast' | 'instant';
 export type Difficulty = 'story' | 'normal' | 'hard';
 /** Which symbols button prompts use ('auto' follows the last device used). */
 export type ButtonPromptStyle = 'auto' | 'keyboard' | 'xbox' | 'playstation';
+export type SubaruCostume = 'arc6' | 'tracksuit';
 
 export interface GraphicsSettings {
   preset: QualityPreset | 'custom';
@@ -51,6 +52,8 @@ export interface GameplaySettings {
   toggleSprint: boolean;
   showHints: boolean;
   buttonPrompts: ButtonPromptStyle;
+  /** Subaru's outfit (a costume id from his character definition). */
+  subaruCostume: SubaruCostume;
 }
 
 export interface GameSettings {
@@ -132,6 +135,7 @@ export function defaultSettings(): GameSettings {
       toggleSprint: false,
       showHints: true,
       buttonPrompts: 'auto',
+      subaruCostume: 'arc6',
     },
     bindings: {},
   };

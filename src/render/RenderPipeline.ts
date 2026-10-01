@@ -150,6 +150,9 @@ export class RenderPipeline {
         cfg.intensity = 2.6;
         cfg.gammaCorrection = false;
         cfg.halfRes = true;
+        // Characters opt out of receiving AO (userData.cannotReceiveAO):
+        // half-res occlusion reads as grime on cel-shaded skin and cloth.
+        (cfg as typeof cfg & { transparencyAware: boolean }).transparencyAware = true;
       }
       this.aoPass.setQualityMode(s.postProcessing === 'high' ? 'Medium' : 'Low');
       this.composer.addPass(this.aoPass);

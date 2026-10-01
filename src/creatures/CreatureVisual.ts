@@ -474,7 +474,7 @@ export class CreatureVisual implements CharacterVisual {
     const view = CharacterLighting.viewPosition;
     const chest = this.socketPosition('chest', _v);
     const d = chest.distanceTo(view);
-    const target = Math.min(clamp((d - 0.8) / 1.0, 0, 1), this.occluding ? 0.35 : 1);
+    const target = CharacterLighting.cameraFade ? Math.min(clamp((d - 0.8) / 1.0, 0, 1), this.occluding ? 0.35 : 1) : 1;
     this.fade.value = damp(this.fade.value, target, 0.06, dt);
     if (this.occlusionQuery) {
       this.envTimer -= dt;

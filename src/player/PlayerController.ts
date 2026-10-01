@@ -104,6 +104,19 @@ export class PlayerController extends Component {
     };
   }
 
+  /** Replace the model (costume change), keeping facing and position. */
+  setVisual(v: CharacterVisual): void {
+    const old = this.visual;
+    if (old === v) return;
+    v.root.rotation.copy(old.root.rotation);
+    v.root.visible = old.root.visible;
+    this.entity.object3D.remove(old.root);
+    this.entity.object3D.add(v.root);
+    this.visual = v;
+    old.dispose();
+    this.game.events.emit('player:visualChanged', { characterId: this.characterId });
+  }
+
   // ------------------------------------------------------------------ control
   lock(reason: string): void {
     this.locks.add(reason);

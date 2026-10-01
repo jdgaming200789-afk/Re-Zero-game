@@ -16,6 +16,7 @@ try {
     g.player.placeAt(new g.player.entity.object3D.position.constructor(-14, 0, 6), Math.PI);
   });
   await step(page, 0.2, false);
+  await devCommand(page, 'camfade off');
   const res = await devCommand(page, `cast ${only.length ? only.join(' ') : 'all'}`);
   console.log(res);
   await step(page, 1.5, false);

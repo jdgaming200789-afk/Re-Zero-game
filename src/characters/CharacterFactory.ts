@@ -23,9 +23,9 @@ export class CharacterFactory {
     private readonly scheduler: Scheduler,
   ) {}
 
-  async create(id: string): Promise<CharacterVisual> {
+  async create(id: string, costume?: string): Promise<CharacterVisual> {
     try {
-      const c = isCreature(id) ? await CreatureVisual.create(creatureDef(id), this.scheduler) : await AnimeCharacter.create(characterDef(id), this.scheduler);
+      const c = isCreature(id) ? await CreatureVisual.create(creatureDef(id), this.scheduler) : await AnimeCharacter.create(characterDef(id, costume), this.scheduler);
       const down = new Vector3(0, -1, 0);
       const from = new Vector3();
       c.groundQuery = (x, y, z) => {

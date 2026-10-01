@@ -1,7 +1,7 @@
 import type { GameContext } from '../../game/GameContext';
 import { BUTTON_ACTIONS, type ButtonAction } from '../../input/Actions';
 import { bindingLabel } from '../../input/InputManager';
-import type { AntiAliasing, ButtonPromptStyle, Difficulty, PostQuality, QualityPreset, ShadowQuality, TextSpeed, TierQuality, ViewDistance } from '../../settings/Settings';
+import type { AntiAliasing, ButtonPromptStyle, SubaruCostume, Difficulty, PostQuality, QualityPreset, ShadowQuality, TextSpeed, TierQuality, ViewDistance } from '../../settings/Settings';
 import { el } from '../dom';
 import { MenuList, cycle, stepNum, type MenuRow } from './MenuList';
 import { Screen } from './Screen';
@@ -24,6 +24,8 @@ const TEXT: TextSpeed[] = ['slow', 'normal', 'fast', 'instant'];
 const DIFF: Difficulty[] = ['story', 'normal', 'hard'];
 const PROMPTS: ButtonPromptStyle[] = ['auto', 'keyboard', 'xbox', 'playstation'];
 const PROMPT_NAMES: Record<ButtonPromptStyle, string> = { auto: 'Auto', keyboard: 'Keyboard', xbox: 'Xbox', playstation: 'PlayStation' };
+const COSTUMES: SubaruCostume[] = ['arc6', 'tracksuit'];
+const COSTUME_NAMES: Record<SubaruCostume, string> = { arc6: 'Travelling clothes', tracksuit: 'Tracksuit' };
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const pct = (v: number) => `${Math.round(v * 100)}%`;
@@ -168,6 +170,14 @@ export class SettingsScreen extends Screen {
       tog('autoAdvance', 'Auto-advance dialogue'),
       { id: 'autodelay', label: 'Auto-advance pause', kind: 'slider', value: () => `${gp().autoAdvanceDelay.toFixed(1)} s`, fraction: () => (gp().autoAdvanceDelay - 0.5) / 3.5, adjust: (d) => s.set('gameplay', 'autoAdvanceDelay', stepNum(gp().autoAdvanceDelay, d, 0.1, 0.5, 4)) },
       tog('subtitles', 'Subtitles for party chatter'),
+      {
+        id: 'costume',
+        label: "Subaru's outfit",
+        hint: 'The cloak and boots of the road to the tower, or the tracksuit he arrived in',
+        kind: 'option',
+        value: () => COSTUME_NAMES[gp().subaruCostume],
+        adjust: (d) => s.set('gameplay', 'subaruCostume', cycle(COSTUMES, gp().subaruCostume, d)),
+      },
       { id: 'diff', label: 'Difficulty', hint: 'Story: gentler fights. The rules of the tower never change.', kind: 'option', value: () => cap(gp().difficulty), adjust: (d) => s.set('gameplay', 'difficulty', cycle(DIFF, gp().difficulty, d)) },
       { id: 'h2', label: 'Camera', kind: 'header' },
       { id: 'sens', label: 'Camera sensitivity', kind: 'slider', value: () => gp().cameraSensitivity.toFixed(1), fraction: () => (gp().cameraSensitivity - 0.2) / 2.8, adjust: (d) => s.set('gameplay', 'cameraSensitivity', stepNum(gp().cameraSensitivity, d, 0.1, 0.2, 3)) },

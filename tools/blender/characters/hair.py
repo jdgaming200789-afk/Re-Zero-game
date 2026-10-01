@@ -88,8 +88,11 @@ class HeadFrame:
         return False, Vector()
 
 
-def grow_path(frame: HeadFrame, c: Clump, steps: int = 18) -> list[Vector]:
+def grow_path(frame: HeadFrame, c: Clump, steps: int | None = None) -> list[Vector]:
     H = frame.H
+    if steps is None:
+        # Short locks need fewer rings; long, curling ones keep their curve.
+        steps = max(8, min(18, int(round(c.length * 9 + abs(c.curl) * 2))))
     p = frame.surface(c.az, c.el, c.root_offset)
     d = Vector(c.direction).normalized()
     seg = c.length * H / steps
@@ -234,7 +237,7 @@ def build_cap(name: str, head_spec, frame: HeadFrame, style: HairStyle) -> bpy.t
     from head import sculpt
 
     bm = bmesh.new()
-    bmesh.ops.create_uvsphere(bm, u_segments=96, v_segments=64, radius=1.0)
+    bmesh.ops.create_uvsphere(bm, u_segments=72, v_segments=44, radius=1.0)
     rd = frame.H * 0.5 * head_spec.depth
     for v in bm.verts:
         q = sculpt(v.co.copy(), head_spec)

@@ -1,3 +1,4 @@
+import { CharacterLighting } from '../characters/render/AnimeMaterial';
 import { Vector3 } from 'three';
 import { CHARACTERS } from '../data/characters';
 import { CREATURES } from '../data/creatures';
@@ -47,6 +48,15 @@ export function registerCastDevCommands(dev: DevConsole, game: Game): void {
     },
   });
 
+  dev.register({
+    name: 'camfade',
+    usage: 'camfade on|off',
+    help: 'Characters dither out near the camera (off for review close-ups)',
+    run: (args) => {
+      CharacterLighting.cameraFade = args[0] !== 'off';
+      return `Camera fade ${CharacterLighting.cameraFade ? 'on' : 'off'}`;
+    },
+  });
   dev.register({
     name: 'castshot',
     usage: 'castshot [id] [distance]',

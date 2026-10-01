@@ -41,6 +41,8 @@ export interface CharacterDefinition {
   outline: string;
   /** NPC movement overrides (the player uses its own profile). */
   movement?: Partial<ActorMovement>;
+  /** Alternate outfits: costume id -> model (the default is `model`). */
+  costumes?: Record<string, { label: string; model: string }>;
 }
 
 /** Spring presets (VRM-style units: stiffness/gravity are per-second pulls). */
@@ -50,6 +52,7 @@ const DRILL: Omit<SpringChainDef, 'prefix'> = { stiffness: 1.1, drag: 0.22, grav
 const SKIRT: Omit<SpringChainDef, 'prefix'> = { stiffness: 2.6, drag: 0.5, gravity: 0.08, hitRadius: 0.035 };
 const COAT: Omit<SpringChainDef, 'prefix'> = { stiffness: 2.0, drag: 0.48, gravity: 0.15, hitRadius: 0.035 };
 const CAPE: Omit<SpringChainDef, 'prefix'> = { stiffness: 1.2, drag: 0.4, gravity: 0.3, hitRadius: 0.04 };
+const SCARF: Omit<SpringChainDef, 'prefix'> = { stiffness: 1.6, drag: 0.42, gravity: 0.22, hitRadius: 0.03 };
 
 function chains(preset: Omit<SpringChainDef, 'prefix'>, ...prefixes: string[]): SpringChainDef[] {
   return prefixes.map((prefix) => ({ prefix, ...preset }));
@@ -66,20 +69,27 @@ export const CHARACTERS: Record<string, CharacterDefinition> = {
     gait: { slouch: 0.6, armSwing: 1.1, posture: 3, stride: 1, bounce: 1.1 },
     face: {
       skin: '#f3d9c7',
-      iris: '#2a2530',
-      irisLight: '#6b5d74',
-      brow: '#1d1f29',
-      lash: '#15151c',
+      iris: '#8a5426',
+      irisLight: '#e0a65a',
+      brow: '#1c1e27',
+      lash: '#141419',
       eyeSize: 0.86,
-      tilt: 0.25,
+      tilt: 0.3,
       sanpaku: true,
-      lashWeight: 1.1,
+      eyeShape: 'sharp',
+      eyeHeight: 0.8,
+      browWeight: 1.25,
+      lashWeight: 1.15,
     },
     defaultExpression: 'neutral',
-    springs: [],
+    springs: [...chains(CAPE, 'cape'), ...chains(SCARF, 'scarf')],
     voice: { pitch: 150, rate: 11, timbre: 'bright' },
     nameColor: '#f0a060',
     outline: '#2a2626',
+    costumes: {
+      arc6: { label: 'Travelling clothes', model: 'assets/models/characters/subaru.glb' },
+      tracksuit: { label: 'Tracksuit', model: 'assets/models/characters/subaru_tracksuit.glb' },
+    },
   },
   emilia: {
     id: 'emilia',
@@ -305,8 +315,9 @@ export const CHARACTERS: Record<string, CharacterDefinition> = {
   },
 };
 
-export function characterDef(id: string): CharacterDefinition {
+export function characterDef(id: string, costume?: string): CharacterDefinition {
   const d = CHARACTERS[id];
   if (!d) throw new Error(`Unknown character "${id}"`);
-  return d;
+  const alt = costume ? d.costumes?.[costume] : undefined;
+  return alt ? { ...d, model: alt.model } : d;
 }

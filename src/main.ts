@@ -14,7 +14,7 @@ async function boot(): Promise<void> {
   await Physics.init();
   const game = new Game(canvas);
   registerAreas(game.scenes);
-  const visual = await game.characters.create('subaru');
+  const visual = await game.characters.create('subaru', game.settings.gameplay.subaruCostume);
   spawnPlayer(game, visual);
   game.ui.registerSpeakerName('subaru', 'Subaru', '#f0a060');
 

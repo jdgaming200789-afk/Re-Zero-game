@@ -2,7 +2,7 @@ import { CanvasTexture, SRGBColorSpace } from 'three';
 import { clamp, damp } from '../../core/math/MathUtil';
 
 export type PupilShape = 'round' | 'butterfly' | 'dots' | 'slit';
-export type MouthShape = 'line' | 'smile' | 'openSmile' | 'frown' | 'o' | 'oSmall' | 'grit' | 'smirk' | 'wavy' | 'open' | 'A' | 'I' | 'U' | 'E' | 'O';
+export type MouthShape = 'line' | 'smile' | 'openSmile' | 'frown' | 'o' | 'oSmall' | 'grit' | 'smirk' | 'wavy' | 'open' | 'fangGrin' | 'A' | 'I' | 'U' | 'E' | 'O';
 
 export interface FaceStyle {
   skin: string;
@@ -18,6 +18,12 @@ export interface FaceStyle {
   tilt?: number;
   /** Subaru's small-irised "three-white" eyes. */
   sanpaku?: boolean;
+  /** 'sharp': flatter, angular lids (Subaru, Reid); default rounded. */
+  eyeShape?: 'round' | 'sharp';
+  /** Eye opening height multiplier (narrower < 1). */
+  eyeHeight?: number;
+  /** Eyebrow thickness multiplier. */
+  browWeight?: number;
   lashWeight?: number;
   eyeLine?: number;
   /** Horizontal distance of each eye from centre (UV units). */
@@ -53,6 +59,7 @@ export const EXPRESSIONS: Record<string, ExpressionParams> = {
   surprised: { open: 1.18, lower: 0, happyClose: 0, browRaise: 1, browInner: 0.2, irisScale: 0.82, mouth: 'o', blush: 0, sweat: 0, tears: 0, squint: 0, asym: 0 },
   fear: { open: 1.14, lower: 0, happyClose: 0, browRaise: 0.7, browInner: 1, irisScale: 0.62, mouth: 'oSmall', blush: 0, sweat: 1, tears: 0, squint: 0, asym: 0 },
   embarrassed: { open: 0.85, lower: 0.25, happyClose: 0, browRaise: 0.3, browInner: 0.6, irisScale: 1, mouth: 'wavy', blush: 1, sweat: 0.6, tears: 0, squint: 0, asym: 0 },
+  cocky: { open: 0.8, lower: 0.25, happyClose: 0, browRaise: 0.15, browInner: -0.35, irisScale: 0.95, mouth: 'fangGrin', blush: 0, sweat: 0, tears: 0, squint: 0, asym: 0.45 },
   smug: { open: 0.62, lower: 0.2, happyClose: 0, browRaise: 0.1, browInner: -0.2, irisScale: 1, mouth: 'smirk', blush: 0, sweat: 0, tears: 0, squint: 0, asym: 0.6 },
   determined: { open: 0.92, lower: 0.15, happyClose: 0, browRaise: -0.25, browInner: -0.45, irisScale: 1, mouth: 'line', blush: 0, sweat: 0, tears: 0, squint: 0, asym: 0 },
   pain: { open: 0.3, lower: 0.4, happyClose: 0, browRaise: -0.2, browInner: 0.8, irisScale: 0.9, mouth: 'grit', blush: 0, sweat: 0.7, tears: 0.3, squint: 1, asym: 0 },
@@ -229,17 +236,101 @@ export class FaceRenderer {
     this.glow.needsUpdate = true;
   }
 
-  private eyePath(g: CanvasRenderingContext2D, cx: number, cy: number, side: number, w: number, h: number, open: number, lower: number): void {
+  /** Upper lid sampled from the inner to the outer corner. */
+  private lidPoints(cx: number, cy: number, side: number, w: number, h: number, open: number): Array<[number, number]> {
     const tilt = (this.style.tilt ?? 0) * h * 0.35;
     const inner = cx - side * w * 0.5;
     const outer = cx + side * w * 0.5;
-    const topY = cy - h * 0.55 * open;
-    const botY = cy + h * 0.45 - lower * h * 0.3;
+    let p0: [number, number], p1: [number, number], p2: [number, number], p3: [number, number];
+    if (this.style.eyeShape === 'sharp') {
+      // Flat, hard lid: a short rise from the inner corner, a long level
+      // sweep and a sudden drop into the outer corner.
+      const topY = cy - h * 0.5 * open;
+      p0 = [inner, cy + h * 0.08];
+      p1 = [inner + side * w * 0.06, topY + h * 0.02];
+      p2 = [outer - side * w * 0.3, topY - h * 0.06 - tilt];
+      p3 = [outer, cy - h * 0.02 - tilt];
+    } else {
+      const topY = cy - h * 0.55 * open;
+      p0 = [inner, cy + h * 0.05];
+      p1 = [inner + side * w * 0.12, topY - h * 0.02];
+      p2 = [outer - side * w * 0.2, topY - tilt];
+      p3 = [outer, cy - h * 0.1 - tilt];
+    }
+    const pts: Array<[number, number]> = [];
+    for (let i = 0; i <= 16; i++) {
+      const t = i / 16;
+      const u = 1 - t;
+      pts.push([
+        u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0],
+        u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1],
+      ]);
+    }
+    return pts;
+  }
+
+  private lowerLidY(cy: number, h: number, lower: number): number {
+    return cy + h * (this.style.eyeShape === 'sharp' ? 0.36 : 0.45) - lower * h * 0.3;
+  }
+
+  private eyePath(g: CanvasRenderingContext2D, cx: number, cy: number, side: number, w: number, h: number, open: number, lower: number): void {
+    const inner = cx - side * w * 0.5;
+    const outer = cx + side * w * 0.5;
+    const botY = this.lowerLidY(cy, h, lower);
+    const pts = this.lidPoints(cx, cy, side, w, h, open);
     g.beginPath();
-    g.moveTo(inner, cy + h * 0.05);
-    g.bezierCurveTo(inner + side * w * 0.12, topY - h * 0.02, outer - side * w * 0.2, topY - tilt, outer, cy - h * 0.1 - tilt);
-    g.bezierCurveTo(outer - side * w * 0.05, botY - h * 0.1, inner + side * w * 0.25, botY + h * 0.05, inner, cy + h * 0.05);
+    g.moveTo(pts[0]![0], pts[0]![1]);
+    for (const [x, y] of pts) g.lineTo(x, y);
+    const end = pts[pts.length - 1]!;
+    if (this.style.eyeShape === 'sharp') g.quadraticCurveTo(cx + side * w * 0.12, botY + h * 0.04, pts[0]![0], pts[0]![1]);
+    else g.bezierCurveTo(outer - side * w * 0.05, botY - h * 0.1, inner + side * w * 0.25, botY + h * 0.05, pts[0]![0], pts[0]![1]);
     g.closePath();
+    void end;
+  }
+
+  /**
+   * The upper lash line as a filled, tapered band along the lid: hairline
+   * at the inner corner, heaviest towards the outer corner, ending in a
+   * flick (round eyes) or a hard point (sharp eyes).
+   */
+  private drawLash(g: CanvasRenderingContext2D, pts: Array<[number, number]>, side: number, w: number, h: number, weight: number): void {
+    const sharp = this.style.eyeShape === 'sharp';
+    const n = pts.length;
+    const top: Array<[number, number]> = [];
+    const bot: Array<[number, number]> = [];
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1);
+      const a = pts[Math.max(0, i - 1)]!;
+      const b = pts[Math.min(n - 1, i + 1)]!;
+      let nx = b[1] - a[1];
+      let ny = -(b[0] - a[0]);
+      const l = Math.hypot(nx, ny) || 1;
+      nx /= l;
+      ny /= l;
+      if (ny > 0) {
+        nx = -nx;
+        ny = -ny;
+      }
+      // Thickness profile along the lid.
+      const prof = sharp ? 0.25 + 0.95 * Math.min(1, t * 1.6) * (t > 0.9 ? 1 - (t - 0.9) * 4 : 1) : 0.2 + 1.0 * Math.sin(Math.min(1, t * 1.15) * Math.PI * 0.55) * (t > 0.92 ? 1 - (t - 0.92) * 5 : 1);
+      const th = weight * Math.max(0.12, prof);
+      top.push([pts[i]![0] + nx * th * 0.75, pts[i]![1] + ny * th * 0.75]);
+      bot.push([pts[i]![0] - nx * th * 0.25, pts[i]![1] - ny * th * 0.25]);
+    }
+    g.beginPath();
+    g.moveTo(top[0]![0], top[0]![1]);
+    for (const [x, y] of top) g.lineTo(x, y);
+    const end = pts[n - 1]!;
+    if (sharp) {
+      g.lineTo(end[0] + side * w * 0.07, end[1] + h * 0.05);
+    } else {
+      // Outer flick, swept up and out.
+      g.quadraticCurveTo(end[0] + side * w * 0.08, end[1] - h * 0.02, end[0] + side * w * 0.13, end[1] - h * 0.14);
+      g.lineTo(end[0] + side * w * 0.02, end[1] + h * 0.02);
+    }
+    for (let i = n - 1; i >= 0; i--) g.lineTo(bot[i]![0], bot[i]![1]);
+    g.closePath();
+    g.fill();
   }
 
   private drawEye(cx: number, cy: number, side: number, open: number, e: ExpressionParams): void {
@@ -247,8 +338,9 @@ export class FaceRenderer {
     const g = this.ctx;
     const size = (s.eyeSize ?? 1) * SIZE;
     const w = 0.2 * size;
-    const h = 0.17 * size;
+    const h = 0.17 * size * (s.eyeHeight ?? 1);
     const lashW = (s.lashWeight ?? 1) * 8 * this.boost;
+    const sharp = s.eyeShape === 'sharp';
 
     // Closed-eye arcs (happy ^ ^) or sleeping lines.
     if (e.happyClose > 0.5 || open < 0.08 || e.squint > 0.5) {
@@ -289,24 +381,47 @@ export class FaceRenderer {
     g.fillRect(cx - w, cy - h, w * 2, h);
 
     // Iris
-    const irisScale = e.irisScale * (s.sanpaku ? 0.76 : 1);
-    const ir = w * 0.3 * irisScale;
-    const irY = h * 0.44 * irisScale;
-    const ix = cx + side * 0 + this.gaze.x * w * 0.22 * side * side * (side > 0 ? 1 : 1);
+    const irisScale = e.irisScale * (s.sanpaku ? 0.7 : 1);
+    const ir = w * 0.3 * irisScale * (sharp && !s.sanpaku ? 0.94 : 1);
+    const irY = h * 0.44 * irisScale * (sharp ? 1.18 : 1);
     const gazeX = this.gaze.x * w * 0.22;
     const irisCx = cx + gazeX;
-    const irisCy = cy + h * 0.02 - this.gaze.y * h * 0.14 + (s.sanpaku ? -h * 0.08 : 0);
-    void ix;
+    const irisCy = cy + h * 0.02 - this.gaze.y * h * 0.14 + (s.sanpaku ? -h * 0.06 : 0);
     const grad = g.createLinearGradient(0, irisCy - irY, 0, irisCy + irY);
-    grad.addColorStop(0, shadeColor(s.iris, -0.35));
-    grad.addColorStop(0.45, s.iris);
+    grad.addColorStop(0, shadeColor(s.iris, -0.55));
+    grad.addColorStop(0.3, shadeColor(s.iris, -0.2));
+    grad.addColorStop(0.6, s.iris);
     grad.addColorStop(1, s.irisLight);
     g.fillStyle = grad;
     g.beginPath();
     g.ellipse(irisCx, irisCy, ir, irY, 0, 0, Math.PI * 2);
     g.fill();
-    g.strokeStyle = shadeColor(s.iris, -0.5);
-    g.lineWidth = 2.2 * this.boost;
+    // Radial streaks, lighter towards the bottom of the iris.
+    g.save();
+    g.beginPath();
+    g.ellipse(irisCx, irisCy, ir, irY, 0, 0, Math.PI * 2);
+    g.clip();
+    g.lineWidth = Math.max(1, ir * 0.06);
+    for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2 + 0.17;
+      const lower = Math.sin(a) > 0;
+      g.strokeStyle = withAlpha(lower ? s.irisLight : shadeColor2hex(s.iris, -0.5), lower ? 0.35 : 0.3);
+      g.beginPath();
+      g.moveTo(irisCx + Math.cos(a) * ir * 0.42, irisCy + Math.sin(a) * irY * 0.42);
+      g.lineTo(irisCx + Math.cos(a) * ir * 0.95, irisCy + Math.sin(a) * irY * 0.95);
+      g.stroke();
+    }
+    // The lid's shadow across the top of the iris.
+    const lidShade = g.createLinearGradient(0, irisCy - irY, 0, irisCy - irY * 0.2);
+    lidShade.addColorStop(0, withAlpha(shadeColor2hex(s.iris, -0.7), 0.7));
+    lidShade.addColorStop(1, withAlpha(shadeColor2hex(s.iris, -0.7), 0));
+    g.fillStyle = lidShade;
+    g.fillRect(irisCx - ir, irisCy - irY, ir * 2, irY * 0.8);
+    g.restore();
+    g.strokeStyle = shadeColor(s.iris, -0.6);
+    g.lineWidth = 2.4 * this.boost;
+    g.beginPath();
+    g.ellipse(irisCx, irisCy, ir, irY, 0, 0, Math.PI * 2);
     g.stroke();
     // Pupil
     g.fillStyle = s.pupil ?? shadeColor(s.iris, -0.65);
@@ -319,7 +434,7 @@ export class FaceRenderer {
       g.fill();
     } else {
       g.beginPath();
-      g.ellipse(irisCx, irisCy + irY * 0.05, ir * 0.42, irY * 0.46, 0, 0, Math.PI * 2);
+      g.ellipse(irisCx, irisCy + irY * 0.05, ir * (s.sanpaku ? 0.36 : 0.42), irY * (s.sanpaku ? 0.4 : 0.46), 0, 0, Math.PI * 2);
       g.fill();
       if (shape === 'dots') {
         g.fillStyle = '#e02a3a';
@@ -340,30 +455,26 @@ export class FaceRenderer {
     // Highlights (fixed light from upper outer)
     g.fillStyle = '#ffffff';
     g.beginPath();
-    g.ellipse(irisCx - side * ir * 0.35, irisCy - irY * 0.45, ir * 0.3, irY * 0.2, -0.4 * side, 0, Math.PI * 2);
+    g.ellipse(irisCx - side * ir * 0.35, irisCy - irY * 0.42, ir * 0.3, irY * 0.2, -0.4 * side, 0, Math.PI * 2);
     g.fill();
     g.beginPath();
     g.arc(irisCx + side * ir * 0.38, irisCy + irY * 0.38, ir * 0.12, 0, Math.PI * 2);
     g.fill();
     g.restore();
 
-    // Upper lash line (thick) with outer flick, lower lash (thin, partial)
+    // Upper lash line: a tapered band with an outer flick; lower lash thin, partial.
     const tilt = (s.tilt ?? 0) * h * 0.35;
     const inner = cx - side * w * 0.5;
     const outer = cx + side * w * 0.5;
-    const topY = cy - h * 0.55 * open;
+    const topY = cy - h * (sharp ? 0.5 : 0.55) * open;
+    g.fillStyle = s.lash;
     g.strokeStyle = s.lash;
     g.lineCap = 'round';
     g.lineJoin = 'round';
-    g.lineWidth = lashW;
-    g.beginPath();
-    g.moveTo(inner, cy + h * 0.03);
-    g.bezierCurveTo(inner + side * w * 0.12, topY - h * 0.02, outer - side * w * 0.2, topY - tilt, outer, cy - h * 0.1 - tilt);
-    g.lineTo(outer + side * w * 0.1, cy - h * 0.2 - tilt);
-    g.stroke();
+    this.drawLash(g, this.lidPoints(cx, cy, side, w, h, open), side, w, h, lashW * 1.25);
     g.lineWidth = lashW * 0.35;
     g.beginPath();
-    const botY = cy + h * 0.45 - e.lower * h * 0.3;
+    const botY = this.lowerLidY(cy, h, e.lower);
     g.moveTo(outer - side * w * 0.02, cy - h * 0.02 - tilt * 0.5);
     g.quadraticCurveTo(cx + side * w * 0.15, botY + h * 0.02, cx - side * w * 0.1, botY + h * 0.03);
     g.stroke();
@@ -372,7 +483,7 @@ export class FaceRenderer {
     g.lineWidth = 2;
     g.beginPath();
     g.moveTo(inner + side * w * 0.2, topY - h * 0.18);
-    g.quadraticCurveTo(cx, topY - h * 0.3, outer - side * w * 0.12, topY - h * 0.12 - tilt);
+    g.quadraticCurveTo(cx, topY - h * (sharp ? 0.24 : 0.3), outer - side * w * 0.12, topY - h * 0.12 - tilt);
     g.stroke();
 
     // Emissive mask: sclera softly, highlights brightly.
@@ -384,7 +495,7 @@ export class FaceRenderer {
     gg.fill();
     gg.fillStyle = '#ffffff';
     gg.beginPath();
-    gg.ellipse(irisCx - side * ir * 0.35, irisCy - irY * 0.45, ir * 0.3, irY * 0.2, 0, 0, Math.PI * 2);
+    gg.ellipse(irisCx - side * ir * 0.35, irisCy - irY * 0.42, ir * 0.3, irY * 0.2, 0, 0, Math.PI * 2);
     gg.fill();
     gg.fillStyle = withAlpha(this.style.irisLight, 0.6);
     gg.beginPath();
@@ -404,7 +515,21 @@ export class FaceRenderer {
     const outerX = cx + side * w * 0.55;
     g.strokeStyle = this.style.brow;
     g.lineCap = 'round';
-    g.lineWidth = 6 * Math.min(this.boost, 1.6);
+    g.lineWidth = 6 * (this.style.browWeight ?? 1) * Math.min(this.boost, 1.6);
+    if (this.style.eyeShape === 'sharp') {
+      // Straight, tapered brows that sit low over the eyes.
+      g.fillStyle = this.style.brow;
+      const t = 6 * (this.style.browWeight ?? 1) * Math.min(this.boost, 1.6);
+      const by = baseY + 0.018 * SIZE;
+      g.beginPath();
+      g.moveTo(innerX, by + innerDrop - t * 0.6);
+      g.lineTo(outerX, by + 0.006 * SIZE - t * 0.25);
+      g.lineTo(outerX - side * w * 0.04, by + 0.006 * SIZE + t * 0.35);
+      g.lineTo(innerX, by + innerDrop + t * 0.6);
+      g.closePath();
+      g.fill();
+      return;
+    }
     g.beginPath();
     g.moveTo(innerX, baseY + innerDrop);
     g.quadraticCurveTo(cx, baseY - 0.012 * SIZE + innerDrop * 0.3, outerX, baseY + 0.008 * SIZE);
@@ -479,18 +604,64 @@ export class FaceRenderer {
       case 'I':
         fillOpen(w * 0.5, w * 0.12);
         break;
-      case 'grit':
-        g.fillStyle = '#ffffff';
-        g.strokeStyle = line;
+      case 'grit': {
+        // Clenched teeth: a wide, flat-topped open mouth, corners pulled down.
+        g.fillStyle = '#5a2226';
         g.beginPath();
-        g.rect(mx - w * 0.6, my - w * 0.18, w * 1.2, w * 0.36);
+        g.moveTo(mx - w * 0.62, my + w * 0.02);
+        g.quadraticCurveTo(mx, my - w * 0.16, mx + w * 0.62, my + w * 0.02);
+        g.quadraticCurveTo(mx + w * 0.42, my + w * 0.32, mx, my + w * 0.3);
+        g.quadraticCurveTo(mx - w * 0.42, my + w * 0.32, mx - w * 0.62, my + w * 0.02);
+        g.closePath();
         g.fill();
-        g.stroke();
-        g.beginPath();
-        g.moveTo(mx - w * 0.6, my);
-        g.lineTo(mx + w * 0.6, my);
+        g.save();
+        g.clip();
+        g.fillStyle = '#fbf8f4';
+        g.fillRect(mx - w, my - w * 0.3, w * 2, w * 0.3);
+        g.fillRect(mx - w, my + w * 0.18, w * 2, w * 0.2);
+        g.restore();
+        g.lineWidth = 3 * Math.min(this.boost, 1.8);
         g.stroke();
         break;
+      }
+      case 'fangGrin': {
+        // A wide, cocky grin full of sharp teeth (Reid).
+        g.fillStyle = '#5a2226';
+        g.beginPath();
+        g.moveTo(mx - w * 0.85, my - w * 0.12);
+        g.quadraticCurveTo(mx, my - w * 0.02, mx + w * 0.85, my - w * 0.18);
+        g.quadraticCurveTo(mx + w * 0.5, my + w * 0.55, mx - w * 0.05, my + w * 0.48);
+        g.quadraticCurveTo(mx - w * 0.6, my + w * 0.4, mx - w * 0.85, my - w * 0.12);
+        g.closePath();
+        g.fill();
+        g.save();
+        g.clip();
+        g.fillStyle = '#fbf8f4';
+        // Upper row: a band with pointed teeth hanging from it.
+        g.beginPath();
+        g.moveTo(mx - w, my - w * 0.3);
+        g.lineTo(mx + w, my - w * 0.3);
+        const n = 9;
+        for (let i = n; i >= 0; i--) {
+          const x = mx - w * 0.85 + (w * 1.7 * i) / n;
+          const y = my - w * 0.06 - (i / n) * w * 0.06;
+          g.lineTo(x, y + (i % 2 ? w * 0.14 : 0));
+        }
+        g.closePath();
+        g.fill();
+        // A few lower fangs.
+        for (const fx of [-0.42, 0.38]) {
+          g.beginPath();
+          g.moveTo(mx + w * (fx - 0.1), my + w * 0.5);
+          g.lineTo(mx + w * fx, my + w * 0.26);
+          g.lineTo(mx + w * (fx + 0.1), my + w * 0.5);
+          g.fill();
+        }
+        g.restore();
+        g.lineWidth = 3.2 * Math.min(this.boost, 1.8);
+        g.stroke();
+        break;
+      }
       case 'smirk':
         g.beginPath();
         g.moveTo(mx - w * 0.5, my + 2);
@@ -597,6 +768,12 @@ function shadeColor(hex: string, amt: number): string {
   const [r, g, b] = parseHex(hex);
   const f = (c: number) => Math.round(amt < 0 ? c * (1 + amt) : c + (255 - c) * amt);
   return `rgb(${f(r)},${f(g)},${f(b)})`;
+}
+
+function shadeColor2hex(hex: string, amt: number): string {
+  const [r, g, b] = parseHex(hex);
+  const f = (c: number) => Math.max(0, Math.min(255, Math.round(amt < 0 ? c * (1 + amt) : c + (255 - c) * amt)));
+  return '#' + [f(r), f(g), f(b)].map((c) => c.toString(16).padStart(2, '0')).join('');
 }
 
 function withAlpha(hex: string, a: number): string {

@@ -73,6 +73,7 @@ export class SubaruCombat extends Component {
     this.entity.add(this.health);
     this.game.combat.register(this.health);
     this.whip = new WhipProp(this.player.visual, this.game.render.scene);
+    this.game.events.on('player:visualChanged', () => this.whip.setVisual(this.player.visual));
     this.barrierVfx = new BarrierVfx(this.game.render.scene, new Color(0.62, 0.36, 1.0), 1.05);
     this.player.onDodgeRequested = () => this.tryDodge();
     this.health.onHit = (r) => {

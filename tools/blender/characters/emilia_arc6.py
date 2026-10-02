@@ -52,6 +52,15 @@ BODY_SHOULDER = 1.03
 # arm, not the torso; and the A-pose web under the shoulder starts here.
 ARM_X = 0.08 * BODY_CHEST / 1.15
 ARMPIT_X = 0.076 * BODY_CHEST / 1.15
+# Below the armpit the bust's outer side reaches further out than that, and
+# the arm is well clear of it.
+ARM_X_LOW = 0.105
+
+
+def arm_x(z: float) -> float:
+    """The |x| limit (fraction of H) beyond which a ray has hit the arm, at
+    height z (fraction of H)."""
+    return ARM_X + (ARM_X_LOW - ARM_X) * (1 - t.smoothstep(0.735, 0.752, z))
 # The chest covering is laid out on an unrolled cylinder round the torso:
 # (s, z) where z is height and s is distance round from the front centre
 # (both fractions of H); s = WRAP_R * angle, so s = 0.078 is the side seam.
@@ -81,10 +90,10 @@ BACK_S = WRAP_R * math.pi
 # Where the side hem meets the scallops under each breast (angle round the
 # breast's centre, see `_outline`), and how deep the scallops are.
 LOBE_T0 = -0.3
-SCALLOP = 0.5
+SCALLOP = 0.55
 # The hem's soft roll: just inside the scalloped edge the cloth puffs out
 # (PUFF, fraction of H, peaking PUFF_W in from the edge) and curls back in.
-PUFF = 0.0032
+PUFF = 0.0042
 PUFF_W = 0.006
 
 
@@ -246,7 +255,7 @@ def _wrap_point(j: Joints, s: float, z: float):
     def cast(zz: float):
         c = Vector((0.0, torso_yc(j, zz), zz))
         hit = t.surface_point(j, c, d)
-        if hit is None or abs(hit[0].x) >= ARM_X * H:
+        if hit is None or abs(hit[0].x) >= arm_x(zz / H) * H:
             return None
         return hit[0], (hit[0] - c).length
 
@@ -488,7 +497,7 @@ def chest_cover(name: str, j: Joints, mat) -> bpy.types.Object:
         runs.append(cur)
     for run in runs:
         ups = [cloth_point(outline[i][0], outline[i][1])[1] for i in run]
-        radii = [{"lobe": 0.0044, "hem": 0.0036, "top": 0.003, "notch": 0.0026}[tags[i]] * H for i in run]
+        radii = [{"lobe": 0.005, "hem": 0.0038, "top": 0.003, "notch": 0.0028}[tags[i]] * H for i in run]
         soft = []
         for a in range(len(run)):
             rr = [radii[min(max(a + k, 0), len(run) - 1)] for k in range(-3, 4)]
@@ -1026,7 +1035,7 @@ def emilia_arc6():
     spec = R.emilia()
     # Her figure carries the chest's shape; the covering is a fitted layer
     # over it (a modest bust: gentle above, rounder below, tucking under).
-    spec.body.extra["bust_shape"] = dict(x=0.052, z=0.012, r=0.057, depth=0.026, upper=0.68, lower=1.3, round=1.0, side=0.6)
+    spec.body.extra["breasts"] = dict(x=0.05, sink=0.013, z=0.007, ax=0.04, ay=0.044, up=0.055, low=0.033, yaw=0.2, sag=0.12, blend=0.02, fold=0.004)
     spec.body.extra["chest_detail"] = 2
     # A natural feminine frame rather than a stick: a fuller ribcage, a
     # softly defined waist, hips a little wider than it.
@@ -1132,9 +1141,9 @@ def emilia_arc6():
         if c.on_arm():
             return c.arm_s() < (SLEEVE_START + 0.012) * c.H
         # The A-pose web joining torso to arm under the shoulder is armpit.
-        if abs(c.p.x) > ARMPIT_X * c.H and c.p.z > (HALTER[1][1] - 0.012) * c.H:
-            return True
         s = abs(wrap_s(c.j, c.p))
+        if abs(c.p.x) > ARMPIT_X * c.H and s > 0.074 and c.p.z > (HALTER[1][1] - 0.012) * c.H:
+            return True
         # (The skin runs well under the covering's top edge, so the body's
         # coarse colour boundary never peeks out above it.)
         return s > HALTER[0][0] - 0.008 and c.p.z > (top_z(s) - 0.013) * c.H

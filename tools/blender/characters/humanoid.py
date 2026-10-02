@@ -442,10 +442,55 @@ def sculpt_muscles(obj, s: BodySpec, j: Joints, amount: float) -> None:
         col.data[i].color = (k, k * 0.96, k * 0.95, 1.0)
 
 
+def _breast_wrap(p: Vector, br: dict, j: Joints, wall_y: float) -> None:
+    """Wrap the chest wall over two breasts modelled as volumes (in place).
+
+    Each breast is an ellipsoid attached to the chest wall: centred at
+    +-x and `z` above the chest joint, `sink` behind the chest wall there
+    (`wall_y`, measured on the mesh; fractions of H), half-width `ax`, projection `ay` (a
+    little more below, `sag`, so the lower half is the fuller one), height
+    `up` above and `low` below its centre, turned outward by `yaw`
+    radians. A surface point inside it is pushed out to its surface along
+    the line from its centre; a smooth maximum (`blend`, wider above, crisp
+    below for the under-bust fold) attaches it to the wall without a seam.
+    """
+    H = j.H
+    side = math.copysign(1.0, p.x) if p.x != 0 else 1.0
+    c = Vector((side * br["x"] * H, wall_y + br["sink"] * H, j.chest.z + br["z"] * H))
+    d = p - c
+    if d.length < 1e-9:
+        return
+    # Local frame: forward is turned outward by yaw.
+    yaw = br.get("yaw", 0.0)
+    fwd = Vector((side * math.sin(yaw), -math.cos(yaw), 0.0))
+    lat = Vector((side * math.cos(yaw), math.sin(yaw), 0.0))
+    a, b, h = d.dot(lat), d.dot(fwd), d.z
+    if b < -0.6 * br["ay"] * H:
+        return  # well behind the breast: the chest wall, untouched
+    ay = br["ay"] * (1 + br.get("sag", 0.0) * max(0.0, -h) / (br["low"] * H))
+    az = br["up"] if h > 0 else br["low"]
+    rp = d.length
+    u = Vector((a, b, h)) / rp
+    re = 1.0 / math.sqrt((u.x / (br["ax"] * H)) ** 2 + (u.y / (ay * H)) ** 2 + (u.z / (az * H)) ** 2)
+    t = min(1.0, max(0.0, (u.z + 0.25) / 0.5))
+    k = (br.get("fold", 0.003) + (br.get("blend", 0.01) - br.get("fold", 0.003)) * t * t * (3 - 2 * t)) * H
+    if rp - re > 4 * k:
+        return
+    r = (rp + re + math.sqrt((rp - re) ** 2 + k * k)) / 2
+    if r > rp:
+        p += d * (r / rp - 1)
+
+
 def shape_body(obj, s: BodySpec, j: Joints) -> None:
     """Post-skin sculpting: chest plane, bust, buttocks, shoulder blades, flat soles."""
     H = j.H
     me = obj.data
+    br = s.extra.get("breasts")
+    wall_y = 0.0
+    if br:
+        # The chest wall where each breast sits (after the flattening below).
+        near = [v.co.y for v in me.vertices if v.co.y < 0 and abs(abs(v.co.x) - br["x"] * H) < 0.008 * H and abs(v.co.z - j.chest.z - br["z"] * H) < 0.008 * H]
+        wall_y = (min(near) if near else -0.04 * H) * 0.92
     for vert in me.vertices:
         p = vert.co
         # Flatten the front of the torso a little (less tube-like).
@@ -453,7 +498,9 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
             p.y *= 0.92
         # Bust
         bs = s.extra.get("bust_shape")
-        if bs and p.y < 0:
+        if br and p.y < 0.01 * H:
+            _breast_wrap(p, br, j, wall_y)
+        elif bs and p.y < 0:
             # A shaped bust: a gentle slope above, a rounder curve below
             # that tucks under (extents scaled separately above and below).
             c = Vector((bs["x"] * H * math.copysign(1, p.x if p.x != 0 else 1), -0.045 * H, j.chest.z + bs["z"] * H))

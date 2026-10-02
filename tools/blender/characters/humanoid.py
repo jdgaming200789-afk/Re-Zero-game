@@ -273,6 +273,8 @@ def build_body(name: str, s: BodySpec, j: Joints) -> bpy.types.Object:
     obj.select_set(True)
     bpy.ops.object.modifier_apply(modifier=skin.name)
     bpy.ops.object.modifier_apply(modifier=sub.name)
+    if s.extra.get("torso_detail"):
+        refine_torso(obj, j, int(s.extra["torso_detail"]))
     if s.extra.get("chest_detail"):
         refine_chest(obj, j, int(s.extra["chest_detail"]))
     shape_body(obj, s, j)
@@ -291,7 +293,27 @@ def refine_chest(obj, j: Joints, cuts: int) -> None:
     bm.from_mesh(me)
 
     def region(p: Vector) -> bool:
-        return j.waist.z < p.z < j.neck_base.z and p.y < 0.02 * H and abs(p.x) < 0.12 * H
+        return j.chest.z - 0.07 * H < p.z < j.chest.z + 0.085 * H and p.y < 0.02 * H and abs(p.x) < 0.12 * H
+
+    edges = [e for e in bm.edges if region(e.verts[0].co) and region(e.verts[1].co)]
+    bmesh.ops.subdivide_edges(bm, edges=edges, cuts=cuts, use_grid_fill=True, smooth=1.0)
+    bm.to_mesh(me)
+    bm.free()
+
+
+def refine_torso(obj, j: Joints, cuts: int) -> None:
+    """More rows over the whole torso, from the tops of the thighs to the
+    neck, all the way round (on the smooth surface), so the chest, waist,
+    belly and hips are shaped at one density and read as one body. The
+    arms (beside the torso above the armpit) are left as they are."""
+    H = j.H
+    me = obj.data
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    z0, z1 = j.hip_l.z - 0.06 * H, j.neck_base.z
+
+    def region(p: Vector) -> bool:
+        return z0 < p.z < z1 and (p.z < j.chest.z - 0.01 * H or abs(p.x) < 0.12 * H)
 
     edges = [e for e in bm.edges if region(e.verts[0].co) and region(e.verts[1].co)]
     bmesh.ops.subdivide_edges(bm, edges=edges, cuts=cuts, use_grid_fill=True, smooth=1.0)
@@ -481,7 +503,72 @@ def _breast_wrap(p: Vector, br: dict, j: Joints, wall_y: float) -> None:
         p += d * (r / rp - 1)
 
 
-def _smooth_breasts(obj, br: dict, j: Joints, iterations: int = 10) -> None:
+def _sculpt_torso(p: Vector, ts: dict, j: Joints) -> None:
+    """Soft anime body forms below the chest (in place): a waist that tapers
+    without pinching, a gentle hip flare into the thighs, a belly with a
+    soft plane change (a little in under the ribcage, gently rounded
+    lower down), a small navel, and the curve of the lower back. All
+    amounts are fractions of H; everything is a smooth Gaussian bump."""
+    H = j.H
+
+    def g(v: float, c: float, w: float) -> float:
+        return math.exp(-((v - c) / w) ** 2)
+
+    z = p.z / H
+    ax = abs(p.x) / H
+    if ax < 0.16:
+        # Width: in at the waist, out over the hips (thighs follow).
+        wz = j.waist.z / H + ts.get("waist_dz", 0.0)
+        hz = j.hips.z / H + ts.get("hip_dz", 0.0)
+        p.x *= 1 - ts.get("waist_in", 0.0) * g(z, wz, 0.05) + ts.get("hip_out", 0.0) * g(z, hz, 0.04)
+    if p.y < 0 and ax < 0.1:
+        across = max(0.0, 1 - (ax / 0.085) ** 2)
+        # Just under the ribcage the front settles in a little ...
+        p.y += ts.get("under_ribs", 0.0) * H * g(z, j.chest.z / H - 0.05, 0.018) * max(0.0, 1 - (ax / 0.05) ** 2)
+        # ... and the lower belly is gently rounded.
+        p.y -= ts.get("belly", 0.0) * H * g(z, j.waist.z / H - 0.04, 0.03) * across
+        # A small, understated navel.
+        nz = j.waist.z / H + ts.get("navel_dz", -0.012)
+        r = math.hypot(ax, (z - nz) * 0.75) / ts.get("navel_r", 0.0055)
+        if r < 1:
+            p.y += ts.get("navel", 0.0) * H * (1 - r * r) ** 2
+    if p.y > 0 and ax < 0.09:
+        # The small of the back curves in.
+        p.y -= ts.get("lumbar", 0.0) * H * g(z, j.waist.z / H, 0.045) * max(0.0, 1 - (ax / 0.09) ** 2)
+
+
+def _smooth_torso(obj, j: Joints, iterations: int = 4) -> None:
+    """Relax the whole torso a little (shrink-free), so the chest, waist,
+    belly and hips read as one continuous surface without visible rows."""
+    H = j.H
+    me = obj.data
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    z0, z1 = j.hip_l.z - 0.04 * H, j.neck_base.z - 0.01 * H
+
+    def weight(p: Vector) -> float:
+        if not z0 < p.z < z1 or (p.z > j.chest.z - 0.01 * H and abs(p.x) > 0.11 * H):
+            return 0.0
+        m = min(1.0, (p.z - z0) / (0.02 * H), (z1 - p.z) / (0.02 * H))
+        return m * m * (3 - 2 * m)
+
+    ws = {v: weight(v.co) for v in bm.verts}
+    verts = [v for v in bm.verts if ws[v] > 0]
+    nbrs = {v: [e.other_vert(v) for e in v.link_edges] for v in verts}
+    for _ in range(iterations):
+        for f in (0.5, -0.53):
+            moved = {}
+            for v in verts:
+                if nbrs[v]:
+                    avg = sum((w.co for w in nbrs[v]), Vector()) / len(nbrs[v])
+                    moved[v] = v.co + (avg - v.co) * f * ws[v]
+            for v, co in moved.items():
+                v.co = co
+    bm.to_mesh(me)
+    bm.free()
+
+
+def _smooth_breasts(obj, br: dict, j: Joints, iterations: int = 16) -> None:
     """Relax the wrapped breasts into smooth, continuous curvature (Taubin
     lambda/mu, so they don't shrink), fading out to the untouched torso."""
     H = j.H
@@ -519,6 +606,7 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
     H = j.H
     me = obj.data
     br = s.extra.get("breasts")
+    ts = s.extra.get("torso_sculpt")
     wall_y = 0.0
     if br:
         # The chest wall where each breast sits (after the flattening below).
@@ -529,6 +617,8 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
         # Flatten the front of the torso a little (less tube-like).
         if j.waist.z < p.z < j.neck_base.z and abs(p.x) < 0.11 * H and p.y < 0:
             p.y *= 0.92
+        if ts:
+            _sculpt_torso(p, ts, j)
         # Bust
         bs = s.extra.get("bust_shape")
         if br and p.y < 0.01 * H:
@@ -569,6 +659,8 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
         if p.z < 0.004 * H:
             p.z = 0.0
         vert.co = p
+    if ts:
+        _smooth_torso(obj, j)
     if br:
         _smooth_breasts(obj, br, j)
 

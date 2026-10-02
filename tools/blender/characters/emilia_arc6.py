@@ -79,9 +79,13 @@ APEX = 0.738
 SEAM_TOP = 0.802
 # How gently the cloth comes back in below the bust's fullest point (the
 # lower, the more the bust lifts it off the underbust).
-LIFT = 0.6
+LIFT = 0.5
 # Below this height (the bust's fullest) the bust carries the cloth.
 LIFT_FROM = 0.722
+# Each half is held up by the upper, outer bust and hovers in front of the
+# rest of the breast like a soft shell, up to this far off it (fraction of
+# H), most over the lower, inner front, where the scallops hang.
+HOVER = 0.006
 # Round the back it is a band: its top edge rises from under the arms to
 # this height across the shoulder blades, and it closes in a seam at the
 # centre back (s = BACK_S).
@@ -90,10 +94,10 @@ BACK_S = WRAP_R * math.pi
 # Where the side hem meets the scallops under each breast (angle round the
 # breast's centre, see `_outline`), and how deep the scallops are.
 LOBE_T0 = -0.3
-SCALLOP = 0.55
+SCALLOP = 0.62
 # The hem's soft roll: just inside the scalloped edge the cloth puffs out
 # (PUFF, fraction of H, peaking PUFF_W in from the edge) and curls back in.
-PUFF = 0.0042
+PUFF = 0.005
 PUFF_W = 0.006
 
 
@@ -429,6 +433,15 @@ def chest_cover(name: str, j: Joints, mat) -> bpy.types.Object:
         x = best / PUFF_W
         return PUFF * H * x * math.exp(1 - x) if x < 6 else 0.0
 
+    def hover(s_: float, z: float) -> float:
+        """How far a half stands off its breast: nothing at its supports
+        (the upper and outer bust, the top edge), rising across the front
+        from the bust's upper slope down past its fullest point, so the
+        scalloped hem hangs from a lifted shell."""
+        across = 1 - t.smoothstep(0.042, 0.068, abs(s_))
+        down = t.smoothstep(0.752, 0.72, z)
+        return HOVER * H * across * down
+
     def overlap(s_: float, z: float) -> float:
         """Above the opening one half laps over the other along the curved
         seam: that half sits a little proud, so they read as two pieces."""
@@ -443,7 +456,7 @@ def chest_cover(name: str, j: Joints, mat) -> bpy.types.Object:
     vs = []
     for v2 in verts2:
         p, d = cloth_point(v2.x, v2.y)
-        vs.append(bm.verts.new(p + d * (puff(v2.x, v2.y) + overlap(v2.x, v2.y))))
+        vs.append(bm.verts.new(p + d * (puff(v2.x, v2.y) + overlap(v2.x, v2.y) + hover(v2.x, v2.y))))
     for tri in tris:
         try:
             bm.faces.new([vs[i] for i in tri])
@@ -1035,8 +1048,8 @@ def emilia_arc6():
     spec = R.emilia()
     # Her figure carries the chest's shape; the covering is a fitted layer
     # over it (a modest bust: gentle above, rounder below, tucking under).
-    spec.body.extra["breasts"] = dict(x=0.05, sink=0.013, z=0.007, ax=0.04, ay=0.044, up=0.055, low=0.033, yaw=0.2, sag=0.12, blend=0.02, fold=0.004)
-    spec.body.extra["chest_detail"] = 2
+    spec.body.extra["breasts"] = dict(x=0.052, sink=0.013, z=0.007, ax=0.045, ay=0.046, up=0.055, low=0.036, yaw=0.25, sag=0.18, blend=0.024, fold=0.005)
+    spec.body.extra["chest_detail"] = 3
     # A natural feminine frame rather than a stick: a fuller ribcage, a
     # softly defined waist, hips a little wider than it.
     spec.body.chest = BODY_CHEST

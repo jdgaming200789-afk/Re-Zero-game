@@ -481,6 +481,39 @@ def _breast_wrap(p: Vector, br: dict, j: Joints, wall_y: float) -> None:
         p += d * (r / rp - 1)
 
 
+def _smooth_breasts(obj, br: dict, j: Joints, iterations: int = 10) -> None:
+    """Relax the wrapped breasts into smooth, continuous curvature (Taubin
+    lambda/mu, so they don't shrink), fading out to the untouched torso."""
+    H = j.H
+    me = obj.data
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    z0 = j.chest.z + (br["z"] - br["low"] - 0.02) * H
+    z1 = j.chest.z + (br["z"] + br["up"] + 0.012) * H
+
+    def weight(p: Vector) -> float:
+        if p.y > 0.015 * H or abs(p.x) > 0.13 * H or not z0 < p.z < z1:
+            return 0.0
+        m = min(p.z - z0, z1 - p.z, 0.13 * H - abs(p.x), 0.015 * H - p.y) / (0.012 * H)
+        m = min(1.0, m)
+        return m * m * (3 - 2 * m)
+
+    ws = {v: weight(v.co) for v in bm.verts}
+    verts = [v for v in bm.verts if ws[v] > 0]
+    nbrs = {v: [e.other_vert(v) for e in v.link_edges] for v in verts}
+    for _ in range(iterations):
+        for f in (0.5, -0.53):
+            moved = {}
+            for v in verts:
+                if nbrs[v]:
+                    avg = sum((w.co for w in nbrs[v]), Vector()) / len(nbrs[v])
+                    moved[v] = v.co + (avg - v.co) * f * ws[v]
+            for v, co in moved.items():
+                v.co = co
+    bm.to_mesh(me)
+    bm.free()
+
+
 def shape_body(obj, s: BodySpec, j: Joints) -> None:
     """Post-skin sculpting: chest plane, bust, buttocks, shoulder blades, flat soles."""
     H = j.H
@@ -536,6 +569,8 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
         if p.z < 0.004 * H:
             p.z = 0.0
         vert.co = p
+    if br:
+        _smooth_breasts(obj, br, j)
 
 
 # --------------------------------------------------------------------------- hands

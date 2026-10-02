@@ -277,6 +277,12 @@ def build_body(name: str, s: BodySpec, j: Joints) -> bpy.types.Object:
         refine_torso(obj, j, int(s.extra["torso_detail"]))
     if s.extra.get("chest_detail"):
         refine_chest(obj, j, int(s.extra["chest_detail"]))
+    ts = s.extra.get("torso_sculpt")
+    if ts and ts.get("navel"):
+        # Fine enough round the navel for it to read as a small dimple.
+        nav = Vector((0.0, -0.1 * j.H, j.waist.z + ts.get("navel_dz", -0.012) * j.H))
+        refine_spot(obj, nav, 0.026 * j.H, 2)
+        refine_spot(obj, nav, 0.012 * j.H, 2)
     shape_body(obj, s, j)
     if s.extra.get("muscle"):
         sculpt_muscles(obj, s, j, float(s.extra["muscle"]))
@@ -294,6 +300,22 @@ def refine_chest(obj, j: Joints, cuts: int) -> None:
 
     def region(p: Vector) -> bool:
         return j.chest.z - 0.07 * H < p.z < j.chest.z + 0.085 * H and p.y < 0.02 * H and abs(p.x) < 0.12 * H
+
+    edges = [e for e in bm.edges if region(e.verts[0].co) and region(e.verts[1].co)]
+    bmesh.ops.subdivide_edges(bm, edges=edges, cuts=cuts, use_grid_fill=True, smooth=1.0)
+    bm.to_mesh(me)
+    bm.free()
+
+
+def refine_spot(obj, centre: Vector, radius: float, cuts: int) -> None:
+    """More rows in a small patch of the front of the body round `centre`
+    (its y only says which side: front if negative)."""
+    me = obj.data
+    bm = bmesh.new()
+    bm.from_mesh(me)
+
+    def region(p: Vector) -> bool:
+        return p.y * centre.y > 0 and math.hypot(p.x - centre.x, p.z - centre.z) < radius
 
     edges = [e for e in bm.edges if region(e.verts[0].co) and region(e.verts[1].co)]
     bmesh.ops.subdivide_edges(bm, edges=edges, cuts=cuts, use_grid_fill=True, smooth=1.0)
@@ -489,13 +511,18 @@ def _breast_wrap(p: Vector, br: dict, j: Joints, wall_y: float) -> None:
     a, b, h = d.dot(lat), d.dot(fwd), d.z
     if b < -0.6 * br["ay"] * H:
         return  # well behind the breast: the chest wall, untouched
-    ay = br["ay"] * (1 + br.get("sag", 0.0) * max(0.0, -h) / (br["low"] * H))
+    # Fuller below (sag); flatter above (top), so the upper half slopes up
+    # into the chest rather than reading as a sphere set on it.
+    ay = br["ay"] * (1 + br.get("sag", 0.0) * max(0.0, -h) / (br["low"] * H)) * (1 - br.get("top", 0.0) * min(1.0, max(0.0, h) / (br["up"] * H)))
     az = br["up"] if h > 0 else br["low"]
     rp = d.length
     u = Vector((a, b, h)) / rp
     re = 1.0 / math.sqrt((u.x / (br["ax"] * H)) ** 2 + (u.y / (ay * H)) ** 2 + (u.z / (az * H)) ** 2)
     t = min(1.0, max(0.0, (u.z + 0.25) / 0.5))
     k = (br.get("fold", 0.003) + (br.get("blend", 0.01) - br.get("fold", 0.003)) * t * t * (3 - 2 * t)) * H
+    # The outer side also blends softly into the side of the chest.
+    o = min(1.0, max(0.0, u.x / 0.7))
+    k = max(k, br.get("blend_out", 0.0) * H * o * o * (3 - 2 * o))
     if rp - re > 4 * k:
         return
     r = (rp + re + math.sqrt((rp - re) ** 2 + k * k)) / 2
@@ -527,14 +554,30 @@ def _sculpt_torso(p: Vector, ts: dict, j: Joints) -> None:
         p.y += ts.get("under_ribs", 0.0) * H * g(z, j.chest.z / H - 0.05, 0.018) * max(0.0, 1 - (ax / 0.05) ** 2)
         # ... and the lower belly is gently rounded.
         p.y -= ts.get("belly", 0.0) * H * g(z, j.waist.z / H - 0.04, 0.03) * across
-        # A small, understated navel.
-        nz = j.waist.z / H + ts.get("navel_dz", -0.012)
-        r = math.hypot(ax, (z - nz) * 0.75) / ts.get("navel_r", 0.0055)
-        if r < 1:
-            p.y += ts.get("navel", 0.0) * H * (1 - r * r) ** 2
+        # A very light hint of the front of the hip bones.
+        if ts.get("iliac"):
+            iz = j.hips.z / H + 0.03
+            p.y -= ts["iliac"] * H * g(ax, 0.058, 0.016) * g(z, iz, 0.022)
     if p.y > 0 and ax < 0.09:
         # The small of the back curves in.
         p.y -= ts.get("lumbar", 0.0) * H * g(z, j.waist.z / H, 0.045) * max(0.0, 1 - (ax / 0.09) ** 2)
+
+
+def _navel(obj, ts: dict, j: Joints) -> None:
+    """A small, understated navel: a soft vertical dimple (pressed in after
+    the torso is smoothed, which would otherwise erase it)."""
+    H = j.H
+    nz = j.waist.z / H + ts.get("navel_dz", -0.012)
+    rx, rz = ts.get("navel_rx", 0.0035), ts.get("navel_rz", 0.006)
+    for v in obj.data.vertices:
+        p = v.co
+        if p.y >= 0:
+            continue
+        r = math.hypot(p.x / H / rx, (p.z / H - nz) / rz)
+        if r < 1:
+            # Deepest a little above its centre, as the upper lip overhangs.
+            k = (1 - r * r) ** 2 * (1 + 0.25 * max(-1.0, min(1.0, (p.z / H - nz) / rz)))
+            p.y += ts["navel"] * H * k
 
 
 def _smooth_torso(obj, j: Joints, iterations: int = 4) -> None:
@@ -568,7 +611,7 @@ def _smooth_torso(obj, j: Joints, iterations: int = 4) -> None:
     bm.free()
 
 
-def _smooth_breasts(obj, br: dict, j: Joints, iterations: int = 16) -> None:
+def _smooth_breasts(obj, br: dict, j: Joints, iterations: int = 24) -> None:
     """Relax the wrapped breasts into smooth, continuous curvature (Taubin
     lambda/mu, so they don't shrink), fading out to the untouched torso."""
     H = j.H
@@ -661,6 +704,8 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
         vert.co = p
     if ts:
         _smooth_torso(obj, j)
+        if ts.get("navel"):
+            _navel(obj, ts, j)
     if br:
         _smooth_breasts(obj, br, j)
 

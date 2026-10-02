@@ -93,24 +93,24 @@ BACK_TOP = 0.776
 BACK_S = WRAP_R * math.pi
 # Where the side hem meets the scallops under each breast (angle round the
 # breast's centre, see `_outline`), and how deep the scallops are.
-LOBE_T0 = 0.15
-# Round the side, under the arm, the hem rises to this height (fraction of
-# H), so each half reads as a rounded petal with the bodysuit beneath it.
-SIDE_HEM = 0.727
+LOBE_T0 = 0.7
+# Where each half's top edge ends, at the front of the armpit (s, fraction
+# of H): beyond it, round the side and the back, is the bodysuit.
+PETAL_S = 0.051
 # The cloud scallops round each breast's hem, from its outer side round
 # underneath and up the inner side: (start, end, height), with start/end
 # along that arc (0..1) and height relative to its radius. Three broad ones
 # and a small one by the opening; the two halves differ a little.
-SCALLOPS_R = ((0.0, 0.34, 0.22), (0.34, 0.68, 0.4), (0.68, 1.0, 0.27))
-SCALLOPS_L = ((0.0, 0.31, 0.2), (0.31, 0.66, 0.42), (0.66, 1.0, 0.29))
+SCALLOPS_R = ((0.22, 0.48, 0.26), (0.48, 0.76, 0.34), (0.76, 1.0, 0.22))
+SCALLOPS_L = ((0.2, 0.45, 0.24), (0.45, 0.74, 0.36), (0.74, 1.0, 0.24))
 # Each half's inner edge up to the top of the opening: where it ends (x, and
 # dz from APEX), how high it rises before turning in (rise), and how round
 # the top is (c2x). The two differ a little, so the opening isn't a mirror.
-NOTCH_R = dict(x=0.0012, dz=0.0, rise=0.011, c2x=0.0045)
-NOTCH_L = dict(x=0.0008, dz=-0.0014, rise=0.009, c2x=0.0052)
+NOTCH_R = dict(x=0.0012, dz=0.0, rise=0.013, c2x=0.0032)
+NOTCH_L = dict(x=0.0006, dz=-0.0022, rise=0.009, c2x=0.0042, wave=0.0014)
 # The hem's soft roll: just inside the scalloped edge the cloth puffs out
 # (PUFF, fraction of H, peaking PUFF_W in from the edge) and curls back in.
-PUFF = 0.0024
+PUFF = 0.0015
 PUFF_W = 0.006
 
 
@@ -159,43 +159,39 @@ def wrap_s(j: Joints, p: Vector) -> float:
 
 
 def _half(scallops, notch) -> list[tuple[float, float, str]]:
-    """One half of the garment's outline (s >= 0), from the top centre round
-    to the top of the opening; `scallops` shapes its hem (see SCALLOPS_R),
-    `notch` its inner edge up to the top of the opening (see NOTCH_R)."""
+    """One half of the garment's outline (s >= 0): a soft petal over one
+    breast, from the top centre along the shoulder line to the front of the
+    armpit, down the outer side of the breast, round its own rounded,
+    scalloped bottom (see SCALLOPS_R) and up its inner edge to the top of
+    the opening (see NOTCH_R)."""
     right: list[tuple[float, float, str]] = []
-    (s0, z0), (s1, _z1) = HALTER
+    (s0, z0), _ = HALTER
     for k in range(6):
         a = k / 5 * math.radians(80)
         right.append((math.sin(a) * s0, COLLAR_Z - (1 - math.cos(a)) * (COLLAR_Z - z0) * 1.4, "top"))
-    # Down the shoulder line to under the arm, then round the back.
-    for k in range(1, 13):
-        s_ = s0 + (s1 - s0) * k / 12
+    # Along the shoulder line to the front of the armpit (the upper, outer
+    # bust: where the garment rests on the body).
+    for k in range(1, 11):
+        s_ = s0 + (PETAL_S - s0) * k / 10
         right.append((s_, top_z(s_), "top"))
-    for k in range(1, 15):
-        s_ = s1 + (BACK_S - s1) * k / 14
-        right.append((s_, top_z(s_), "top"))
-    # The breast: centre and radii of the scalloped hem round its underside
-    # (broad and not too tall, so the half's fullness sits high).
-    cs, cz, rz = 0.041, 0.718, 0.02
-    rs_out, rs_in = 0.027, 0.026
+    # The breast: the centre and radii of the petal's rounded lower part.
+    cs, cz, rz = 0.036, 0.718, 0.024
+    rs_out, rs_in = 0.021, 0.026
     sj, zj = cs + rs_out * math.cos(LOBE_T0), cz + rz * math.sin(LOBE_T0)
 
-    def hem_z(s_: float) -> float:
-        u = (s_ - sj) / (BACK_S - sj)
-        rise = t.smoothstep(sj, 0.09, s_)
-        return zj + (SIDE_HEM - zj) * rise - 0.003 * abs(math.sin(3 * math.pi * u)) ** 0.55
+    def bez(p0, p1, p2, p3, u):
+        a, b, c, d = (1 - u) ** 3, 3 * (1 - u) ** 2 * u, 3 * (1 - u) * u * u, u ** 3
+        return (a * p0[0] + b * p1[0] + c * p2[0] + d * p3[0], a * p0[1] + b * p1[1] + c * p2[1] + d * p3[1])
 
-    # The back seam, then the hem forward round the ribs.
-    zb = hem_z(BACK_S)
-    for k in range(1, 6):
-        right.append((BACK_S, BACK_TOP + (zb - BACK_TOP) * k / 6, "back"))
-    for k in range(0, 21):
-        s_ = BACK_S + (sj - BACK_S) * k / 20
-        right.append((s_, hem_z(s_), "hem"))
-    # Under the breast and up its inner side: a few broad, soft cloud
+    # Down the outer side of the breast into the rounded bottom.
+    cx_, cz0 = right[-1][0], right[-1][1]
+    for k in range(1, 9):
+        x, z = bez((cx_, cz0), (cx_ + 0.001, cz0 - 0.01), (sj + 0.004, zj + 0.012), (sj, zj), k / 8)
+        right.append((x, z, "outer"))
+    # Round the bottom and up the inner side: a few broad, soft cloud
     # scallops, each a rounded arc between two small cusps, drawn rather
     # than repeated (sizes and spacing from the list).
-    n = 44
+    n = 48
     t0, t1 = LOBE_T0, -math.pi
     for k in range(1, n + 1):
         u = k / n
@@ -220,19 +216,15 @@ def _half(scallops, notch) -> list[tuple[float, float, str]]:
             (ax, az, _a), (bx, bz, tag), (cx, cz_, _c) = pts_[k - 1], pts_[k], pts_[k + 1]
             right[lo - 1 + k] = (0.25 * ax + 0.5 * bx + 0.25 * cx, 0.25 * az + 0.5 * bz + 0.25 * cz_, tag)
     xs, zs, _ = right[-1]
-
-    def bez(p0, p1, p2, p3, u):
-        a, b, c, d = (1 - u) ** 3, 3 * (1 - u) ** 2 * u, 3 * (1 - u) * u * u, u ** 3
-        return (a * p0[0] + b * p1[0] + c * p2[0] + d * p3[0], a * p0[1] + b * p1[1] + c * p2[1] + d * p3[1])
-
-    # Up into the centre: the half's inner edge, a smooth convex petal curve
-    # from its innermost point up to the soft, rounded top of the opening.
-    # The opening is simply the space the two curves leave between them,
-    # narrow at the top and widening steadily downward.
+    # Up into the centre: the half's inner edge, a soft cloth curve from
+    # its innermost point up to the top of the opening, which is simply
+    # the space the two edges leave between them: narrow near the top,
+    # opening gradually lower down. The halves' edges differ a little.
     ax_, az_ = notch["x"], APEX + notch["dz"]
     for k in range(1, 13):
         u = k / 12
-        x, z = bez((xs, zs), (xs, zs + notch["rise"]), (notch["c2x"], az_ - 0.0012), (ax_, az_), u)
+        x, z = bez((xs, zs), (xs, zs + notch["rise"]), (notch["c2x"], az_ - 0.004), (ax_, az_), u)
+        x += notch.get("wave", 0.0) * math.sin(math.pi * u) ** 2
         right.append((x, z, "notch"))
     return right
 
@@ -458,7 +450,7 @@ def chest_cover(name: str, j: Joints, mat) -> bpy.types.Object:
     soft_edges = []
     for i in range(len(outline)):
         a_, b_ = outline[i], outline[(i + 1) % len(outline)]
-        if a_[2] in ("lobe", "notch", "hem") and b_[2] in ("lobe", "notch", "hem"):
+        if a_[2] in ("lobe", "notch", "outer") and b_[2] in ("lobe", "notch", "outer"):
             soft_edges.append((a_[0], a_[1], b_[0], b_[1]))
 
     def puff(s_: float, z: float) -> float:
@@ -535,21 +527,24 @@ def chest_cover(name: str, j: Joints, mat) -> bpy.types.Object:
     bm = bmesh.new()
     n = len(outline)
     tags = [tag for _x, _z, tag in outline]
-    start = next(i for i in range(n) if tags[i] != "back" and tags[i - 1] == "back")
-    runs, cur = [], []
-    for k in range(n):
-        i = (start + k) % n
-        if tags[i] == "back":
-            if cur:
-                runs.append(cur)
-            cur = []
-        else:
-            cur.append(i)
-    if cur:
-        runs.append(cur)
+    if "back" in tags:
+        start = next(i for i in range(n) if tags[i] != "back" and tags[i - 1] == "back")
+        runs, cur = [], []
+        for k in range(n):
+            i = (start + k) % n
+            if tags[i] == "back":
+                if cur:
+                    runs.append(cur)
+                cur = []
+            else:
+                cur.append(i)
+        if cur:
+            runs.append(cur)
+    else:
+        runs = [list(range(n)) + [0]]
     for run in runs:
         ups = [cloth_point(outline[i][0], outline[i][1])[1] for i in run]
-        radii = [{"lobe": 0.0033, "hem": 0.0028, "top": 0.0026, "notch": 0.0024}[tags[i]] * H for i in run]
+        radii = [{"lobe": 0.0025, "outer": 0.0023, "top": 0.0023, "notch": 0.002}[tags[i]] * H for i in run]
         soft = []
         for a in range(len(run)):
             rr = [radii[min(max(a + k, 0), len(run) - 1)] for k in range(-3, 4)]
@@ -1087,11 +1082,11 @@ def emilia_arc6():
     spec = R.emilia()
     # Her figure carries the chest's shape; the covering is a fitted layer
     # over it (a modest bust: gentle above, rounder below, tucking under).
-    spec.body.extra["breasts"] = dict(x=0.052, sink=0.013, z=0.007, ax=0.045, ay=0.046, up=0.058, low=0.036, yaw=0.25, sag=0.18, top=0.28, blend=0.034, blend_out=0.026, fold=0.011)
+    spec.body.extra["breasts"] = dict(x=0.052, sink=0.013, z=0.007, ax=0.045, ay=0.044, up=0.064, low=0.04, yaw=0.25, sag=0.14, top=0.38, blend=0.04, blend_out=0.034, fold=0.016)
     # The body below the chest, shaped to match it: a soft waist, a gentle
     # hip flare, a belly with a soft plane change, a small navel, the
     # curve of the lower back.
-    spec.body.extra["torso_sculpt"] = dict(waist_in=0.07, hip_out=0.05, hip_dz=0.01, under_ribs=0.0032, belly=0.0035, navel=0.0032, navel_rx=0.0032, navel_rz=0.0062, navel_dz=-0.014, iliac=0.0016, lumbar=0.006)
+    spec.body.extra["torso_sculpt"] = dict(waist_in=0.07, hip_out=0.065, hip_dz=0.01, thigh_out=0.06, under_ribs=0.0032, belly=0.0035, navel=0.0032, navel_rx=0.0032, navel_rz=0.0062, navel_dz=-0.014, iliac=0.0016, lumbar=0.006)
     # One even step finer over the whole torso, one more over the bust.
     spec.body.extra["torso_detail"] = 1
     spec.body.extra["chest_detail"] = 2
@@ -1198,14 +1193,18 @@ def emilia_arc6():
         return c.j.knee_l.z + 0.05 * c.H
 
     def on_arm(c: ZoneContext) -> bool:
-        """The arm, not the outer side of the bust in front of the chest
-        wall (which reaches close to the upper arm)."""
+        """The arm, not the side of the torso below the armpit (which the
+        fuller bust brings close to the upper arm): below the shoulder joint
+        the arm angles away from the body, so anything inside its inner
+        surface there is torso."""
         if not c.on_arm():
             return False
-        # (Without the garment, show the bodysuit right round the bust.)
-        wall = (0.012 if body_only else -0.012) * c.H
-        bust = c.p.y < c.j.chest.y + wall and abs(c.p.x) < ARM_X_LOW * c.H and 0.67 * c.H < c.p.z < 0.78 * c.H
-        return not bust
+        a = c.j.arm_l
+        if c.p.z < a.z:
+            inner = a.x + (a.z - c.p.z) / math.tan(math.radians(42)) - 0.042 * c.H
+            if abs(c.p.x) < inner:
+                return False
+        return True
 
     def bare_shoulder(c: ZoneContext) -> bool:
         if on_arm(c):
@@ -1214,12 +1213,14 @@ def emilia_arc6():
         s = abs(wrap_s(c.j, c.p))
         # (Only the web itself, beside and behind the chest wall, not the
         # outer side of the bust in front of it.)
-        if abs(c.p.x) > ARMPIT_X * c.H and s > 0.074 and c.p.y > c.j.chest.y - 0.012 * c.H and c.p.z > (0.775 if body_only else HALTER[1][1] - 0.012) * c.H:
+        if abs(c.p.x) > ARMPIT_X * c.H and s > 0.074 and c.p.y > c.j.chest.y - 0.012 * c.H and c.p.z > (0.775 if body_only else top_z(s) - 0.002) * c.H:
             return True
-        # (The skin runs well under the covering's top edge, so the body's
-        # coarse colour boundary never peeks out above it.)
-        # (Without the garment the bodysuit carries on over the chest.)
-        margin = -0.004 if body_only else 0.013
+        # (Under the garment's top edge the skin runs a little below it, so
+        # the body's coarse colour boundary never peeks out above it; beyond
+        # the garment, at the sides and the back, the bodysuit comes right
+        # up to the shoulder line. Without the garment the bodysuit carries
+        # on over the chest.)
+        margin = -0.004 if body_only else 0.013 - 0.015 * t.smoothstep(PETAL_S - 0.006, PETAL_S + 0.004, s)
         if body_only and s > 0.05 and c.p.z < 0.775 * c.H:
             return False
         return s > HALTER[0][0] - 0.008 and c.p.z > (top_z(s) - margin) * c.H

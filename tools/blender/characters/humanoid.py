@@ -548,6 +548,10 @@ def _sculpt_torso(p: Vector, ts: dict, j: Joints) -> None:
         wz = j.waist.z / H + ts.get("waist_dz", 0.0)
         hz = j.hips.z / H + ts.get("hip_dz", 0.0)
         p.x *= 1 - ts.get("waist_in", 0.0) * g(z, wz, 0.05) + ts.get("hip_out", 0.0) * g(z, hz, 0.04)
+        # The upper thighs carry the hips' line on down (outer side fuller).
+        if ts.get("thigh_out") and z < j.hips.z / H:
+            tz = j.hip_l.z / H - 0.035
+            p.x *= 1 + ts["thigh_out"] * g(z, tz, 0.05) * min(1.0, ax / 0.04)
     if p.y < 0 and ax < 0.1:
         across = max(0.0, 1 - (ax / 0.085) ** 2)
         # Just under the ribcage the front settles in a little ...

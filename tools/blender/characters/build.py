@@ -51,6 +51,8 @@ class CharacterSpec:
     # Body faces hidden under opaque garments (deleted after tailoring, so
     # they can't poke through the clothes when joints bend).
     hidden: Callable[[object], bool] | None = None
+    # Make the ears a part the game can hide (under a hood worn up).
+    ear_part: str | None = None
 
 
 def reset():
@@ -204,6 +206,8 @@ def build(spec: CharacterSpec) -> str:
     head["face"] = json.dumps({**meta_face(meta), **spec.face})
     ears = meta["ears"]
     ears.data.materials.append(mats["skin"])
+    if spec.ear_part:
+        ears["part"] = spec.ear_part
 
     hair, hmeta = build_hair(f"{spec.id}_hair", j, head, spec.head, spec.hair)
     # Slot 0 = hair; slot 1 = "hair_tip" (dyed tips) when the palette has one.
@@ -276,7 +280,11 @@ def build(spec: CharacterSpec) -> str:
     if spec.hidden:
         hide_under(body, j, spec.hidden)
 
-    consolidate(spec.id, arm, keep={head.name, hair.name})
+    # Hair parts the game toggles (the back hair under a hood) become their
+    # own meshes, weights and all.
+    hair_parts = split_hair_parts(hair, hmeta.get("parts", []), spec.id)
+
+    consolidate(spec.id, arm, keep={head.name, hair.name, *(o.name for o in hair_parts)})
 
     arm["character"] = spec.id
     arm["meta"] = json.dumps(spec.meta)
@@ -303,6 +311,41 @@ def build(spec: CharacterSpec) -> str:
     tris = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in bpy.data.objects if o.type == "MESH")
     print(f"{spec.id}: {tris} tris, {len(arm.data.bones)} bones → {os.path.relpath(path, ROOT)} ({os.path.getsize(path) / 1024:.0f} KB)")
     return path
+
+
+def split_hair_parts(hair, parts: list[str], cid: str) -> list:
+    """Move the faces of each tagged hair part into its own object,
+    `<cid>_part_<part>` (same material, armature and weights)."""
+    attr = hair.data.attributes.get("part")
+    if not parts or attr is None:
+        return []
+    labels = [attr.data[i].value for i in range(len(hair.data.polygons))]
+    out = []
+    for k, part in enumerate(parts, start=1):
+        o = hair.copy()
+        o.data = hair.data.copy()
+        bpy.context.scene.collection.objects.link(o)
+        o.name = f"{cid}_part_{part}"
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        bm.faces.ensure_lookup_table()
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if labels[f.index] != k], context="FACES")
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+        bm.to_mesh(o.data)
+        bm.free()
+        out.append(o)
+    bm = bmesh.new()
+    bm.from_mesh(hair.data)
+    bm.faces.ensure_lookup_table()
+    bmesh.ops.delete(bm, geom=[f for f in bm.faces if labels[f.index] != 0], context="FACES")
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    bm.to_mesh(hair.data)
+    bm.free()
+    for o in (hair, *out):
+        a = o.data.attributes.get("part")
+        if a is not None:
+            o.data.attributes.remove(a)
+    return out
 
 
 def assign_along_chain(obj, base_bone: str, bones: list[str], guide: list[Vector]):
@@ -404,6 +447,7 @@ def consolidate(cid: str, arm, keep: set[str], skip_roles: frozenset[str] = froz
 
     pieces: dict[str, list] = {"skin": [], "main": []}
     for o in cands:
+        part = o.get("part")
         me = o.data
         if not me.materials:
             continue
@@ -434,7 +478,10 @@ def consolidate(cid: str, arm, keep: set[str], skip_roles: frozenset[str] = froz
         me.color_attributes.active_color = me.color_attributes["Col"]
         if os.environ.get("CONSOLIDATE_DEBUG"):
             print("  consolidate", o.name, order)
-        if order == ["skin"]:
+        if part:
+            # A part the game toggles (a cloak, a hood): its own mesh.
+            pieces.setdefault(f"part_{part}", []).append(o)
+        elif order == ["skin"]:
             pieces["skin"].append(o)
         elif "skin" in order:
             # Mixed (the zoned body): split its skin off into a copy.

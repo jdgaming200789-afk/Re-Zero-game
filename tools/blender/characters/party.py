@@ -71,14 +71,14 @@ def under_sleeves(c: ZoneContext) -> bool:
 # --------------------------------------------------------------------------- Emilia
 
 
-def hood_up(name: str, f: HeadFrame, mat, lining, scale: float = 1.34, opening: tuple[float, float] = (66.0, 52.0)) -> bpy.types.Object:
+def hood_up(name: str, f: HeadFrame, mat, lining, scale: float = 1.34, opening: tuple[float, float] = (66.0, 52.0), cowl: bool = False) -> bpy.types.Object:
     """A hood worn up: a shell round the head, open at the face, tucking in
     towards the neck at the back. Outer faces take `mat`, inner `lining`."""
     import bmesh
 
     bm = bmesh.new()
     azs = list(range(-180, 180, 9))
-    els = list(range(-60, 91, 8))
+    els = list(range(-60, 91, 8)) if not cowl else list(range(-80, 91, 8))
     verts = {}
     for az in azs:
         for el in els:
@@ -86,11 +86,20 @@ def hood_up(name: str, f: HeadFrame, mat, lining, scale: float = 1.34, opening: 
                 continue
             a, e = math.radians(az), math.radians(el)
             n = Vector((math.sin(a) * math.cos(e), -math.cos(a) * math.cos(e), math.sin(e)))
-            # Full volume over the hair; tucked in round the neck below.
-            k = scale if el >= -8 else 1.06 + (scale - 1.06) * (1 - (-8 - el) / 52)
-            p = f.c + Vector((n.x * f.rw, n.y * f.rd, n.z * f.rh)) * k
-            if el < -8:
-                p.y += (-8 - el) / 52 * 0.12 * f.H  # drapes back onto the nape
+            if cowl and el < -8:
+                # A cowl: below the head the hood keeps its girth and falls
+                # onto the shoulders and upper back, into the cloak.
+                tt = (-8 - el) / 72
+                e0 = math.radians(-8)
+                ring = Vector((math.sin(a) * math.cos(e0) * f.rw, -math.cos(a) * math.cos(e0) * f.rd, 0)) * scale * (1 + 0.32 * tt)
+                p = f.c + ring + Vector((0, 0, math.sin(e0) * f.rh * scale - tt * 0.62 * f.H))
+                p.y += tt * 0.16 * f.H * max(0.0, -math.cos(a))  # further down the back
+            else:
+                # Full volume over the hair; tucked in round the neck below.
+                k = scale if el >= -8 else 1.06 + (scale - 1.06) * (1 - (-8 - el) / 52)
+                p = f.c + Vector((n.x * f.rw, n.y * f.rd, n.z * f.rh)) * k
+                if el < -8:
+                    p.y += (-8 - el) / 52 * 0.12 * f.H  # drapes back onto the nape
             verts[(az, el)] = bm.verts.new(p)
     for i, az in enumerate(azs):
         az2 = azs[(i + 1) % len(azs)]
@@ -233,113 +242,12 @@ def emilia_classic():
 
 
 def emilia():
-    """Emilia in Arc 6, per the reference: a long white hooded cloak — the
-    hood worn down, with purple-tipped cat ears — over a fitted purple
-    bodysuit, white boots, and her silver hair in one long braid."""
-    spec = R.emilia()
-    spec.head.elf_ear = 1.7
-    from outfit import cape
+    """Emilia in Arc 6: a complete base outfit, with the cloak, the hood (up
+    or down), her back hair and her hair ornaments as parts the game shows
+    and hides (see emilia_arc6.py)."""
+    from emilia_arc6 import emilia_arc6
 
-    # Hair: fringe and side locks as ever; the back gathered into a braid.
-    clumps = [c for c in spec.hair.clumps if not (c.chain or "").startswith("hair_back")]
-    for k in range(4):
-        clumps.append(Clump(az=180 + (k - 1.5) * 8, el=-4, direction=(0.0, 0.25, -1.0), length=3.3, width=0.2, thickness=0.09, stiffness=0.35, gravity=1.4, lift=0.012, chain="hair_braid"))
-    for az in range(120, 241, 20):
-        a = math.radians(az)
-        clumps.append(Clump(az=az, el=24, direction=(math.sin(a) * 0.2, 0.55, -0.85), length=0.7, width=0.42, thickness=0.09, stiffness=0.4, gravity=1.0, lift=0.01))
-    chains = {k: v for k, v in spec.hair.chains.items() if not k.startswith("hair_back")}
-    chains["hair_braid"] = 6
-    spec.hair.clumps = clumps
-    spec.hair.chains = chains
-
-    spec.palette.update({
-        "suit": ("#6f55b8", "cloth"),
-        "cloak": ("#ffffff", "cloth"),
-        "lining": ("#c4b2ea", "cloth"),
-        "ear_tip": ("#7552c4", "cloth"),
-        # A touch more silver-lavender, so the white hood reads against it.
-        "hair": ("#d9d4ea", "hair"),
-        "cuff": ("#f2a7b4", "cloth"),
-        "gold": ("#dbb75c", "metal"),
-        "sole": ("#7a58c2", "cloth"),
-        "flower_c": ("#c7b2ee", "cloth"),
-        "ribbon": ("#7a58c2", "cloth"),
-    })
-    boots_top = lambda c: c.j.knee_l.z + 0.05 * c.H  # noqa: E731
-    spec.zones = R.skin_rules() + [
-        ("boot_trim", lambda c: (not c.on_arm()) and boots_top(c) - 0.018 * c.H < c.p.z <= boots_top(c)),
-        ("boot", lambda c: (not c.on_arm()) and c.p.z <= boots_top(c)),
-        ("cloak", lambda c: c.on_arm()),
-        ("suit", lambda c: True),
-    ]
-    spec.default_zone = "suit"
-
-    def garments(j: Joints, m: dict) -> Garments:
-        g = Garments()
-        H = j.H
-        # The long cloak: round the shoulders and down past the knees, its
-        # inside lined in purple.
-        cp, guides = cape("emilia_cloak", j, 0.15, 0.66, m["cloak"], chains=6, bones=4, wrap=228, folds=9, fold_depth=0.026, flare=0.45)
-        cp["bone"] = "upperChest"
-        cp.data.materials.append(m["lining"])
-        for poly in cp.data.polygons:
-            c = poly.center
-            radial = Vector((c.x, c.y - j.chest.y, 0))
-            if radial.length > 1e-6 and poly.normal.dot(radial.normalized()) < -0.15:
-                poly.material_index = 1
-        g.objects.append(cp)
-        names = []
-        for i, gl in enumerate(guides):
-            g.chains[f"cape{i}"] = gl
-            names.append(f"cape{i}")
-        g.bindings[cp.name] = names
-        # A frilled white capelet over the shoulders (the hood rises out of it).
-        from outfit import shoulder_collar
-
-        capelet = shoulder_collar("emilia_capelet", j, m["cloak"], outer_x=0.118, outer_front=0.078, outer_back=0.098, frill_waves=22, frill_amp=0.009, flare=0.016, lift=0.004)
-        capelet["bone"] = "upperChest"
-        g.objects.append(capelet)
-        # Puffy white sleeves, gathered at pink cuffs.
-        g.objects.append(sleeves("emilia_sleeves", j, m["cloak"], start=0.0, bell=0.011))
-        for s_ in (1, -1):
-            a, w, d = arm_axis(j, s_)
-            cf = t.ring_trim(f"emilia_cuff{s_}", j, w - d * 0.02 * H, d, 0.02, m["cuff"], lift=0.022)
-            if cf:
-                g.objects.append(cf)
-        # A gold clasp at the throat.
-        cl = t.studs("emilia_clasp", j, [(Vector((0, -1.0, j.neck_base.z - 0.012 * H)), Vector((0, 1, 0)))], 0.012, m["gold"], lift=0.02, flat=0.35)
-        if cl:
-            cl["bone"] = "upperChest"
-            g.objects.append(cl)
-        shoes(g, "emilia", j, m["boot"], m["sole"], length=1.12, width=0.92, height=0.95, sole=0.016, collar=0.085)
-        return g
-
-    def accessories(j: Joints, m: dict, head):
-        out = []
-        f = HeadFrame(j, 0.84, 0.94)
-        # The hood, up, with its cat ears.
-        out.append(hood_up("emilia_hood", f, m["cloak"], m["lining"]))
-        for s_ in (1, -1):
-            a, e = math.radians(s_ * 40), math.radians(62)
-            n = Vector((math.sin(a) * math.cos(e), -math.cos(a) * math.cos(e), math.sin(e)))
-            base = f.c + Vector((n.x * f.rw, n.y * f.rd, n.z * f.rh)) * 1.3
-            out.extend(cat_ear(f"emilia_ear{s_}", base, (n + Vector((0, 0, 0.8))).normalized(), 0.44 * f.H, m["cloak"], m["ear_tip"]))
-        guide = getattr(j, "hair_chains", {}).get("hair_braid")
-        if guide and len(guide) >= 3:
-            pts = [guide[0].lerp(guide[1], 0.5)] + [q.copy() for q in guide[1:]]
-            br = acc.braid("emilia_braid", pts, 0.042 * j.H, m["hair"])
-            br["chain"] = "hair_braid"
-            out.append(br)
-            tie_p = pts[-1] + (pts[-1] - pts[-2]).normalized() * -0.01
-            tie = t.bow("emilia_braid_tie", tie_p, Vector((0, 1, 0)), 0.016 * j.H, m["ribbon"], tails=0.7, droop=0.2)
-            tie["chain"] = "hair_braid"
-            out.append(tie)
-        return out
-
-    spec.garments = garments
-    spec.accessories = accessories
-    spec.hidden = lambda c: under_shoes(c) or under_sleeves(c)
-    return spec
+    return emilia_arc6()
 
 
 # --------------------------------------------------------------------------- Beatrice

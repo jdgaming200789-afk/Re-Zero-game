@@ -71,6 +71,10 @@ export interface CharacterVisual {
   attach?(obj: Object3D, socket: string, restRotation?: Quaternion, offsetAlongBone?: number): void;
   /** Show/hide authored mesh parts by name prefix (sheathed sword, cloak). */
   setPartVisible?(prefix: string, visible: boolean): void;
+  /** Switch to one of the character's modular looks (hood up/down, no cloak). */
+  setLook?(look: string): void;
+  /** The look currently shown (if the character has looks). */
+  readonly look?: string | null;
   /** Partially dissolve (e.g. while standing between the camera and the player). */
   setOccluding?(occluding: boolean): void;
   /** World position of a named socket (hand_R, head, chest...). */

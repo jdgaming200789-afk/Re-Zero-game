@@ -168,6 +168,8 @@ export class AnimeCharacter implements CharacterVisual {
       this.lod.add(m, m.name.endsWith('_outline') ? 1 : 0);
     });
 
+    if (def.defaultLook) this.setLook(def.defaultLook);
+
     this.rig = new HumanoidRig(model, skinned);
     const hips = this.rig.bone('hips');
     this.hipsRest.copy(hips.position);
@@ -275,6 +277,30 @@ export class AnimeCharacter implements CharacterVisual {
     bone.add(obj);
     if (restRotation) obj.quaternion.copy(this.rig.restWorldOf(bone)).invert().multiply(restRotation);
     obj.position.set(0, offsetAlongBone, 0);
+  }
+
+  /** The modular look shown (null: the model has none). */
+  look: string | null = null;
+
+  setLook(look: string): void {
+    const looks = this.def.looks;
+    const spec = looks?.[look];
+    if (!looks || !spec) return;
+    const parts = new Set(Object.values(looks).flatMap((l) => l.hide));
+    const prefix = `${this.def.id}_part_`;
+    let found = false;
+    this.root.traverse((o) => {
+      if (!o.name.startsWith(prefix)) return;
+      const rest = o.name.slice(prefix.length);
+      for (const part of parts) {
+        if (rest === part || rest.startsWith(part + '_')) {
+          o.visible = !spec.hide.includes(part);
+          found = true;
+          break;
+        }
+      }
+    });
+    this.look = found ? look : null;
   }
 
   setPartVisible(prefix: string, visible: boolean): void {

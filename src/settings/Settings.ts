@@ -13,6 +13,8 @@ export type Difficulty = 'story' | 'normal' | 'hard';
 /** Which symbols button prompts use ('auto' follows the last device used). */
 export type ButtonPromptStyle = 'auto' | 'keyboard' | 'xbox' | 'playstation';
 export type PartyOutfits = 'arc6' | 'classic';
+/** Emilia's Arc 6 cloak: 'auto' wears the hood up in the desert and down inside the tower. */
+export type EmiliaCloak = 'auto' | 'hood_up' | 'hood_down' | 'off';
 export type SubaruCostume = 'arc6' | 'tracksuit';
 
 export interface GraphicsSettings {
@@ -59,6 +61,7 @@ export interface GameplaySettings {
   subaruCostume: SubaruCostume;
   /** The party's outfits: Arc 6 travelling clothes or their classic looks (Emilia, Ram). */
   partyOutfits: PartyOutfits;
+  emiliaCloak: EmiliaCloak;
 }
 
 export interface GameSettings {
@@ -148,6 +151,7 @@ export function defaultSettings(): GameSettings {
       buttonPrompts: 'auto',
       subaruCostume: 'arc6',
       partyOutfits: 'arc6',
+      emiliaCloak: 'auto',
     },
     bindings: {},
   };

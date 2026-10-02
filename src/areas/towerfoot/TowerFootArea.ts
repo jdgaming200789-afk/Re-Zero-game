@@ -35,6 +35,7 @@ export const NIGHT_GRADE: ColorGrade = {
  * ruins, the Glass Flats and the paved plaza before the great gate.
  */
 class TowerFootArea extends Area {
+  override readonly outdoors = true;
   readonly id = 'tower_foot';
   readonly displayName = 'The Tower’s Foot';
   readonly subtitle = 'Augria Sand Dunes — the Pleiades Watchtower, at last.';

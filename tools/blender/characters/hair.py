@@ -39,6 +39,9 @@ class Clump:
     root_offset: float = 0.012
     tip_material: int = 0  # material slot for the tip (0 = same as root)
     tip_start: float = 0.8
+    # A named part the game can show and hide (hair under a hood): clumps
+    # with a part are split into their own mesh, `<id>_part_<part>`.
+    part: str | None = None
 
 
 @dataclass
@@ -115,8 +118,9 @@ def grow_path(frame: HeadFrame, c: Clump, steps: int | None = None) -> list[Vect
     return pts
 
 
-def sweep(bm: bmesh.types.BMesh, pts: list[Vector], frame: HeadFrame, c: Clump, uv_layer, ring: int = 6):
-    """Sweep a lens cross-section along the path. Returns created verts with their path parameter."""
+def sweep(bm: bmesh.types.BMesh, pts: list[Vector], frame: HeadFrame, c: Clump, uv_layer, ring: int = 6, faces_out: list | None = None):
+    """Sweep a lens cross-section along the path. Returns created verts with
+    their path parameter (and appends the created faces to `faces_out`)."""
     H = frame.H
     n = len(pts)
     rows = []
@@ -154,6 +158,8 @@ def sweep(bm: bmesh.types.BMesh, pts: list[Vector], frame: HeadFrame, c: Clump, 
             cc = rows[i + 1][(k + 1) % ring]
             d = rows[i + 1][k]
             f = bm.faces.new((a, b, cc, d))
+            if faces_out is not None:
+                faces_out.append(f)
             if c.tip_material and (i + 0.5) / (n - 1) > c.tip_start:
                 f.material_index = c.tip_material
             for loop in f.loops:
@@ -161,7 +167,9 @@ def sweep(bm: bmesh.types.BMesh, pts: list[Vector], frame: HeadFrame, c: Clump, 
                 row_i = i if loop.vert in rows[i] else i + 1
                 loop[uv_layer].uv = (vi / ring, row_i / (n - 1))
     # Close the root end
-    bm.faces.new(list(reversed(rows[0])))
+    root = bm.faces.new(list(reversed(rows[0])))
+    if faces_out is not None:
+        faces_out.append(root)
     return created
 
 
@@ -271,9 +279,17 @@ def build_hair(name: str, j: Joints, head_obj, head_spec, style: HairStyle) -> t
     # chain id -> list of (vertex, t)
     bound: dict[str, list] = {}
     chain_paths: dict[str, list[Vector]] = {}
+    # Face layer: which part (1-based index into `parts`) a face belongs to.
+    parts = sorted({c.part for c in style.clumps if c.part})
+    part_layer = bm.faces.layers.int.new("part") if parts else None
     for c in style.clumps:
         pts = grow_path(frame, c)
-        created = sweep(bm, pts, frame, c, uv)
+        faces: list = []
+        created = sweep(bm, pts, frame, c, uv, faces_out=faces)
+        if c.part and part_layer is not None:
+            k = parts.index(c.part) + 1
+            for f in faces:
+                f[part_layer] = k
         if c.chain:
             bound.setdefault(c.chain, []).extend(created)
             chain_paths.setdefault(c.chain, pts)
@@ -312,4 +328,4 @@ def build_hair(name: str, j: Joints, head_obj, head_spec, style: HairStyle) -> t
     bpy.ops.object.join()
     obj = bpy.context.view_layer.objects.active
     obj.name = name
-    return obj, {"chains": chain_paths, "bound": bound_idx, "clump_vertex_count": n_clump_verts}
+    return obj, {"chains": chain_paths, "bound": bound_idx, "clump_vertex_count": n_clump_verts, "parts": parts}

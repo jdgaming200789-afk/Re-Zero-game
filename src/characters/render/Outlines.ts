@@ -20,7 +20,13 @@ export function buildOutlines(skinned: SkinnedMesh[], opts: OutlineOptions): Arr
   const owned: Array<{ dispose(): void }> = [];
   const groups = new Map<Object3D, SkinnedMesh[]>();
   for (const mesh of skinned) {
-    const key = mesh.parent && mesh.parent.children.filter((c) => (c as SkinnedMesh).isSkinnedMesh).length > 1 ? mesh.parent : mesh;
+    // A glTF mesh with several materials arrives as a group holding only its
+    // primitives: those share one shell. Separate meshes that merely share a
+    // parent (the rig) keep their own — each has its own role, and parts
+    // the game hides (a hood) must take their outline with them.
+    const p = mesh.parent;
+    const primitives = p && p.children.length > 1 && p.children.every((c) => (c as SkinnedMesh).isSkinnedMesh);
+    const key = primitives ? p : mesh;
     const list = groups.get(key) ?? [];
     list.push(mesh);
     groups.set(key, list);

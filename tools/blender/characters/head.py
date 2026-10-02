@@ -23,6 +23,9 @@ class HeadSpec:
     nose: float = 1.0
     ear: float = 1.0
     elf_ear: float = 0.0  # Emilia is a half-elf
+    # Long elf ears that stand out from the head (angled out, back and a
+    # little up, clear of the hair) instead of lying flat along it.
+    elf_out: float = 0.0
 
 
 def sculpt(n: Vector, h: HeadSpec) -> Vector:
@@ -107,15 +110,30 @@ def build_ears(name: str, j: Joints, h: HeadSpec, rw: float, rh: float) -> bpy.t
         bm = bmesh.new()
         bmesh.ops.create_uvsphere(bm, u_segments=10, v_segments=8, radius=1.0)
         ln = 0.13 * H * h.ear * (1 + 1.4 * h.elf_ear)
-        for v in bm.verts:
-            v.co = Vector((v.co.x * 0.012 * H, v.co.y * 0.045 * H * h.ear, v.co.z * ln * 0.5))
-            if h.elf_ear > 0 and v.co.z > 0:
-                # pointed tip, swept back
-                v.co.y += v.co.z * 0.6 * h.elf_ear
-        pos = Vector((c.x + side * rw * 0.97, c.y + 0.02 * H, c.z - rh * 0.1))
-        for v in bm.verts:
-            rot = Vector((v.co.x * math.cos(0.3) - v.co.y * math.sin(0.3) * side, v.co.x * math.sin(0.3) * side + v.co.y * math.cos(0.3), v.co.z))
-            v.co = pos + rot
+        if h.elf_out > 0:
+            # A pointed leaf: wide at the root, tapering to a sharp tip that
+            # curls up a little, standing out from the side of the head.
+            d = Vector((side * 0.9, 0.24, 0.42 * h.elf_out)).normalized()
+            upv = (Vector((0, 0, 1)) - d * d.z).normalized()
+            nrm = d.cross(upv).normalized()
+            base = Vector((c.x + side * rw * 0.86, c.y + 0.03 * H, c.z - rh * 0.12))
+            for v in bm.verts:
+                u = v.co.z  # -1 root .. 1 tip
+                taper = (1 - max(0.0, u)) ** 0.75 * (1 + 0.15 * min(0.0, u))
+                lz = u * ln * 0.5
+                ly = v.co.y * 0.05 * H * h.ear * taper + 0.18 * ln * max(0.0, u) ** 2
+                lx = v.co.x * 0.02 * H * max(0.4, taper)
+                v.co = base + d * (lz + ln * 0.42) + upv * ly + nrm * lx
+        else:
+            for v in bm.verts:
+                v.co = Vector((v.co.x * 0.012 * H, v.co.y * 0.045 * H * h.ear, v.co.z * ln * 0.5))
+                if h.elf_ear > 0 and v.co.z > 0:
+                    # pointed tip, swept back
+                    v.co.y += v.co.z * 0.6 * h.elf_ear
+            pos = Vector((c.x + side * rw * 0.97, c.y + 0.02 * H, c.z - rh * 0.1))
+            for v in bm.verts:
+                rot = Vector((v.co.x * math.cos(0.3) - v.co.y * math.sin(0.3) * side, v.co.x * math.sin(0.3) * side + v.co.y * math.cos(0.3), v.co.z))
+                v.co = pos + rot
         me = bpy.data.meshes.new(f"{name}{side}")
         bm.to_mesh(me)
         bm.free()

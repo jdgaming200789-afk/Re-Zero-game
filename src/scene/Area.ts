@@ -53,6 +53,8 @@ export abstract class Area {
   readonly spawns = new Map<string, AreaSpawn>();
   /** Whether party members follow the player here ('hidden' for solo scenes). */
   readonly partyPolicy: 'follow' | 'hidden' = 'follow';
+  /** Out in the open desert (hoods go up); inside the tower they come down. */
+  readonly outdoors: boolean = false;
   protected readonly colliders: RAPIER.Collider[] = [];
   protected readonly bodies: RAPIER.RigidBody[] = [];
   /** Shared assets (kit meshes, textures) that must not be disposed with this area. */

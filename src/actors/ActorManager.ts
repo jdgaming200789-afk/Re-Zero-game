@@ -3,6 +3,7 @@ import { CharacterMotor } from '../characters/CharacterMotor';
 import type { CharacterFactory } from '../characters/CharacterFactory';
 import { createLogger } from '../core/Log';
 import { actorDef } from '../data/actors';
+import { CHARACTERS } from '../data/characters';
 import type { GameContext, GameSystem } from '../game/GameContext';
 import { Layer } from '../physics/Physics';
 import { ActorController, DEFAULT_ACTOR_MOVEMENT, type ActorMovement } from './ActorController';
@@ -35,6 +36,39 @@ export class ActorManager implements GameSystem {
     private readonly factory: CharacterFactory,
   ) {
     game.events.on('area:unloaded', () => this.prune());
+    game.events.on('area:entered', () => this.applyLooks());
+    game.events.on('settings:changed', ({ key }) => {
+      if (key === 'gameplay.emiliaCloak' || key === '*') this.applyLooks();
+    });
+  }
+
+  /** Looks a scene has asked for (cleared with null): they win over the setting. */
+  private readonly lookOverrides = new Map<string, string>();
+
+  /** Which modular look a character should wear now (null: it has none). */
+  lookFor(id: string): string | null {
+    const looks = CHARACTERS[id]?.looks;
+    if (!looks) return null;
+    const forced = this.lookOverrides.get(id);
+    if (forced && looks[forced]) return forced;
+    const pref = this.game.settings.gameplay.emiliaCloak;
+    if (pref === 'off') return 'no_cloak';
+    if (pref !== 'auto') return pref;
+    return this.game.scenes.current?.outdoors ? 'hood_up' : 'hood_down';
+  }
+
+  /** A scene (cinematic) dresses someone a particular way; null hands back to the setting. */
+  setLookOverride(id: string, look: string | null): void {
+    if (look) this.lookOverrides.set(id, look);
+    else this.lookOverrides.delete(id);
+    this.applyLooks();
+  }
+
+  applyLooks(): void {
+    for (const [id, a] of this.actors) {
+      const look = this.lookFor(id);
+      if (look) a.visual.setLook?.(look);
+    }
   }
 
   /** Spawn (or return the existing) actor for a character id. */
@@ -76,6 +110,8 @@ export class ActorManager implements GameSystem {
       );
     }
     const movement = { ...DEFAULT_ACTOR_MOVEMENT, ...def.movement, ...opts.movement };
+    const look = this.lookFor(id);
+    if (look) visual.setLook?.(look);
     const actor = entity.add(new ActorController(this.game, def, visual, motor, movement));
     actor.placeAt(opts.position, opts.yaw ?? 0);
     this.actors.set(id, actor);

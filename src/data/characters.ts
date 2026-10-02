@@ -43,6 +43,13 @@ export interface CharacterDefinition {
   movement?: Partial<ActorMovement>;
   /** Alternate outfits: costume id -> model (the default is `model`). */
   costumes?: Record<string, { label: string; model: string }>;
+  /**
+   * Looks built from modular parts (meshes named `<id>_part_<name>`): each
+   * look lists the parts it hides; every other part shows. Models without
+   * parts (other costumes) ignore them.
+   */
+  looks?: Record<string, { label: string; hide: string[] }>;
+  defaultLook?: string;
 }
 
 /** Spring presets (VRM-style units: stiffness/gravity are per-second pulls). */
@@ -111,8 +118,15 @@ export const CHARACTERS: Record<string, CharacterDefinition> = {
       blushColor: '#f29db2',
     },
     defaultExpression: 'neutral',
-    // Arc 6: the braid and the long cloak; the classic outfit: loose hair and a skirt.
-    springs: [...chains(HAIR_LONG, 'hair_back', 'hair_braid'), ...chains(HAIR_SIDE, 'hair_side'), ...chains(SKIRT, 'skirt'), ...chains(CAPE, 'cape')],
+    // Arc 6: loose hair and the long cloak; the classic outfit: loose hair and a skirt.
+    springs: [...chains(HAIR_LONG, 'hair_back'), ...chains(HAIR_SIDE, 'hair_side'), ...chains(SKIRT, 'skirt'), ...chains(CAPE, 'cape')],
+    // Arc 6 is a complete outfit with the cloak and hood as wearable parts.
+    looks: {
+      hood_up: { label: 'Cloak, hood up', hide: ['hooddown', 'hairback', 'ornaments', 'elfears'] },
+      hood_down: { label: 'Cloak, hood down', hide: ['hoodup'] },
+      no_cloak: { label: 'No cloak', hide: ['cloak', 'hoodup', 'hooddown'] },
+    },
+    defaultLook: 'hood_up',
     costumes: {
       arc6: { label: 'Arc 6 — hooded cloak', model: 'assets/models/characters/emilia.glb' },
       classic: { label: 'Classic', model: 'assets/models/characters/emilia_classic.glb' },

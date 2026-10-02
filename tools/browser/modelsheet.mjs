@@ -2,7 +2,7 @@
 // front, three-quarter, side and back full-body views plus a face close-up —
 // composed into a single image, test-results/sheet_<id>.png.
 //
-//   node tools/browser/modelsheet.mjs <id> [id ...] [--expr=smug] [--face=0.7] [--outfits=classic]
+//   node tools/browser/modelsheet.mjs <id> [id ...] [--expr=smug] [--face=0.7] [--outfits=classic] [--look=hood_down]
 import { launch, waitReady, step, devCommand } from './harness.mjs';
 import { join } from 'node:path';
 import { OUT_DIR } from './harness.mjs';
@@ -60,6 +60,8 @@ try {
       await page.evaluate(() => (window.__game.player.visual.root.visible = false));
     }
     if (opt.expr) await devCommand(page, `aexpr ${id} ${opt.expr}`);
+    // Modular looks (Emilia: --look=hood_up | hood_down | no_cloak).
+    if (opt.look) await page.evaluate(([id, look]) => window.__game.actors.setLookOverride(id, look), [id, opt.look]);
     await step(page, 1.2, false);
     const info = await page.evaluate((id) => {
       const a = window.__game.actors.get(id);
@@ -142,7 +144,7 @@ try {
         .map(([l, b]) => `<figure style="margin:0;width:320px"><img style="width:320px;height:410px;display:block" src="data:image/png;base64,${b}"><figcaption style="text-align:center;height:24px;line-height:24px">${id} · ${l}</figcaption></figure>`)
         .join('')}</body>`,
     );
-    const out = join(OUT_DIR, `sheet_${id}.png`);
+    const out = join(OUT_DIR, `sheet_${id}${opt.look ? `_${opt.look}` : ""}.png`);
     await sheet.screenshot({ path: out });
     await sheet.close();
     console.log('sheet', out);

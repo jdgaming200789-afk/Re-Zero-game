@@ -211,6 +211,9 @@ export class CinematicPlayer implements GameSystem {
       case 'look':
         this.visual(s.who)?.lookAt(s.at === null ? null : this.point(s.at, 'head'), 0.9);
         return;
+      case 'outfit':
+        g.actors.setLookOverride(s.who, s.look);
+        return;
       case 'anim': {
         const v = this.visual(s.who);
         // 'none' releases a held pose (standing up from a chair).

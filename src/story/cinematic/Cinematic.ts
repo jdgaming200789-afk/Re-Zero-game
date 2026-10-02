@@ -43,6 +43,8 @@ export type CineStep =
   | { do: 'move'; who: string; to: PlaceRef; speed?: 'walk' | 'run' | number; wait?: boolean }
   | { do: 'face'; who: string; to: PlaceRef; wait?: boolean }
   | { do: 'look'; who: string; at: PlaceRef | null }
+  /** Dress someone in one of their modular looks (`null`: back to the setting). */
+  | { do: 'outfit'; who: string; look: string | null }
   /** `clip: 'none'` releases a held pose. */
   | { do: 'anim'; who: string; clip: string; wait?: boolean; hold?: boolean }
   | { do: 'expr'; who: string; expression: string; seconds?: number }

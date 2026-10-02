@@ -469,7 +469,13 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
                 if q.z < 0 and bs.get("round"):
                     v = min(1.0, -q.z / (bs["r"] * H) / 0.4)
                     w = bs["round"] * v * v * (3 - 2 * v) * q.z * q.z / max(q.x * q.x + q.z * q.z, 1e-12)
-                p.y -= bs["depth"] * H * (1 - d * d) ** (2.0 - 1.2 * w)
+                bump = bs["depth"] * H * (1 - d * d) ** (2.0 - 1.2 * w)
+                p.y -= bump
+                # "side" fills the bust out sideways too on its outer half,
+                # so it widens the front silhouette, not only the profile.
+                out = q.x * math.copysign(1, p.x if p.x != 0 else 1)
+                if bs.get("side") and out > 0:
+                    p.x += math.copysign(1, p.x) * bs["side"] * bump * min(1.0, out / (0.6 * bs["r"] * H))
         elif s.bust > 0 and p.y < 0:
             c = Vector((0.04 * H * math.copysign(1, p.x if p.x != 0 else 1), -0.045 * H, j.chest.z + 0.012 * H))
             d = (p - c).length / (0.05 * H)

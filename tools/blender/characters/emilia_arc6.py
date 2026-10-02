@@ -53,6 +53,8 @@ HALTER = ((0.032, 0.826), (0.074, 0.751))
 HALTER_BOW = 0.006
 # Half-width of the open slit up the middle at its foot and at the ornament.
 NOTCH = (0.008, 0.006)
+# Where the slit starts (between the lobes) and ends (under the ornament).
+SLIT = (0.716, 0.778)
 
 
 def halter_z(s: float) -> float:
@@ -96,30 +98,30 @@ def _outline() -> list[tuple[float, float, str]]:
     for k in range(1, 11):
         u = k / 10
         right.append((s0 + (s1 - s0) * u, halter_z(s0 + (s1 - s0) * u), "top"))
-    # The lobe: broad over the upper chest, rounding under it in a
-    # cloud-scalloped edge that sweeps in to meet its twin at the centre.
-    cs, cz, rs, rz = 0.04, 0.718, 0.035, 0.04
-    t0, t1 = -0.04, -math.pi + 0.45
-    # Down the side, easing out into the lobe.
+    # Down the side it narrows, curving in under the arm, into a smaller
+    # rounded lobe whose scalloped lower edge sweeps in towards its twin.
+    cs, cz, rs, rz = 0.031, 0.714, 0.021, 0.022
+    t0, t1 = 0.0, -math.pi + 0.45
     sx, sz = cs + rs * math.cos(t0), cz + rz * math.sin(t0)
-    for k in range(1, 6):
-        u = k / 5
-        right.append((s1 + (sx - s1) * u + 0.003 * math.sin(u * math.pi), z1 + (sz - z1) * u, "lobe"))
-    n = 44
+    for k in range(1, 11):
+        u = k / 10
+        # Off the side seam and in under the bust: an easy S, not a straight drop.
+        right.append((s1 + (sx - s1) * t.smoothstep(0.0, 1.0, u), z1 + (sz - z1) * u, "lobe"))
+    n = 36
     for k in range(1, n + 1):
         u = k / n
         ang = t0 + (t1 - t0) * u
-        bump = 1 + 0.09 * abs(math.sin(u * 4 * math.pi)) ** 0.55
+        bump = 1 + 0.11 * abs(math.sin(u * 3 * math.pi)) ** 0.55
         right.append((cs + rs * bump * math.cos(ang), cz + rz * bump * math.sin(ang), "lobe"))
     xs, zs, _ = right[-1]
     for k in range(1, 4):
         u = k / 3
-        right.append((xs + (NOTCH[0] - xs) * math.sin(u * math.pi / 2), zs + (0.703 - zs) * u, "lobe"))
+        right.append((xs + (NOTCH[0] - xs) * math.sin(u * math.pi / 2), zs + (SLIT[0] - zs) * u, "lobe"))
     # A narrow slit up the middle where the purple shows, closing a little
     # towards the ornament.
-    for k in range(1, 13):
-        u = k / 12
-        right.append((NOTCH[1] + (NOTCH[0] - NOTCH[1]) * (1 - u) ** 2, 0.703 + (0.794 - 0.703) * u, "notch"))
+    for k in range(1, 11):
+        u = k / 10
+        right.append((NOTCH[1] + (NOTCH[0] - NOTCH[1]) * (1 - u) ** 2, SLIT[0] + (SLIT[1] - SLIT[0]) * u, "notch"))
     left = [(-x, z, tag) for (x, z, tag) in reversed(right[1:])]
     pts = right + left
     area = sum(pts[i][0] * pts[(i + 1) % len(pts)][1] - pts[(i + 1) % len(pts)][0] * pts[i][1] for i in range(len(pts)))
@@ -171,21 +173,22 @@ def _edge_dist_tag(pts, x, z, tag: str) -> float:
 
 def _fullness(outline, s: float, z: float) -> float:
     """How far (0..1 of the full lift) the covering stands off the body at
-    (s, z). The volume sits over the upper chest — broad, rising quickly
-    from the halter line like a padded bodice — then curves back
-    in and settles towards the torso as it nears the scalloped hem; the two
-    sides swell right up to the slit so they lean in towards each other;
-    round the side it eases off."""
+    (s, z), on top of the body's own shape (her figure carries the chest's
+    volume; this is the garment's cloth and layering). Fuller over the upper
+    chest, rising from the halter line like a padded bodice, then settling
+    onto the torso towards the scalloped hem; the two sides swell right up
+    to the slit so they lean in towards each other; round the side it eases
+    off."""
     a = abs(s)
     ramp = (t.smoothstep(0.0, 0.022, _edge_dist_tag(outline, s, z, "top")) ** 0.6
-            * t.smoothstep(0.0, 0.013, _edge_dist_tag(outline, s, z, "notch")) ** 0.6
+            * t.smoothstep(0.0, 0.02, _edge_dist_tag(outline, s, z, "notch")) ** 0.7
             * t.smoothstep(0.0, 0.022, _edge_dist_tag(outline, s, z, "lobe")) ** 0.75)
     # Fullest just under the halter line (where the body itself falls away
     # towards the collar), less and less towards the hem.
-    if z >= 0.765:
-        vert = 1.05 - 0.3 * t.smoothstep(0.79, 0.826, z)
+    if z >= 0.74:
+        vert = 1.0 - 0.25 * t.smoothstep(0.79, 0.826, z)
     else:
-        vert = 0.12 + 0.93 * t.smoothstep(0.68, 0.765, z) ** 0.9
+        vert = 0.3 + 0.7 * t.smoothstep(0.692, 0.74, z) ** 0.9
     across = 1.0 - 0.55 * t.smoothstep(0.046, 0.08, a)
     # Under the collar, above the slit, it lies flat: the ornament sits there.
     bridge = 1.0 - 0.85 * (1.0 - t.smoothstep(0.014, 0.036, a)) * t.smoothstep(0.778, 0.802, z)
@@ -249,14 +252,14 @@ def chest_cover(name: str, j: Joints, mat) -> bpy.types.Object:
     for k, ins in enumerate(orig):
         for i in ins:
             out_of[i] = k
-    edge_lift = 0.0045 * H
+    edge_lift = 0.004 * H
     bm = bmesh.new()
     vs, dirs, lifts = [], [], []
     for v2 in verts2:
         p, d = _wrap_point(j, v2.x, v2.y)
         vs.append(bm.verts.new(p))
         dirs.append(d)
-        lifts.append(edge_lift + 0.0195 * H * _fullness(outline, v2.x, v2.y))
+        lifts.append(edge_lift + 0.0068 * H * _fullness(outline, v2.x, v2.y))
     for tri in tris:
         try:
             bm.faces.new([vs[i] for i in tri])
@@ -268,11 +271,11 @@ def chest_cover(name: str, j: Joints, mat) -> bpy.types.Object:
     _taubin(bm, vs, boundary, 4)
     bm.normal_update()
     for v, v2, d, lift in zip(vs, verts2, dirs, lifts):
-        # Out from the torso, tipped up or down with the slope of the chest,
-        # and beside the slit leaning in over it a little.
+        # Beside the slit it leans in over it a little.
         n = v.normal if v.normal.dot(d) > 0 else -v.normal
-        lean = 0.12 * (1.0 - t.smoothstep(0.007, 0.03, abs(v2.x)))
-        off = (d + Vector((0, 0, max(-0.35, min(0.35, 0.5 * n.z)))) + Vector((-math.copysign(lean, v2.x), 0, 0))).normalized()
+        lean = 0.08 * (1.0 - t.smoothstep(0.007, 0.03, abs(v2.x)))
+        # A fitted layer: it follows the (smoothed) body surface.
+        off = (n * 0.7 + d * 0.3 + Vector((-math.copysign(lean, v2.x), 0, 0))).normalized()
         v.co = v.co + off * lift
     _taubin(bm, vs, boundary, 3)
     bm.normal_update()
@@ -286,7 +289,7 @@ def chest_cover(name: str, j: Joints, mat) -> bpy.types.Object:
         _p, d = _wrap_point(j, x, z)
         ring_pts.append(v.co.copy())
         ups.append(d)
-        r = {"lobe": 0.0046, "top": 0.0042, "notch": 0.0034}[tag] * H
+        r = {"lobe": 0.0042, "top": 0.0038, "notch": 0.0032}[tag] * H
         radii.append((r, r * 0.95))
     # Ease the radius where the thick lobe edge meets the slim ones.
     soft = []
@@ -388,25 +391,30 @@ def neck_ornament(j: Joints, gold, purple) -> list[bpy.types.Object]:
     p, n = hit
     n = Vector((n.x * 0.2, n.y, n.z * 0.35)).normalized()
     base = p + n * 0.011 * H
-    w = 0.026
+    w = 0.029
     # Ends curve back with the collar (local +y is into the body).
-    bend = 0.0085 * H / (w * H) ** 2
+    bend = 0.0095 * H / (w * H) ** 2
     out = []
-    frame = _plate_from_outline("emilia_neck_frame", [(x * H, z * H) for x, z in _crescent(w, -0.0075, 0.0, 0.0045, 0.0055)], 0.005 * H, gold, bend=bend)
+    # Layered: a gold frame behind, the purple band set into it, and a slim
+    # gold arc over the band's lower edge in front.
+    frame = _plate_from_outline("emilia_neck_frame", [(x * H, z * H) for x, z in _crescent(w, -0.0085, 0.0, 0.005, 0.006)], 0.006 * H, gold, bend=bend)
     _place(frame, base, n)
     out.append(frame)
-    inlay = _plate_from_outline("emilia_neck_inlay", [(x * H, z * H) for x, z in _crescent(w * 0.79, -0.0054, -0.0021, 0.0027, 0.0)], 0.002 * H, purple, bend=bend)
-    _place(inlay, base + n * 0.0015 * H + Vector((0, 0, 0.0003 * H)), n)
+    inlay = _plate_from_outline("emilia_neck_inlay", [(x * H, z * H) for x, z in _crescent(w * 0.8, -0.0061, -0.0023, 0.003, 0.0)], 0.0022 * H, purple, bend=bend)
+    _place(inlay, base + n * 0.0016 * H + Vector((0, 0, 0.0003 * H)), n)
     out.append(inlay)
+    arc = _plate_from_outline("emilia_neck_arc", [(x * H, z * H) for x, z in _crescent(w * 0.74, -0.0062, -0.0048, 0.0016, 0.0)], 0.0016 * H, gold, bend=bend)
+    _place(arc, base + n * 0.0032 * H, n)
+    out.append(arc)
     bm = bmesh.new()
     bmesh.ops.create_icosphere(bm, subdivisions=1, radius=1.0)
     for v in bm.verts:
         v.co = Vector((v.co.x * 0.0034 * H, v.co.y * 0.0022 * H, v.co.z * 0.0034 * H))
     boss = acc._obj("emilia_neck_boss", bm, gold)
-    _place(boss, base + n * 0.003 * H + Vector((0, 0, 0.0022 * H)), n)
+    _place(boss, base + n * 0.0035 * H + Vector((0, 0, 0.0024 * H)), n)
     out.append(boss)
-    drop = _plate_from_outline("emilia_neck_drop", [(x * H, z * H) for x, z in _rhombus(0.0042, 0.0066)], 0.0035 * H, gold)
-    _place(drop, base + Vector((0, 0, -0.0128 * H)) + n * 0.0005 * H, n)
+    drop = _plate_from_outline("emilia_neck_drop", [(x * H, z * H) for x, z in _rhombus(0.0046, 0.0072)], 0.0038 * H, gold)
+    _place(drop, base + Vector((0, 0, -0.0145 * H)) + n * 0.0005 * H, n)
     out.append(drop)
     for o in out:
         t.skin_like_body(o, j)
@@ -583,30 +591,40 @@ def _resample(points: list[Vector], step: float) -> list[Vector]:
 
 
 def _braid(name: str, points: list[Vector], centre: Vector, width: float, mat) -> bpy.types.Object:
-    """A three-strand braid lying on the head: a slim core with smooth,
-    elongated lobes crossing it alternately from each side (the chevrons a
-    braid shows from above), tapering a little towards its end."""
-    path = _resample(points, width * 0.42)
+    """A three-strand braid lying on the head: a slim core with pointed,
+    leaf-shaped lobes crossing it alternately from each side in a
+    herringbone, each bent to the curve of the skull, tapering a little
+    towards the end."""
+    path = _resample(points, width * 0.34)
     bm = bmesh.new()
     n = len(path)
+    # The core, so no gaps show between the lobes.
+    core_ups = [(c - centre).normalized() for c in path]
+    t.tube_along(bm, path, [(width * 0.24 * (1 - 0.25 * i / max(1, n - 1)), width * 0.2) for i in range(n)], core_ups, ring=8)
     for i, c in enumerate(path):
         tan = (path[min(i + 1, n - 1)] - path[max(i - 1, 0)]).normalized()
         up = (c - centre).normalized()
         up = (up - tan * up.dot(tan)).normalized()
         side = tan.cross(up).normalized()
-        k = 1.0 - 0.3 * i / max(1, n - 1)
+        k = 1.0 - 0.28 * i / max(1, n - 1)
         sgn = 1 if i % 2 else -1
-        # Each lobe leans in from its side towards the far edge.
-        axis = (tan + side * (-sgn) * 0.62).normalized()
-        across = axis.cross(up).normalized()
-        L, W, T = 0.62 * width * k, 0.26 * width * k, 0.2 * width * k
-        pos = c + side * sgn * 0.14 * width * k + up * T * 0.55
-        m = Matrix((across * W, axis * L, up * T)).transposed()
-        geom = bmesh.ops.create_uvsphere(bm, u_segments=14, v_segments=8, radius=1.0)
-        for v in geom["verts"]:
-            v.co = pos + m @ v.co
-    o = acc._obj(name, bm, mat)
-    return o
+        # Each lobe crosses from its side over the middle and down the other.
+        axis = (tan * 0.85 + side * (-sgn) * 0.55).normalized()
+        L, W, T = 0.74 * width * k, 0.27 * width * k, 0.3 * width * k
+        mid = c + side * sgn * 0.05 * width * k + up * T * 0.9
+        pts, radii, ups = [], [], []
+        for q in range(9):
+            tt = q / 8
+            along = (tt - 0.5) * L
+            # Ends tuck down towards the head.
+            p_ = mid + axis * along - up * (4 * (tt - 0.5) ** 2) * T * 1.1
+            pts.append(p_)
+            prof = math.sin(math.pi * tt) ** 0.7
+            radii.append((W * max(prof, 0.05), T * max(prof, 0.08)))
+            ups.append(up)
+        t.tube_along(bm, pts, radii, ups, ring=8, cap=True)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return acc._obj(name, bm, mat)
 
 
 def _flower(name: str, position: Vector, normal: Vector, radius: float, mat_petal, mat_centre, petals: int = 5) -> bpy.types.Object:
@@ -649,28 +667,37 @@ def _flower(name: str, position: Vector, normal: Vector, radius: float, mat_peta
     return acc.join([petals_o, centre], name)
 
 
-def _spiral_bun(name: str, centre: Vector, n: Vector, u: Vector, v: Vector, radius: float, mat) -> bpy.types.Object:
-    """A smooth, rounded bun: a soft dome with a broad band of hair coiled
-    round it from its rim in to its crown."""
+def _rosette_bun(name: str, centre: Vector, n: Vector, u: Vector, v: Vector, radius: float, mat) -> bpy.types.Object:
+    """A styled side bun: a soft knot of hair with broad looped sections
+    folded round it like a rosette — each loop a flat lock leaving the
+    centre, swinging out and round and tucking back in — slightly uneven
+    in size and lean, so it reads as dressed hair, not a machined spiral."""
     bm = bmesh.new()
-    geom = bmesh.ops.create_uvsphere(bm, u_segments=20, v_segments=12, radius=1.0)
+    geom = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=10, radius=1.0)
     for vv in geom["verts"]:
         x, y, z = vv.co
-        vv.co = centre + u * x * radius * 0.92 + v * y * radius * 0.92 + n * z * radius * 0.55
-    pts, ups, radii = [], [], []
-    turns = 1.7
-    steps = 64
-    for k in range(steps + 1):
-        tt = k / steps
-        ang = tt * 2 * math.pi * turns
-        r = radius * (0.86 - 0.7 * tt)
-        h = radius * 0.55 * math.sqrt(max(0.0, 1 - (r / radius) ** 2)) + radius * 0.05
-        radial = u * math.cos(ang) + v * math.sin(ang)
-        pts.append(centre + radial * r + n * h)
-        ups.append((n + radial * (r / radius) * 0.9).normalized())
-        w = radius * (0.34 - 0.2 * tt)
-        radii.append((w, w * 0.42))
-    t.tube_along(bm, pts, radii, ups, ring=10, cap=True)
+        vv.co = centre + u * x * radius * 0.62 + v * y * radius * 0.62 + n * (z * radius * 0.5 + radius * 0.16)
+    loops = 6
+    for k in range(loops):
+        a0 = 2 * math.pi * k / loops + 0.25 * math.sin(k * 2.3)
+        size = radius * (0.95 + 0.12 * math.sin(k * 1.7))
+        # Alternate loops sit higher, overlapping their neighbours.
+        rise = radius * (0.14 if k % 2 else 0.0)
+        pts, ups, radii = [], [], []
+        steps = 18
+        for i in range(steps + 1):
+            tt = i / steps
+            ang = a0 + 1.05 * tt
+            r = size * math.sin(math.pi * tt) ** 0.8
+            radial = u * math.cos(ang) + v * math.sin(ang)
+            # Each loop climbs from the knot's rim and arches over.
+            h = rise + radius * (0.3 + 0.32 * math.sin(math.pi * tt)) * (1 - 0.45 * (r / radius))
+            pts.append(centre + radial * r + n * h)
+            ups.append((n * 1.0 + radial * 0.9 * math.sin(math.pi * tt)).normalized())
+            w = radius * 0.36 * (0.55 + 0.45 * math.sin(math.pi * tt))
+            radii.append((w, w * 0.4))
+        t.tube_along(bm, pts, radii, ups, ring=10, cap=True)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     return acc._obj(name, bm, mat)
 
 
@@ -692,6 +719,7 @@ def _bow_knot(name: str, at: Vector, n: Vector, side: Vector, size: float, mat) 
             ups.append(n)
             radii.append((size * 0.2, size * 0.05))
         t.tube_along(bm, pts, radii, ups, ring=8, cap=False)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     return acc._obj(name, bm, mat)
 
 
@@ -700,6 +728,9 @@ def _bow_knot(name: str, at: Vector, n: Vector, side: Vector, size: float, mat) 
 
 def emilia_arc6():
     spec = R.emilia()
+    # Her figure carries the chest's shape; the covering is a fitted layer
+    # over it (a modest bust: gentle above, rounder below, tucking under).
+    spec.body.extra["bust_shape"] = dict(x=0.036, z=0.012, r=0.046, depth=0.0135, upper=0.72, lower=1.3)
     spec.head.elf_ear = 1.6
     spec.head.elf_out = 1.0
     # Her ears stand out of her hair — and go under the hood when it's up.
@@ -709,12 +740,20 @@ def emilia_arc6():
     # of the ears; a smooth crown; long back hair in broad, layered groups.
     spec.head.ear = 1.12
     clumps = []
-    # Bangs: narrow, thin sections falling close over the forehead, cut
-    # nearly straight (blunt tips, lengths barely varying).
-    for i, az in enumerate(range(-60, 61, 10)):
+    # Bangs: a straight fringe made of narrow, soft individual locks, each
+    # ending in a gently rounded point; lengths, angles and depths vary a
+    # little so they read as locks, not a cut edge or a sawtooth.
+    vary = [0.0, 0.022, -0.012, 0.03, -0.006, 0.014, -0.018, 0.026, 0.004, 0.026, -0.018, 0.014, -0.006, 0.03, -0.012, 0.022, 0.0]
+    lean = [0.0, -0.04, 0.03, -0.02, 0.04, -0.03, 0.02, -0.04, 0.0, 0.04, -0.02, 0.03, -0.04, 0.02, -0.03, 0.04, 0.0]
+    for i, az in enumerate(range(-64, 65, 8)):
         side = math.sin(math.radians(az))
-        ln = 0.56 + 0.06 * (abs(az) / 60) ** 2 + (0.012 if i % 2 else -0.012)
-        clumps.append(Clump(az=az, el=60, direction=(side * 0.15, -0.75, -0.8), length=ln, width=0.25, thickness=0.05, stiffness=0.3, gravity=1.2, lift=0.004, hold=0.6, tip=1.6, blunt=0.42))
+        ln = 0.55 + 0.07 * (abs(az) / 64) ** 2 + vary[i]
+        clumps.append(Clump(az=az, el=60, direction=(side * 0.15 + lean[i], -0.75, -0.8), length=ln, width=0.21, thickness=0.045, stiffness=0.3, gravity=1.2, lift=0.008 + (0.006 if i % 2 else 0.0), hold=0.8, tip=1.3, blunt=0.2, twist=0.15 if i % 3 == 1 else (-0.15 if i % 3 == 2 else 0.0)))
+    # A shorter layer under them, offset between them: the little gaps
+    # between the lock tips show hair, not forehead.
+    for az in range(-60, 61, 8):
+        side = math.sin(math.radians(az))
+        clumps.append(Clump(az=az, el=60, direction=(side * 0.15, -0.75, -0.8), length=0.5 + 0.06 * (abs(az) / 64) ** 2, width=0.26, thickness=0.04, stiffness=0.3, gravity=1.2, lift=0.0, hold=0.72, tip=1.5, blunt=0.3))
     for az in (-69, 69):
         clumps.append(Clump(az=az, el=34, direction=(math.copysign(0.16, az), -0.4, -1.0), length=2.1, width=0.3, thickness=0.09, stiffness=0.3, gravity=1.3, lift=0.012, chain=f"hair_side{'L' if az > 0 else 'R'}"))
     for az in (-61, 61):
@@ -722,8 +761,10 @@ def emilia_arc6():
     # The crown: thin, flat locks lying on the scalp, flowing down from the
     # top of the head (a smooth crown, not tufts).
     for az in range(15, 360, 30):
+        if 0 < az < 60:
+            continue  # the crown braid lies there, on the scalp
         a = math.radians(az)
-        cl = Clump(az=az, el=80, direction=(math.sin(a) * 0.98, -math.cos(a) * 0.98, -0.2), length=0.42, width=0.46, thickness=0.04, stiffness=0.0, gravity=1.4, lift=-0.004, root_offset=0.0, hold=0.6, tip=1.6)
+        cl = Clump(az=az, el=80, direction=(math.sin(a) * 0.98, -math.cos(a) * 0.98, -0.2), length=0.5, width=0.46, thickness=0.04, stiffness=0.0, gravity=1.4, lift=-0.004, root_offset=0.0, hold=0.7, tip=1.2)
         if 100 < az < 260:
             cl.part = "hairback"
         clumps.append(cl)
@@ -747,9 +788,11 @@ def emilia_arc6():
     for k, (az, ln) in enumerate(((120, 3.28), (150, 3.42), (180, 3.5), (210, 3.42), (240, 3.28))):
         a = math.radians(az)
         clumps.append(Clump(az=az, el=14, direction=(math.sin(a) * 0.55, 0.75, -0.7), length=ln, width=0.58 if az == 180 else 0.55, thickness=0.1, stiffness=0.32, gravity=1.3, curl=0.08 if k % 2 else -0.08, twist=0.18 if k % 2 else -0.18, lift=0.03, hold=0.6 if az == 180 else 0.45, chain=chain_of(az), part="hairback"))
-    for k, (az, ln, curl, lift) in enumerate(((132, 3.55, -0.2, 0.052), (166, 3.75, 0.12, 0.08), (194, 3.7, -0.12, 0.058), (228, 3.55, 0.2, 0.078))):
+    for k, (az, ln, curl, lift, spread) in enumerate(((132, 3.55, -0.24, 0.05, 0.75), (164, 3.72, 0.14, 0.078, 0.6), (196, 3.66, -0.14, 0.064, 0.6), (228, 3.55, 0.24, 0.086, 0.75))):
         a = math.radians(az)
-        clumps.append(Clump(az=az, el=36, direction=(math.sin(a) * 0.6, 0.75, -0.7), length=ln, width=0.56, thickness=0.11, stiffness=0.34, gravity=1.3, curl=curl, twist=-curl * 1.8, lift=lift, hold=0.48, chain=chain_of(az), part="hairback"))
+        clumps.append(Clump(az=az, el=36, direction=(math.sin(a) * spread, 0.75, -0.7), length=ln, width=0.52, thickness=0.12, stiffness=0.34, gravity=1.3, curl=curl, twist=-curl * 2.0, lift=lift, hold=0.5, chain=chain_of(az), part="hairback"))
+    # And one mass down the middle, outermost of all.
+    clumps.append(Clump(az=180, el=46, direction=(0.0, 0.8, -0.6), length=3.45, width=0.46, thickness=0.12, stiffness=0.36, gravity=1.3, twist=0.22, lift=0.105, hold=0.52, chain=chain_of(180), part="hairback"))
     spec.hair.clumps = clumps
     spec.hair.chains = {"hair_back0": 5, "hair_back1": 5, "hair_back2": 5, "hair_back3": 5, "hair_back4": 5, "hair_sideL": 4, "hair_sideR": 4}
 
@@ -780,7 +823,7 @@ def emilia_arc6():
         if c.on_arm():
             return c.arm_s() < (SLEEVE_START + 0.012) * c.H
         # The A-pose web joining torso to arm under the shoulder is armpit.
-        if abs(c.p.x) > 0.056 * c.H and c.p.z > 0.722 * c.H:
+        if abs(c.p.x) > 0.057 * c.H and c.p.z > 0.746 * c.H:
             return True
         s = abs(wrap_s(c.j, c.p))
         return s > HALTER[0][0] + 0.004 and c.p.z > (halter_z(s) - 0.004) * c.H and c.p.y < c.j.chest.y + 0.035 * c.H
@@ -883,7 +926,7 @@ def emilia_arc6():
 
         # ---- Part: the hood down, bunched behind the neck over the cloak,
         # its ears flopped back.
-        hd = t.hood_down("emilia_hood_down", j, m["cloak"], size=1.14, over=cp, span=70.0, rim_folds=0.22)
+        hd = t.hood_down("emilia_hood_down", j, m["cloak"], size=1.14, over=cp, span=70.0, rim_folds=0.22, soft=True)
         hd["part"] = "hooddown"
         g.objects.append(hd)
         f = HeadFrame(j, 0.84, 0.94)
@@ -899,22 +942,28 @@ def emilia_arc6():
         out = []
         f = HeadFrame(j, 0.84, 0.94)
         # ---- Part: the hood up, with its cat ears.
-        hood = hood_up("emilia_hood", f, m["cloak"], m["lining"], scale=1.24, cowl=True)
+        hood = hood_up("emilia_hood", f, m["cloak"], m["lining"], scale=1.2, opening=(66.0, 40.0), cowl=True, seam_peak=0.04)
         hood["part"] = "hoodup"
         out.append(hood)
         for s_ in (1, -1):
-            a, e = math.radians(s_ * 40), math.radians(62)
+            a, e = math.radians(s_ * 34), math.radians(66)
             n = Vector((math.sin(a) * math.cos(e), -math.cos(a) * math.cos(e), math.sin(e)))
             # Rooted in the hood (the base sunk into it), rising out of it.
-            base = f.c + Vector((n.x * f.rw, n.y * f.rd, n.z * f.rh)) * 1.1
-            for ear in cat_ear(f"emilia_ear{s_}", base, (n + Vector((0, 0, 0.6))).normalized(), 0.4 * f.H, m["cloak"], m["ear_tip"]):
+            base = f.c + Vector((n.x * f.rw, n.y * f.rd, n.z * f.rh)) * 1.07
+            for ear in cat_ear(f"emilia_ear{s_}", base, (n + Vector((0, 0, 0.6))).normalized(), 0.45 * f.H, m["cloak"], m["ear_tip"], tip_start=0.5):
                 ear["part"] = "hoodup"
                 out.append(ear)
         # ---- Part: hair ornaments.
         orn = []
         # Her left: a small braid along the crown, ending at a white flower clip.
-        pts = [f.surface(az, el, 0.035) for az, el in ((10, 70), (20, 66), (30, 62), (40, 57), (49, 52))]
-        orn.append(_braid("emilia_crown_braid", pts, f.c, 0.034, m["hair"]))
+        # (sampled densely on the skull at a constant height above it, clear
+        # of the bangs' roots, so it follows the head's curve).
+        pts = []
+        for k in range(17):
+            el = 74 - 22 * (k / 16) ** 1.1
+            # On the bare scalp at the crown, then up over the bangs' roots.
+            pts.append(f.surface(6 + 46 * k / 16, el, 0.03 + 0.04 * t.smoothstep(0.0, 1.0, (74 - el) / 13)))
+        orn.append(_braid("emilia_crown_braid", pts, f.c, 0.042, m["hair"]))
         fp = f.surface(56, 48, 0.06)
         orn.append(_flower("emilia_flower", fp, (fp - f.c).normalized(), 0.036, m["flower"], m["flower_c"]))
         # Her right: a smooth, rounded bun, tied with purple at its base,
@@ -923,7 +972,7 @@ def emilia_arc6():
         n = (bc - f.c).normalized()
         u = n.cross(Vector((0, 0, 1))).normalized()
         v = n.cross(u).normalized()
-        orn.append(_spiral_bun("emilia_bun", bc, n, u, v, 0.04, m["hair"]))
+        orn.append(_rosette_bun("emilia_bun", bc, n, u, v, 0.042, m["hair"]))
         tie = []
         for k in range(25):
             ang = k / 24 * 2 * math.pi
@@ -939,16 +988,24 @@ def emilia_arc6():
             out.append(o)
         guide = getattr(j, "hair_chains", {}).get("hair_sideR")
         start = knot - n * 0.002
-        for i, (dx, dy, extra) in enumerate(((-0.012, 0.014, 0.09), (-0.004, 0.024, 0.13))):
+        for i, (dx, dy, extra, twist) in enumerate(((-0.012, 0.012, 0.09, 0.35), (-0.003, 0.022, 0.14, -0.3))):
+            # From the bow they drop a little, then ease into the fall of the
+            # hair beside her face (and swing with it).
+            ctrl = [start, start + Vector((dx * 0.5, dy * 0.4, -0.028)) - n * 0.004]
             if guide and len(guide) >= 3:
-                body = [q + Vector((dx, dy, 0)) for q in guide[1:]]
+                ctrl += [q + Vector((dx, dy, 0)) for q in guide[2:]]
                 tail_dir = (guide[-1] - guide[-2]).normalized()
-                body.append(body[-1] + tail_dir * extra)
+                ctrl.append(ctrl[-1] + tail_dir * extra)
             else:
-                body = [start + Vector((dx, dy, -0.08 * k)) for k in range(1, 6)]
-            line = [start + Vector((dx * 0.4, dy * 0.3, 0))] + body
-            nrm = [Vector((-1, 0.25, 0)).normalized()] * len(line)
-            rib = t.ribbon(f"emilia_ribbon{i}", line, nrm, 0.014, m["ribbon"], thickness=0.0025)
+                ctrl += [start + Vector((dx, dy, -0.08 * k)) for k in range(1, 6)]
+            line = _resample(ctrl, 0.012)
+            nrm = []
+            for k_, q in enumerate(line):
+                out_d = Vector((q.x, q.y - j.neck_base.y, 0))
+                out_d = out_d.normalized() if out_d.length > 1e-6 else Vector((-1, 0, 0))
+                tan = (line[min(k_ + 1, len(line) - 1)] - line[max(k_ - 1, 0)]).normalized()
+                nrm.append(Matrix.Rotation(twist * math.sin(math.pi * k_ / max(1, len(line) - 1)), 3, tan) @ out_d)
+            rib = t.ribbon(f"emilia_ribbon{i}", line, nrm, 0.014 if i == 0 else 0.012, m["ribbon"], thickness=0.0025)
             rib["chain"] = "hair_sideR"
             rib["part"] = "ornaments"
             out.append(rib)

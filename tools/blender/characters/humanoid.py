@@ -432,7 +432,17 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
         if j.waist.z < p.z < j.neck_base.z and abs(p.x) < 0.11 * H and p.y < 0:
             p.y *= 0.92
         # Bust
-        if s.bust > 0 and p.y < 0:
+        bs = s.extra.get("bust_shape")
+        if bs and p.y < 0:
+            # A shaped bust: a gentle slope above, a rounder curve below
+            # that tucks under (extents scaled separately above and below).
+            c = Vector((bs["x"] * H * math.copysign(1, p.x if p.x != 0 else 1), -0.045 * H, j.chest.z + bs["z"] * H))
+            q = p - c
+            q.z *= bs["upper"] if q.z > 0 else bs["lower"]
+            d = q.length / (bs["r"] * H)
+            if d < 1:
+                p.y -= bs["depth"] * H * (1 - d * d) ** 2
+        elif s.bust > 0 and p.y < 0:
             c = Vector((0.04 * H * math.copysign(1, p.x if p.x != 0 else 1), -0.045 * H, j.chest.z + 0.012 * H))
             d = (p - c).length / (0.05 * H)
             if d < 1:

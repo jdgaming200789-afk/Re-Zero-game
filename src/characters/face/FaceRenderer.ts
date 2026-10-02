@@ -53,6 +53,12 @@ export interface FaceStyle {
   browLift?: number;
   /** Brows drawn as a soft arch that tapers to a fine outer tail. */
   browTaper?: boolean;
+  /**
+   * Almond eyes (with the default rounded shape): a flatter upper lid
+   * highest towards the outer third, a lower inner corner, a slightly
+   * drawn-out outer corner and a shallower lower lid.
+   */
+  almond?: boolean;
 }
 
 export interface ExpressionParams {
@@ -288,6 +294,12 @@ export class FaceRenderer {
       p1 = [inner + side * w * 0.06, topY + h * 0.02];
       p2 = [outer - side * w * 0.3, topY - h * 0.06 - tilt];
       p3 = [outer, cy - h * 0.02 - tilt];
+    } else if (this.style.almond) {
+      const topY = cy - h * 0.55 * open;
+      p0 = [inner, cy + h * 0.1];
+      p1 = [inner + side * w * 0.2, topY + h * 0.02];
+      p2 = [outer - side * w * 0.28, topY - h * 0.03 - tilt];
+      p3 = [outer + side * w * 0.03, cy - h * 0.04 - tilt];
     } else {
       const topY = cy - h * 0.55 * open;
       p0 = [inner, cy + h * 0.05];
@@ -308,7 +320,7 @@ export class FaceRenderer {
   }
 
   private lowerLidY(cy: number, h: number, lower: number): number {
-    return cy + h * (this.style.eyeShape === 'sharp' ? 0.36 : 0.45) - lower * h * 0.3;
+    return cy + h * (this.style.eyeShape === 'sharp' ? 0.36 : this.style.almond ? 0.4 : 0.45) - lower * h * 0.3;
   }
 
   private eyePath(g: CanvasRenderingContext2D, cx: number, cy: number, side: number, w: number, h: number, open: number, lower: number): void {
@@ -321,6 +333,7 @@ export class FaceRenderer {
     for (const [x, y] of pts) g.lineTo(x, y);
     const end = pts[pts.length - 1]!;
     if (this.style.eyeShape === 'sharp') g.quadraticCurveTo(cx + side * w * 0.12, botY + h * 0.04, pts[0]![0], pts[0]![1]);
+    else if (this.style.almond) g.bezierCurveTo(outer - side * w * 0.14, botY - h * 0.04, inner + side * w * 0.3, botY + h * 0.03, pts[0]![0], pts[0]![1]);
     else g.bezierCurveTo(outer - side * w * 0.05, botY - h * 0.1, inner + side * w * 0.25, botY + h * 0.05, pts[0]![0], pts[0]![1]);
     g.closePath();
     void end;
@@ -471,6 +484,24 @@ export class FaceRenderer {
       g.lineWidth = Math.max(1.2, ir * 0.07);
       g.beginPath();
       g.ellipse(irisCx, irisCy + irY * 0.04, ir * 0.7, irY * 0.72, 0, 0, Math.PI * 2);
+      g.stroke();
+      // Fine radial fibres from the pupil out, and a light ring (the
+      // collarette) round the pupil.
+      g.lineWidth = Math.max(0.8, ir * 0.035);
+      for (let i = 0; i < 24; i++) {
+        const a = (i / 24) * Math.PI * 2 + 0.11;
+        const lower = Math.sin(a) > 0;
+        g.strokeStyle = withAlpha(lower ? s.irisLight : shadeColor2hex(s.iris, -0.45), lower ? 0.32 : 0.22);
+        const r0 = 0.46 + (i % 2) * 0.06;
+        g.beginPath();
+        g.moveTo(irisCx + Math.cos(a) * ir * r0, irisCy + Math.sin(a) * irY * r0);
+        g.lineTo(irisCx + Math.cos(a) * ir * 0.9, irisCy + Math.sin(a) * irY * 0.9);
+        g.stroke();
+      }
+      g.strokeStyle = withAlpha(s.irisLight, 0.4);
+      g.lineWidth = Math.max(1, ir * 0.05);
+      g.beginPath();
+      g.ellipse(irisCx, irisCy + irY * 0.03, ir * 0.46, irY * 0.62, 0, 0, Math.PI * 2);
       g.stroke();
     } else {
       // Radial streaks, lighter towards the bottom of the iris.

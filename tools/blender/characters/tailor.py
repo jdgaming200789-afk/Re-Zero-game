@@ -609,12 +609,13 @@ def tube_along(bm, pts: list[Vector], radii: list[tuple[float, float]], ups: lis
     return rows
 
 
-def hood_down(name: str, j: Joints, mat, mat_lining=None, size: float = 1.0, over=None, skin: bool = True, span: float = 84.0, rim_folds: float = 0.0) -> bpy.types.Object:
+def hood_down(name: str, j: Joints, mat, mat_lining=None, size: float = 1.0, over=None, skin: bool = True, span: float = 84.0, rim_folds: float = 0.0, soft: bool = False) -> bpy.types.Object:
     """A hood worn down: a thick rolled rim around the back of the neck from
     collarbone to collarbone, and the deflated hood lying on the upper back
     in a few soft folds, ending in a blunt point between the shoulder blades.
     `span`: how far round the rim reaches each way (degrees from the back);
-    `rim_folds` swells and pinches the rim like gathered cloth."""
+    `rim_folds` swells and pinches the rim like gathered cloth; `soft` gives
+    the deflated hood real cloth thickness, a fuller bulge and a rolled edge."""
     from outfit import drape_down
 
     H = j.H
@@ -668,20 +669,34 @@ def hood_down(name: str, j: Joints, mat, mat_lining=None, size: float = 1.0, ove
             hit = tree.ray_cast(Vector((x, 1.0, z)), Vector((0, -1, 0)))
             y = hit[0].y if hit[0] is not None else j.chest.y + 0.08 * H
             bulge = 0.018 * H * size * math.cos(u * math.pi) * (1 - t) ** 0.6 * (0.6 + 0.4 * math.sin(math.pi * min(1.0, t * 1.4)))
+            if soft:
+                bulge *= 1.35
+                fold *= 1.4
             row.append(bm.verts.new(Vector((x, y + 0.006 * H + bulge + fold, z))))
         grid.append(row)
     for r in range(rows_n):
         for c in range(cols):
             bm.faces.new((grid[r][c], grid[r][c + 1], grid[r + 1][c + 1], grid[r + 1][c]))
+    grid_pts = [[v.co.copy() for v in row] for row in grid]
     me = bpy.data.meshes.new(name + "_sack")
     bm.to_mesh(me)
     bm.free()
     sack = _link(name + "_sack", me)
     sol = sack.modifiers.new("Sol", "SOLIDIFY")
-    sol.thickness = 0.006 * H
+    sol.thickness = (0.011 if soft else 0.006) * H
     sol.use_rim = True
     _apply(sack, sol)
     parts.append(sack)
+    if soft:
+        # A rolled edge down its sides and round its point: cloth, not plate.
+        bm = bmesh.new()
+        outline = [grid_pts[r][0] for r in range(rows_n + 1)] + [grid_pts[rows_n][c] for c in range(1, cols + 1)] + [grid_pts[r][cols] for r in range(rows_n - 1, -1, -1)]
+        ups = [Vector((0, 1, 0))] * len(outline)
+        tube_along(bm, [q + Vector((0, 0.004 * H, 0)) for q in outline], [(0.0065 * H, 0.0055 * H)] * len(outline), ups, ring=8)
+        me = bpy.data.meshes.new(name + "_edge")
+        bm.to_mesh(me)
+        bm.free()
+        parts.append(_link(name + "_edge", me))
     for o in parts:
         for p in o.data.polygons:
             p.use_smooth = True

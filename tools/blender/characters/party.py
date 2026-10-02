@@ -71,7 +71,7 @@ def under_sleeves(c: ZoneContext) -> bool:
 # --------------------------------------------------------------------------- Emilia
 
 
-def hood_up(name: str, f: HeadFrame, mat, lining, scale: float = 1.34, opening: tuple[float, float] = (66.0, 52.0), cowl: bool = False) -> bpy.types.Object:
+def hood_up(name: str, f: HeadFrame, mat, lining, scale: float = 1.34, opening: tuple[float, float] = (66.0, 52.0), cowl: bool = False, seam_peak: float = 0.07) -> bpy.types.Object:
     """A hood worn up: a soft shell over the hair, open at the face in a
     rounded arch, with a gentle point where its back seam meets the crown
     and a few loose folds low on the sides; with `cowl`, it carries on below
@@ -120,7 +120,7 @@ def hood_up(name: str, f: HeadFrame, mat, lining, scale: float = 1.34, opening: 
                 n = Vector((math.sin(a) * math.cos(e), -math.cos(a) * math.cos(e), math.sin(e)))
                 k_ = scale if el >= -8 else 1.06 + (scale - 1.06) * (1 - (-8 - el) / 52)
                 # The back seam rising to a soft point at the crown.
-                k_ += 0.07 * math.exp(-(((az - 180) / 38) ** 2)) * math.exp(-(((el - 46) / 22) ** 2))
+                k_ += seam_peak * math.exp(-(((az - 180) / 38) ** 2)) * math.exp(-(((el - 46) / 22) ** 2))
                 # Loose folds low on the sides and back.
                 k_ += 0.025 * math.sin(6 * a) * (1 - min(1.0, max(0.0, (el + 5) / 45))) * min(1.0, (az - half) / 30, (360 - half - az) / 30)
                 p = f.c + Vector((n.x * f.rw, n.y * f.rd, n.z * f.rh)) * k_
@@ -164,7 +164,7 @@ def hood_up(name: str, f: HeadFrame, mat, lining, scale: float = 1.34, opening: 
     return o
 
 
-def cat_ear(name: str, base: Vector, out: Vector, size: float, mat, tip_mat) -> list[bpy.types.Object]:
+def cat_ear(name: str, base: Vector, out: Vector, size: float, mat, tip_mat, tip_start: float = 0.62) -> list[bpy.types.Object]:
     """A rounded triangular ear standing out of a hood, its tip another colour."""
     import bmesh
 
@@ -175,7 +175,7 @@ def cat_ear(name: str, base: Vector, out: Vector, size: float, mat, tip_mat) -> 
     side.normalize()
     fwd = out.cross(side).normalized()
     parts = []
-    for part, (t0, t1, m) in enumerate(((0.0, 0.62, mat), (0.62, 1.0, tip_mat))):
+    for part, (t0, t1, m) in enumerate(((0.0, tip_start, mat), (tip_start, 1.0, tip_mat))):
         bm = bmesh.new()
         rings = []
         for k in range(4):

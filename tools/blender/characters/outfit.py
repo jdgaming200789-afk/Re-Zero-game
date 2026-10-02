@@ -360,11 +360,13 @@ def cape(
     hem_curve: float = 0.0,
     edge_wave: float = 0.0,
     thickness: float = 0.005,
+    edges_out: dict | None = None,
 ) -> tuple[bpy.types.Object, list[list[Vector]]]:
     """Cloak fastened at the neck: drapes over the shoulders (dropped onto
     the body), then hangs down the back with folds and flare. `width` is
     the half-width at the shoulders as a fraction of H; `length` is measured
-    from the shoulders down."""
+    from the shoulders down. `edges_out`, if given, receives the free edges'
+    points ("left", "right", "hem")."""
     H = j.H
     bm = bmesh.new()
     # Enough columns that every fold is a rounded ridge, not a zig-zag.
@@ -427,6 +429,11 @@ def cape(
                 p.z += tatters * H * 0.045 * (0.5 + 0.5 * math.sin(c * 2.7) * math.cos(c * 1.3))
             p = push_outside_torso(j, p, 0.012 * H, torso_x)
             grid[c].append(p)
+    if edges_out is not None:
+        # The free edges (front edges top to bottom, the hem), for trims.
+        edges_out["left"] = [p.copy() for p in grid[0]]
+        edges_out["right"] = [p.copy() for p in grid[cols]]
+        edges_out["hem"] = [grid[c][-1].copy() for c in range(cols + 1)]
     verts = [[bm.verts.new(p) for p in col] for col in grid]
     for c in range(cols):
         for r in range(len(verts[c]) - 1):

@@ -3,18 +3,19 @@ modular parts the game shows and hides (per the Arc 6 references: cloak on
 with the hood up, cloak on with the hood down, and the cloak taken off).
 
 Base (always present):
-  a fitted purple bodysuit (bare shoulders, a seam down the front); the
-  white chest covering — two full, rounded lobes over the upper chest that
-  settle in towards a scalloped hem, meeting under a high white collar, with
-  a narrow slit down the middle where the purple shows; a compact
-  gold-and-purple neck ornament (a gold band with a purple inlay, a small
-  gold drop beneath); detached puffy white sleeves gathered
-  at pink cuffs; white boots with a purple V at the top; long, loose silver
-  hair with straight bangs, face-framing strands and pointed elf ears.
+  a fitted purple bodysuit (bare shoulders, a seam down the front) over
+  her figure; the white chest covering — cloth draped over the bust from a
+  high white collar, its halves meeting in a curved seam, lifted by the
+  bust so its scalloped hem hangs a little free, the purple showing in the
+  arched opening below the bust; a compact gold-and-purple neck ornament
+  (a gold crown bar over a purple crescent, a gold diamond beneath);
+  detached puffy white sleeves gathered at pink cuffs; white boots with a
+  purple V at the top; long, loose silver hair with straight bangs,
+  face-framing strands and pointed elf ears.
 
 Parts (`<id>_part_<name>` meshes, see src/data/characters.ts `looks`):
-  cloak      the long white cloak lined lavender, its raised shoulder mantle
-             and the round gold clasp at the throat;
+  cloak      the long white cloak lined lavender, the soft scalloped capelet
+             over the shoulders and the round gold clasp at the throat;
   hoodup     the hood worn up, with purple-tipped cat ears;
   hooddown   the hood down, bunched behind the neck and lying on the
              shoulders, its ears flopped back;
@@ -155,48 +156,6 @@ def _edge_dist(pts, x, z) -> float:
     return best
 
 
-def _edge_dist_tag(pts, x, z, tag: str) -> float:
-    """Distance to the outline's edges of one kind (by their first point's tag)."""
-    best = 1e9
-    n = len(pts)
-    for i in range(n):
-        if pts[i][2] != tag:
-            continue
-        ax, az = pts[i][0], pts[i][1]
-        bx, bz = pts[(i + 1) % n][0], pts[(i + 1) % n][1]
-        dx, dz = bx - ax, bz - az
-        L = dx * dx + dz * dz
-        u = 0.0 if L < 1e-12 else max(0.0, min(1.0, ((x - ax) * dx + (z - az) * dz) / L))
-        best = min(best, math.hypot(x - ax - dx * u, z - az - dz * u))
-    return best
-
-
-def _fullness(outline, s: float, z: float) -> float:
-    """How far (0..1 of the full lift) the covering stands off the body at
-    (s, z), on top of the body's own shape (her figure carries the chest's
-    volume; this is the garment's cloth and layering). Fuller over the upper
-    chest, rising from the halter line like a padded bodice, then settling
-    onto the torso towards the scalloped hem; the two sides swell right up
-    to the slit so they lean in towards each other; round the side it eases
-    off."""
-    a = abs(s)
-    ramp = (t.smoothstep(0.0, 0.022, _edge_dist_tag(outline, s, z, "top")) ** 0.6
-            * t.smoothstep(0.0, 0.02, _edge_dist_tag(outline, s, z, "notch")) ** 0.7
-            * t.smoothstep(0.0, 0.022, _edge_dist_tag(outline, s, z, "lobe")) ** 0.75)
-    # Fullest just under the halter line (where the body itself falls away
-    # towards the collar), less and less towards the hem.
-    if z >= 0.74:
-        vert = 1.0 - 0.25 * t.smoothstep(0.79, 0.826, z)
-    else:
-        vert = 0.3 + 0.7 * t.smoothstep(0.692, 0.74, z) ** 0.9
-    across = 1.0 - 0.55 * t.smoothstep(0.046, 0.08, a)
-    # Under the collar it lies flat: the ornament sits there.
-    bridge = 1.0 - 0.85 * (1.0 - t.smoothstep(0.014, 0.036, a)) * t.smoothstep(0.778, 0.802, z)
-    # Above the opening the two halves meet in a soft valley (the seam).
-    seam = 1.0 - 0.45 * math.exp(-((s / 0.008) ** 2)) * t.smoothstep(APEX - 0.004, APEX + 0.008, z)
-    return ramp * vert * across * bridge * seam
-
-
 def _wrap_point(j: Joints, s: float, z: float):
     """The torso surface at unrolled (s, z) (fractions of H), cast outwards
     from the torso's centre line so it never lands on an arm; returns
@@ -231,19 +190,81 @@ def _taubin(bm, verts, fixed, iterations: int = 6) -> None:
                 v.co = co
 
 
+def _drape_field(j: Joints, s_lo: float, s_hi: float, z_lo: float, z_hi: float, step: float, thick: float, k_across: float, k_down: float):
+    """How far out from the torso's centre line a cloth laid over the chest
+    sits, on a grid over the unrolled torso (s, z): it rests on the body
+    wherever the body is fullest, can only dip so steeply between two
+    rises (it bridges the cleavage), and below a rise it hangs under
+    gravity, coming back to the body only gradually (the bust lifts it).
+    Returns (s values, z values, R[z][s] in metres)."""
+    H = j.H
+    ns = int(round((s_hi - s_lo) / step)) + 1
+    nz = int(round((z_hi - z_lo) / step)) + 1
+    S = [s_lo + i * step for i in range(ns)]
+    Z = [z_lo + k * step for k in range(nz)]
+    rb = []
+    for z in Z:
+        cy = torso_yc(j, z * H)
+        row = []
+        for s_ in S:
+            p, _d = _wrap_point(j, s_, z)
+            row.append(math.hypot(p.x, p.y - cy))
+        rb.append(row)
+    # Across the front of the bust only: elsewhere it follows the body.
+    dh = step * H * k_across
+    front = [i for i, s_ in enumerate(S) if abs(s_) < 0.07]
+    for k, z in enumerate(Z):
+        wz = t.smoothstep(0.672, 0.7, z) * (1 - t.smoothstep(0.75, 0.785, z))
+        if wz <= 0:
+            continue
+        row = rb[k]
+        env = row[:]
+        for a, b in zip(front, front[1:]):
+            env[b] = max(env[b], env[a] - dh)
+        for a, b in zip(front[::-1], front[::-1][1:]):
+            env[b] = max(env[b], env[a] - dh)
+        for i in front:
+            w = wz * (1 - t.smoothstep(0.05, 0.07, abs(S[i])))
+            row[i] = row[i] + (env[i] - row[i]) * w
+    # Down: in front it hangs from the bust; round the sides it's fitted.
+    R = [[0.0] * ns for _ in range(nz)]
+    dvs = [step * H * (k_down + 1.4 * t.smoothstep(0.045, 0.07, abs(s_))) for s_ in S]
+    for k in range(nz - 1, -1, -1):  # from the collar down
+        for i in range(ns):
+            v = rb[k][i] + thick
+            if k < nz - 1:
+                v = max(v, R[k + 1][i] - dvs[i])
+            R[k][i] = v
+    return S, Z, R
+
+
+def _sample(S, Z, R, s_: float, z: float) -> float:
+    """Bilinear lookup in a drape field."""
+    step_s = S[1] - S[0]
+    step_z = Z[1] - Z[0]
+    fi = min(max((s_ - S[0]) / step_s, 0.0), len(S) - 1.001)
+    fk = min(max((z - Z[0]) / step_z, 0.0), len(Z) - 1.001)
+    i, k = int(fi), int(fk)
+    u, w = fi - i, fk - k
+    r0 = R[k][i] * (1 - u) + R[k][i + 1] * u
+    r1 = R[k + 1][i] * (1 - u) + R[k + 1][i + 1] * u
+    return r0 * (1 - w) + r1 * w
+
+
 def chest_cover(name: str, j: Joints, mat) -> bpy.types.Object:
-    """The white chest covering, a raised garment layer over the bodysuit:
-    the outline triangulated with a fine interior grid on the unrolled
-    torso, wrapped round the chest to the side seams, and lifted into two
-    two lobes (see `_fullness`) that stand up to ~4 cm off the upper chest
-    and settle in towards the hem, finished all round with a soft rolled
-    edge — fuller under the scalloped lobes, slim along the halter line
-    and the slit up the middle."""
+    """The white chest covering as cloth over her figure: laid on the body
+    from the collar down, it rests on the upper chest and the bust, bridges
+    the dip between the breasts in a soft valley (the seam runs down it),
+    and below the bust it hangs, lifted by it — the scalloped hem standing
+    a little off the torso rather than tucking under. Its outline is laid
+    out on the unrolled torso (see `_outline`); cloth with a little
+    thickness, finished with a soft rolled edge."""
     H = j.H
     outline = _outline()
+    S, Z, R = _drape_field(j, -0.092, 0.092, 0.65, 0.836, 0.002, 0.0045 * H, k_across=0.5, k_down=0.42)
     pts2 = [Vector((x, z)) for x, z, _ in outline]
     step = 0.004
-    for xi in range(-21, 22):
+    for xi in range(-23, 24):
         for zi in range(0, 48):
             x, z = xi * step, 0.656 + zi * step
             if _inside(outline, x, z) and _edge_dist(outline, x, z) > step * 0.45:
@@ -254,78 +275,72 @@ def chest_cover(name: str, j: Joints, mat) -> bpy.types.Object:
     for k, ins in enumerate(orig):
         for i in ins:
             out_of[i] = k
-    edge_lift = 0.004 * H
+
+    def cloth_point(s_: float, z: float) -> tuple[Vector, Vector]:
+        a = s_ / WRAP_R
+        d = Vector((math.sin(a), -math.cos(a), 0.0))
+        c = Vector((0.0, torso_yc(j, z * H), z * H))
+        return c + d * _sample(S, Z, R, s_, z), d
+
     bm = bmesh.new()
-    vs, dirs, lifts = [], [], []
+    vs = []
     for v2 in verts2:
-        p, d = _wrap_point(j, v2.x, v2.y)
-        vs.append(bm.verts.new(p))
-        dirs.append(d)
-        lifts.append(edge_lift + 0.0068 * H * _fullness(outline, v2.x, v2.y))
+        vs.append(bm.verts.new(cloth_point(v2.x, v2.y)[0]))
     for tri in tris:
         try:
             bm.faces.new([vs[i] for i in tri])
         except ValueError:
             pass
-    # Smooth the sampled body surface (its facets) before lifting it off.
     ring = [vs[out_of[i]] for i in range(len(outline))]
-    boundary = set(ring)
-    _taubin(bm, vs, boundary, 4)
-    bm.normal_update()
-    for v, v2, d, lift in zip(vs, verts2, dirs, lifts):
-        # Beside the slit it leans in over it a little.
-        n = v.normal if v.normal.dot(d) > 0 else -v.normal
-        lean = 0.08 * (1.0 - t.smoothstep(0.007, 0.03, abs(v2.x))) * (1.0 - t.smoothstep(APEX - 0.01, APEX + 0.004, v2.y))
-        # A fitted layer: it follows the (smoothed) body surface.
-        off = (n * 0.7 + d * 0.3 + Vector((-math.copysign(lean, v2.x), 0, 0))).normalized()
-        v.co = v.co + off * lift
-    _taubin(bm, vs, boundary, 3)
+    _taubin(bm, vs, set(ring), 2)
     bm.normal_update()
     centre = Vector((0, j.chest.y, 0.72 * H))
     if sum(f.normal.dot(f.calc_center_median() - centre) for f in bm.faces) < 0:
         bmesh.ops.reverse_faces(bm, faces=bm.faces)
-    surface = set(bm.faces)
-    # The rolled edge along the whole outline, sitting on the bodysuit.
-    ring_pts, ups, radii = [], [], []
-    for (x, z, tag), v in zip(outline + [outline[0]], ring + [ring[0]]):
-        _p, d = _wrap_point(j, x, z)
-        ring_pts.append(v.co.copy())
-        ups.append(d)
-        r = {"lobe": 0.0042, "top": 0.0038, "notch": 0.0032}[tag] * H
-        radii.append((r, r * 0.95))
-    # Ease the radius where the thick lobe edge meets the slim ones.
-    soft = []
+    tree = BVHTree.FromBMesh(bm)
+    ring_pts = [v.co.copy() for v in ring] + [ring[0].co.copy()]
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    cloth = bpy.data.objects.new(name, me)
+    bpy.context.scene.collection.objects.link(cloth)
+    sol = cloth.modifiers.new("Sol", "SOLIDIFY")
+    sol.thickness = 0.0022 * H
+    sol.offset = -1.0
+    bpy.context.view_layer.objects.active = cloth
+    bpy.ops.object.modifier_apply(modifier=sol.name)
+    # The rolled edge all round, and the seam where the halves overlap.
+    bm = bmesh.new()
+    ups, radii = [], []
+    for x, z, tag in outline + [outline[0]]:
+        ups.append(cloth_point(x, z)[1])
+        r = {"lobe": 0.0042, "top": 0.0036, "notch": 0.0032}[tag] * H
+        radii.append(r)
     m = len(radii) - 1
+    soft = []
     for i in range(len(radii)):
-        rr = [radii[(i + k) % m][0] for k in range(-3, 4)]
+        rr = [radii[(i + k) % m] for k in range(-3, 4)]
         r = sum(rr) / len(rr)
         soft.append((r, r * 0.95))
-    # The seam where the two halves meet above the opening: one overlaps
-    # the other along a gentle S from under the ornament down to the apex.
-    tree = BVHTree.FromBMesh(bm)
+    t.tube_along(bm, ring_pts, soft, ups, ring=10, cap=False)
     seam_pts, seam_ups = [], []
     for k in range(15):
         u = k / 14
         sz_ = 0.784 + (APEX + 0.001 - 0.784) * u
         ss_ = 0.004 * math.sin(2 * math.pi * u) * (0.4 + 0.6 * u)
-        base, d = _wrap_point(j, ss_, sz_)
-        hit = tree.ray_cast(base + d * 0.08 * H, -d)
+        p, d = cloth_point(ss_, sz_)
+        hit = tree.ray_cast(p + d * 0.05 * H, -d)
         if hit[0] is not None:
             seam_pts.append(hit[0] + d * 0.0006 * H)
             seam_ups.append(d)
     if len(seam_pts) > 3:
         t.tube_along(bm, seam_pts, [(0.0024 * H, 0.0016 * H)] * len(seam_pts), seam_ups, ring=8)
-    t.tube_along(bm, ring_pts, soft, ups, ring=10, cap=False)
-    rim = [f for f in bm.faces if f not in surface]
-    bmesh.ops.recalc_face_normals(bm, faces=rim)
-    me = bpy.data.meshes.new(name)
-    bm.to_mesh(me)
-    bm.free()
-    obj = bpy.data.objects.new(name, me)
-    bpy.context.scene.collection.objects.link(obj)
-    for p in me.polygons:
-        p.use_smooth = True
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    edges = acc._obj(name + "_edges", bm, mat)
+    for p_ in me.polygons:
+        p_.use_smooth = True
     me.materials.append(mat)
+    obj = acc.join([cloth, edges], name)
     t.skin_like_body(obj, j)
     return obj
 
@@ -565,8 +580,8 @@ def capelet(name: str, j: Joints, mat, lining, over=None) -> bpy.types.Object:
             side = abs(math.sin(a))
             # Reach: to the upper chest in front, over the upper arm at the
             # sides, down the upper back behind; a soft scallop at the hem.
-            reach = 0.068 * fb + 0.158 * side * (1 - fb) ** 0.3 + 0.122 * (1 - fb) * (1 - side)
-            reach = max(reach, 0.07)
+            reach = 0.086 * fb + 0.17 * side * (1 - fb) ** 0.3 + 0.136 * (1 - fb) * (1 - side)
+            reach = max(reach, 0.086)
             sc = abs(math.sin(scallops * (a - a0) / 2)) ** 0.55
             reach = reach * (0.94 + 0.08 * sc * min(1.0, tr * 1.3))
             # The front edges run down from the throat (a narrow V).
@@ -587,9 +602,9 @@ def capelet(name: str, j: Joints, mat, lining, over=None) -> bpy.types.Object:
                 p = Vector((x, y, cone))
             # Soft fullness: a puffed arch across it, falling away at the hem
             # in gathered folds.
-            arch = 0.009 * H * math.sin(math.pi * min(1.0, tr * 1.1)) ** 0.8
-            fall = 0.02 * H * t.smoothstep(0.6, 1.0, tr) ** 1.5
-            fold = math.sin(scallops * (a - a0)) * 0.004 * H * tr ** 1.5
+            arch = 0.013 * H * math.sin(math.pi * min(1.0, tr * 1.1)) ** 0.8
+            fall = 0.022 * H * t.smoothstep(0.6, 1.0, tr) ** 1.5
+            fold = math.sin(scallops * (a - a0)) * 0.0052 * H * tr ** 1.5
             p = p + Vector((0, 0, arch - fall)) + radial * (fold + 0.007 * H * tr * tr)
             row.append(p)
         grid.append(row)
@@ -608,7 +623,7 @@ def capelet(name: str, j: Joints, mat, lining, over=None) -> bpy.types.Object:
     obj = bpy.data.objects.new(name, me)
     bpy.context.scene.collection.objects.link(obj)
     sol = obj.modifiers.new("Sol", "SOLIDIFY")
-    sol.thickness = 0.008 * H
+    sol.thickness = 0.011 * H
     sol.offset = -1.0
     sol.use_rim = True
     bpy.context.view_layer.objects.active = obj
@@ -626,7 +641,7 @@ def capelet(name: str, j: Joints, mat, lining, over=None) -> bpy.types.Object:
         q = Vector((p.x, p.y - j.neck_base.y, 0))
         ups.append((q.normalized() if q.length > 1e-6 else Vector((0, 1, 0))) * 0.4 + Vector((0, 0, 1)))
     bm = bmesh.new()
-    t.tube_along(bm, [p + Vector((0, 0, -0.003 * H)) for p in hem], [(0.005 * H, 0.0042 * H)] * len(hem), ups, ring=8)
+    t.tube_along(bm, [p + Vector((0, 0, -0.004 * H)) for p in hem], [(0.0064 * H, 0.0054 * H)] * len(hem), ups, ring=8)
     hem_o = acc._obj(name + "_hem", bm, mat)
     out = acc.join([obj, hem_o], name)
     t.skin_like_body(out, j)
@@ -796,7 +811,7 @@ def emilia_arc6():
     spec = R.emilia()
     # Her figure carries the chest's shape; the covering is a fitted layer
     # over it (a modest bust: gentle above, rounder below, tucking under).
-    spec.body.extra["bust_shape"] = dict(x=0.039, z=0.012, r=0.05, depth=0.0165, upper=0.72, lower=1.25)
+    spec.body.extra["bust_shape"] = dict(x=0.04, z=0.01, r=0.052, depth=0.021, upper=0.7, lower=1.2)
     # A natural feminine frame rather than a stick: a fuller ribcage, a
     # softly defined waist, hips a little wider than it.
     spec.body.chest = 1.05
@@ -982,17 +997,33 @@ def emilia_arc6():
             if lip:
                 g.objects.append(lip)
 
-        # ---- Part: the cloak (broad, flaring, lined lavender), its raised
-        # shoulder mantle, and the clasp.
-        cp, guides = cape("emilia_cloak", j, 0.17, 0.7, m["cloak"], chains=6, bones=4, wrap=238, folds=8, fold_depth=0.036, flare=1.0, fold2=(17, 0.012), hem_curve=0.09, edge_wave=0.024, thickness=0.011)
-        cp["bone"] = "upperChest"
-        cp["part"] = "cloak"
+        # ---- Part: the cloak (broad, flaring, lined lavender), the capelet
+        # over the shoulders, and the clasp.
+        # Worn on the shoulders and wrapping round them, its front edges at
+        # her sides (behind the arms from the front), not standing as panels.
+        # Its free edges are rolled, so it has the thickness of real cloth.
+        edges = {}
+        cp, guides = cape("emilia_cloak", j, 0.165, 0.7, m["cloak"], chains=6, bones=4, wrap=212, folds=8, fold_depth=0.036, flare=1.0, fold2=(17, 0.012), hem_curve=0.09, edge_wave=0.03, thickness=0.012, edges_out=edges)
         cp.data.materials.append(m["lining"])
         for poly in cp.data.polygons:
             c = poly.center
             radial = Vector((c.x, c.y - j.chest.y, 0))
             if radial.length > 1e-6 and poly.normal.dot(radial.normalized()) < -0.15:
                 poly.material_index = 1
+        bm = bmesh.new()
+        for key in ("left", "right", "hem"):
+            line = _resample(edges[key], 0.012 * H)
+            ups = []
+            for k_, q in enumerate(line):
+                tan = (line[min(k_ + 1, len(line) - 1)] - line[max(k_ - 1, 0)]).normalized()
+                out_d = Vector((q.x, q.y - j.chest.y, 0))
+                out_d = (out_d - tan * out_d.dot(tan)).normalized() if out_d.length > 1e-6 else Vector((0, 1, 0))
+                ups.append(out_d)
+            t.tube_along(bm, line, [(0.007 * H, 0.0055 * H)] * len(line), ups, ring=8)
+        roll = acc._obj("emilia_cloak_roll", bm, m["cloak"])
+        cp = acc.join([cp, roll], "emilia_cloak")
+        cp["bone"] = "upperChest"
+        cp["part"] = "cloak"
         g.objects.append(cp)
         names = []
         for i, gl in enumerate(guides):

@@ -609,18 +609,21 @@ def tube_along(bm, pts: list[Vector], radii: list[tuple[float, float]], ups: lis
     return rows
 
 
-def hood_down(name: str, j: Joints, mat, mat_lining=None, size: float = 1.0, over=None, skin: bool = True) -> bpy.types.Object:
+def hood_down(name: str, j: Joints, mat, mat_lining=None, size: float = 1.0, over=None, skin: bool = True, span: float = 84.0, rim_folds: float = 0.0) -> bpy.types.Object:
     """A hood worn down: a thick rolled rim around the back of the neck from
     collarbone to collarbone, and the deflated hood lying on the upper back
-    in a few soft folds, ending in a blunt point between the shoulder blades."""
+    in a few soft folds, ending in a blunt point between the shoulder blades.
+    `span`: how far round the rim reaches each way (degrees from the back);
+    `rim_folds` swells and pinches the rim like gathered cloth."""
     from outfit import drape_down
 
     H = j.H
     parts = []
     # Rolled rim: around the neck, from front-left over the back to front-right.
     pts, radii, ups = [], [], []
-    for i in range(13):
-        a = math.radians(-84 + 168 * i / 12)  # 0 = straight back
+    n_rim = 13 if not rim_folds else 25
+    for i in range(n_rim):
+        a = math.radians(-span + 2 * span * i / (n_rim - 1))  # 0 = straight back
         x = math.sin(a) * 0.066 * H * size
         y = j.neck_base.y + math.cos(a) * 0.058 * H * size
         p = drape_down(j, x, y, 0.022 * H) or Vector((x, y, j.neck_base.z - 0.02 * H))
@@ -629,6 +632,10 @@ def hood_down(name: str, j: Joints, mat, mat_lining=None, size: float = 1.0, ove
         p.y += 0.006 * H * max(0.0, back)
         pts.append(p)
         r = (0.009 + 0.01 * max(0.0, back) ** 0.7) * H * size
+        if rim_folds:
+            r *= 1 + rim_folds * math.sin(9 * a + 0.6)
+            # Ends taper off into the cloak rather than stopping as a bar.
+            r *= 0.45 + 0.55 * min(1.0, (span - abs(math.degrees(a))) / 22)
         radii.append((r, r * 0.8))
         ups.append(Vector((math.sin(a), math.cos(a), 0.6)).normalized())
     bm = bmesh.new()

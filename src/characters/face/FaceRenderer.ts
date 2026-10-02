@@ -22,6 +22,12 @@ export interface FaceStyle {
   eyeShape?: 'round' | 'sharp';
   /** Eye opening height multiplier (narrower < 1). */
   eyeHeight?: number;
+  /**
+   * Eye opening width multiplier. When set, the iris keeps its own size
+   * (it doesn't stretch with the opening) and a shorter opening crops it
+   * under the lids: a more almond, horizontal eye.
+   */
+  eyeWidth?: number;
   /** Eyebrow thickness multiplier. */
   browWeight?: number;
   /** An eyepatch over one eye (+1 the character's left, -1 right). */
@@ -45,6 +51,8 @@ export interface FaceStyle {
   lowerLash?: 'fine';
   /** Raise the brows (UV units) — refined faces sit them higher. */
   browLift?: number;
+  /** Brows drawn as a soft arch that tapers to a fine outer tail. */
+  browTaper?: boolean;
 }
 
 export interface ExpressionParams {
@@ -367,8 +375,11 @@ export class FaceRenderer {
     const s = this.style;
     const g = this.ctx;
     const size = (s.eyeSize ?? 1) * SIZE;
-    const w = 0.2 * size;
+    const w = 0.2 * size * (s.eyeWidth ?? 1);
     const h = 0.17 * size * (s.eyeHeight ?? 1);
+    // The iris's own frame: with eyeWidth it doesn't follow the opening.
+    const wIris = s.eyeWidth ? 0.2 * size : w;
+    const hIris = s.eyeWidth ? 0.17 * size * Math.max(s.eyeHeight ?? 1, 0.92) : h;
     const lashW = (s.lashWeight ?? 1) * 8 * this.boost;
     const sharp = s.eyeShape === 'sharp';
 
@@ -412,8 +423,8 @@ export class FaceRenderer {
 
     // Iris
     const irisScale = e.irisScale * (s.sanpaku ? 0.7 : 1);
-    const ir = w * 0.3 * irisScale * (sharp && !s.sanpaku ? 0.94 : 1);
-    const irY = h * 0.44 * irisScale * (sharp ? 1.18 : 1);
+    const ir = wIris * 0.3 * irisScale * (sharp && !s.sanpaku ? 0.94 : 1);
+    const irY = hIris * 0.44 * irisScale * (sharp ? 1.18 : 1);
     const gazeX = this.gaze.x * w * 0.22;
     const irisCx = cx + gazeX;
     const irisCy = cy + h * 0.02 - this.gaze.y * h * 0.14 + (s.sanpaku ? -h * 0.06 : 0);
@@ -481,8 +492,8 @@ export class FaceRenderer {
     g.fillStyle = lidShade;
     g.fillRect(irisCx - ir, irisCy - irY, ir * 2, irY * 0.8);
     g.restore();
-    g.strokeStyle = shadeColor(s.iris, -0.6);
-    g.lineWidth = 2.4 * this.boost;
+    g.strokeStyle = shadeColor(s.iris, jewel ? -0.7 : -0.6);
+    g.lineWidth = (jewel ? 3.2 : 2.4) * this.boost;
     g.beginPath();
     g.ellipse(irisCx, irisCy, ir, irY, 0, 0, Math.PI * 2);
     g.stroke();
@@ -686,6 +697,33 @@ export class FaceRenderer {
       g.lineTo(outerX, by + 0.006 * SIZE - t * 0.25);
       g.lineTo(outerX - side * w * 0.04, by + 0.006 * SIZE + t * 0.35);
       g.lineTo(innerX, by + innerDrop + t * 0.6);
+      g.closePath();
+      g.fill();
+      return;
+    }
+    if (this.style.browTaper) {
+      // A soft arch: fullest a little in from the inner end, tapering to a
+      // fine tail past the outer corner of the eye.
+      const t0 = 6.5 * (this.style.browWeight ?? 1) * Math.min(this.boost, 1.6);
+      const p0: [number, number] = [innerX, baseY + innerDrop];
+      const p1: [number, number] = [cx - side * w * 0.05, baseY - 0.017 * SIZE + innerDrop * 0.3];
+      const p2: [number, number] = [outerX + side * w * 0.08, baseY + 0.012 * SIZE];
+      const top: Array<[number, number]> = [];
+      const bot: Array<[number, number]> = [];
+      for (let i = 0; i <= 14; i++) {
+        const t = i / 14;
+        const u = 1 - t;
+        const x = u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0];
+        const y = u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1];
+        const th = t0 * (0.62 + 0.38 * Math.sin(Math.PI * Math.min(1, t * 1.6))) * (1 - 0.82 * t * t);
+        top.push([x, y - th * 0.55]);
+        bot.push([x, y + th * 0.45]);
+      }
+      g.fillStyle = this.style.brow;
+      g.beginPath();
+      g.moveTo(top[0]![0], top[0]![1]);
+      for (const [x, y] of top) g.lineTo(x, y);
+      for (let i = bot.length - 1; i >= 0; i--) g.lineTo(bot[i]![0], bot[i]![1]);
       g.closePath();
       g.fill();
       return;

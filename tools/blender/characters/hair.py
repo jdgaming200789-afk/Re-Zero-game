@@ -37,6 +37,7 @@ class Clump:
     chain: str | None = None
     twist: float = 0.0
     root_offset: float = 0.012
+    blunt: float = 0.0  # width kept at the tip (0 = a point; ~0.4 = a near-straight cut, capped)
     tip_material: int = 0  # material slot for the tip (0 = same as root)
     tip_start: float = 0.8
     # A named part the game can show and hide (hair under a hood): clumps
@@ -140,6 +141,8 @@ def sweep(bm: bmesh.types.BMesh, pts: list[Vector], frame: HeadFrame, c: Clump, 
         # to a point: a leaf shape, not a triangle.
         u = max(0.0, (t - c.hold) / max(1e-4, 1 - c.hold))
         taper = (1 - u**c.tip) ** 0.85 if t < 0.999 else 0.0
+        if c.blunt:
+            taper = 1.0 - (1.0 - c.blunt) * u**c.tip
         w = c.width * H * 0.5 * max(taper, 0.02) * (0.82 + 0.26 * math.sin(math.pi * min(1.0, t * 1.25)))
         th = c.thickness * H * 0.5 * max(taper, 0.05)
         row = []
@@ -166,10 +169,14 @@ def sweep(bm: bmesh.types.BMesh, pts: list[Vector], frame: HeadFrame, c: Clump, 
                 vi = rows[i].index(loop.vert) if loop.vert in rows[i] else rows[i + 1].index(loop.vert)
                 row_i = i if loop.vert in rows[i] else i + 1
                 loop[uv_layer].uv = (vi / ring, row_i / (n - 1))
-    # Close the root end
+    # Close the root end (and a blunt tip).
     root = bm.faces.new(list(reversed(rows[0])))
     if faces_out is not None:
         faces_out.append(root)
+    if c.blunt:
+        end = bm.faces.new(rows[-1])
+        if faces_out is not None:
+            faces_out.append(end)
     return created
 
 

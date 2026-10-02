@@ -72,52 +72,77 @@ def under_sleeves(c: ZoneContext) -> bool:
 
 
 def hood_up(name: str, f: HeadFrame, mat, lining, scale: float = 1.34, opening: tuple[float, float] = (66.0, 52.0), cowl: bool = False) -> bpy.types.Object:
-    """A hood worn up: a shell round the head, open at the face, tucking in
-    towards the neck at the back. Outer faces take `mat`, inner `lining`."""
+    """A hood worn up: a soft shell over the hair, open at the face in a
+    rounded arch, with a gentle point where its back seam meets the crown
+    and a few loose folds low on the sides; with `cowl`, it carries on below
+    the head onto the shoulders and upper back. A rolled rim frames the
+    face. Outer faces take `mat`, inner `lining`."""
     import bmesh
 
+    def open_half(el: float) -> float:
+        # Half-width (degrees) of the face opening at this elevation: the
+        # sides run straight up, then round over into an arch.
+        top = opening[1]
+        spring = top - 30
+        if el <= spring:
+            return opening[0]
+        if el >= top:
+            return 0.0
+        return opening[0] * math.sqrt(max(0.0, 1 - ((el - spring) / (top - spring)) ** 2))
+
     bm = bmesh.new()
-    azs = list(range(-180, 180, 9))
-    els = list(range(-60, 91, 8)) if not cowl else list(range(-80, 91, 8))
-    verts = {}
-    for az in azs:
-        for el in els:
-            if abs(az) < opening[0] and el < opening[1]:
-                continue
+    els = list(range(-80 if cowl else -60, 91, 6))
+    cols = 44
+    rows = []
+    rim_l: list[Vector] = []
+    rim_r: list[Vector] = []
+    for el in els:
+        half = open_half(el)
+        row = []
+        for k in range(cols + 1):
+            az = half + (360 - 2 * half) * k / cols  # through 180 = the back
             a, e = math.radians(az), math.radians(el)
-            n = Vector((math.sin(a) * math.cos(e), -math.cos(a) * math.cos(e), math.sin(e)))
+            back = max(0.0, -math.cos(a))
             if cowl and el < -8:
-                # A cowl: below the head the hood keeps its girth and falls
-                # onto the shoulders and upper back, into the cloak.
+                # Below the head the hood keeps its girth and falls onto the
+                # shoulders and upper back, into the cloak; behind, it first
+                # follows the skull in towards the nape (a soft S).
                 tt = (-8 - el) / 72
                 e0 = math.radians(-8)
-                back = max(0.0, -math.cos(a))
-                # Behind, the fabric follows the skull in under the back of
-                # the head towards the nape, then spreads out over the upper
-                # back: a soft S, not a flat board.
-                girth = 1 + 0.32 * tt - 0.2 * back * math.sin(math.pi * min(1.0, tt * 1.4)) ** 1.2
+                girth = 1 + 0.2 * tt - 0.2 * back * math.sin(math.pi * min(1.0, tt * 1.4)) ** 1.2
+                girth += 0.035 * math.sin(6 * a) * tt
                 ring = Vector((math.sin(a) * math.cos(e0) * f.rw, -math.cos(a) * math.cos(e0) * f.rd, 0)) * scale * girth
-                p = f.c + ring + Vector((0, 0, math.sin(e0) * f.rh * scale - tt * 0.62 * f.H))
-                p.y += tt * tt * 0.14 * f.H * back  # out over the upper back
+                p = f.c + ring + Vector((0, 0, math.sin(e0) * f.rh * scale - tt * 0.58 * f.H))
+                p.y += tt * tt * 0.1 * f.H * back
+                # A soft, uneven hem where it settles on the cloak.
+                p.z += 0.035 * f.H * math.sin(5 * a + 0.7) * tt**3
             else:
-                # Full volume over the hair; tucked in round the neck below.
-                k = scale if el >= -8 else 1.06 + (scale - 1.06) * (1 - (-8 - el) / 52)
-                p = f.c + Vector((n.x * f.rw, n.y * f.rd, n.z * f.rh)) * k
+                n = Vector((math.sin(a) * math.cos(e), -math.cos(a) * math.cos(e), math.sin(e)))
+                k_ = scale if el >= -8 else 1.06 + (scale - 1.06) * (1 - (-8 - el) / 52)
+                # The back seam rising to a soft point at the crown.
+                k_ += 0.07 * math.exp(-(((az - 180) / 38) ** 2)) * math.exp(-(((el - 46) / 22) ** 2))
+                # Loose folds low on the sides and back.
+                k_ += 0.025 * math.sin(6 * a) * (1 - min(1.0, max(0.0, (el + 5) / 45))) * min(1.0, (az - half) / 30, (360 - half - az) / 30)
+                p = f.c + Vector((n.x * f.rw, n.y * f.rd, n.z * f.rh)) * k_
                 if el < -8:
                     p.y += (-8 - el) / 52 * 0.12 * f.H  # drapes back onto the nape
-            verts[(az, el)] = bm.verts.new(p)
-    for i, az in enumerate(azs):
-        az2 = azs[(i + 1) % len(azs)]
-        for el, el2 in zip(els, els[1:]):
-            q = [verts.get((az, el)), verts.get((az2, el)), verts.get((az2, el2)), verts.get((az, el2))]
-            if all(q):
-                bm.faces.new(q)
+            row.append(bm.verts.new(p))
+        if half > 0:
+            rim_l.append(row[0].co.copy())
+            rim_r.append(row[-1].co.copy())
+        rows.append(row)
+    for r in range(len(rows) - 1):
+        for k in range(cols):
+            q = [rows[r][k], rows[r][k + 1], rows[r + 1][k + 1], rows[r + 1][k]]
+            bm.faces.new(q)
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
+    bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=1e-6)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     # Normals out, away from the head.
     for face in bm.faces:
         if face.normal.dot(face.calc_center_median() - f.c) < 0:
             face.normal_flip()
+    rim_pts = rim_l + list(reversed(rim_r))
     o = acc._obj(name, bm, mat)
     sol = o.modifiers.new("Sol", "SOLIDIFY")
     sol.thickness = 0.03 * f.H
@@ -128,6 +153,14 @@ def hood_up(name: str, f: HeadFrame, mat, lining, scale: float = 1.34, opening: 
     for poly in o.data.polygons:
         if poly.normal.dot(poly.center - f.c) < 0:
             poly.material_index = 1
+    # The rolled rim round the face.
+    rim_pts = [p for i, p in enumerate(rim_pts) if i == 0 or (p - rim_pts[i - 1]).length > 1e-4]
+    if len(rim_pts) > 3:
+        bmr = bmesh.new()
+        ups = [(p - f.c).normalized() for p in rim_pts]
+        t.tube_along(bmr, [p - u * 0.012 * f.H for p, u in zip(rim_pts, ups)], [(0.032 * f.H, 0.026 * f.H)] * len(rim_pts), ups, ring=10)
+        rim = acc._obj(name + "_rim", bmr, mat)
+        o = acc.join([o, rim], name)
     return o
 
 

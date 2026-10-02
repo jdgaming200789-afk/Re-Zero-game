@@ -289,6 +289,7 @@ def shoulder_collar(
     open_front: float = 0.0,
     slope: float = 0.5,
     lift: float = 0.0,
+    slope_back: float | None = None,
 ) -> bpy.types.Object:
     """A collar that lies on the shoulders and chest (sailor collar, maid
     neckline frill, capelet): an annulus around the neck dropped onto the
@@ -317,7 +318,9 @@ def shoulder_collar(
             # (the shoulders); elsewhere it flares free instead of sliding
             # down the chest, back or the A-posed arms.
             radial_d = math.hypot(x, y - j.neck_base.y)
-            cone_z = j.neck_base.z - 0.006 * H + lift * H - slope * max(0.0, radial_d - rx_in)
+            # A heavier fabric can fall more steeply behind than in front.
+            sl = slope if slope_back is None else slope_back + (slope - slope_back) * fb
+            cone_z = j.neck_base.z - 0.006 * H + lift * H - sl * max(0.0, radial_d - rx_in)
             p = drape_down(j, x, y, off + 0.002 * H * t)
             if p is None or p.z < cone_z:
                 p = Vector((x, y, cone_z))
@@ -353,6 +356,10 @@ def cape(
     folds: int = 5,
     fold_depth: float = 0.012,
     flare: float = 0.35,
+    fold2: tuple[int, float] | None = None,
+    hem_curve: float = 0.0,
+    edge_wave: float = 0.0,
+    thickness: float = 0.005,
 ) -> tuple[bpy.types.Object, list[list[Vector]]]:
     """Cloak fastened at the neck: drapes over the shoulders (dropped onto
     the body), then hangs down the back with folds and flare. `width` is
@@ -400,8 +407,19 @@ def cape(
             z = top.z + (rim_z - top.z) * min(1.0, t * 4) - length * H * t
             # Folds fall from the shoulders and deepen towards the hem.
             fold = fold_depth * H * math.sin(u * folds * 2 * math.pi) * min(1.0, t * 1.5) * (0.6 + 0.4 * t)
+            if fold2:
+                # Finer folds between the big ones, lower down.
+                fold += fold2[1] * H * math.sin(u * fold2[0] * 2 * math.pi + 1.3) * t
             out = flare * 0.12 * H * t + fold
             p = Vector((top.x, top.y, z)) + radial * out
+            if hem_curve:
+                # Hangs longest at the back; the front corners ride higher.
+                p.z += hem_curve * H * t * (abs(u) * 2) ** 2
+            if edge_wave:
+                # The free front edges ripple instead of falling ruler-straight.
+                k = max(0.0, (abs(u) - 0.4) / 0.1)
+                tangent = Vector((math.cos(a), math.sin(a), 0)) * (1 if u > 0 else -1)
+                p += tangent * edge_wave * H * k * math.sin(t * 3.2 * math.pi) * t
             if r == rows - drape_rows:
                 # The hem rides up a little over each fold's crest.
                 p.z += 0.35 * max(0.0, fold)
@@ -414,7 +432,7 @@ def cape(
         for r in range(len(verts[c]) - 1):
             bm.faces.new((verts[c][r], verts[c + 1][r], verts[c + 1][r + 1], verts[c][r + 1]))
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    obj = _finish(name, bm, mat, 0.005)
+    obj = _finish(name, bm, mat, thickness)
     guides = []
     for ci in range(chains):
         c = round((ci + 0.5) / chains * cols)

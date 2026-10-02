@@ -91,9 +91,14 @@ def hood_up(name: str, f: HeadFrame, mat, lining, scale: float = 1.34, opening: 
                 # onto the shoulders and upper back, into the cloak.
                 tt = (-8 - el) / 72
                 e0 = math.radians(-8)
-                ring = Vector((math.sin(a) * math.cos(e0) * f.rw, -math.cos(a) * math.cos(e0) * f.rd, 0)) * scale * (1 + 0.32 * tt)
+                back = max(0.0, -math.cos(a))
+                # Behind, the fabric follows the skull in under the back of
+                # the head towards the nape, then spreads out over the upper
+                # back: a soft S, not a flat board.
+                girth = 1 + 0.32 * tt - 0.2 * back * math.sin(math.pi * min(1.0, tt * 1.4)) ** 1.2
+                ring = Vector((math.sin(a) * math.cos(e0) * f.rw, -math.cos(a) * math.cos(e0) * f.rd, 0)) * scale * girth
                 p = f.c + ring + Vector((0, 0, math.sin(e0) * f.rh * scale - tt * 0.62 * f.H))
-                p.y += tt * 0.16 * f.H * max(0.0, -math.cos(a))  # further down the back
+                p.y += tt * tt * 0.14 * f.H * back  # out over the upper back
             else:
                 # Full volume over the hair; tucked in round the neck below.
                 k = scale if el >= -8 else 1.06 + (scale - 1.06) * (1 - (-8 - el) / 52)

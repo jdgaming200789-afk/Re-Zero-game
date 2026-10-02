@@ -413,6 +413,18 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
 
 **Mesh audit**: the stairwell recess behind every ring-wall door had its lintel flush with its side walls' outer faces (z-fighting); it now tucks inside them. Alcyone's audit is otherwise clean (wall tops hidden above the ceiling, foliage).
 
+### Phase 12 (part 5) — Emilia, Arc 6, as a modular character
+
+**One model, three states**: Emilia's Arc 6 model (`tools/blender/characters/emilia_arc6.py`) is a complete base outfit with the cloak and hood as separate parts. Mesh parts are named `<id>_part_<name>` (`cloak`, `hoodup`, `hooddown`, `hairback`, `ornaments`, `elfears`) and a character's `looks` (`src/data/characters.ts`) list which parts each look hides: **hood up** (the long back hair, bun, flower and ears go inside the hood; the front strands stay out), **hood down** (the hood lies folded behind the neck on the cloak, its ears flopped back), and **no cloak**. `AnimeCharacter.setLook` switches them at runtime; outlines are now built per part so a hidden part takes its outline with it. *Settings › Gameplay › Emilia's cloak*: Auto (hood up outdoors, down inside the tower), Hood up, Hood down, No cloak; cinematics can dress her for a scene (`outfit` step, `ActorManager.setLookOverride`).
+
+**Base outfit**: the purple bodysuit with bare shoulders and a seam down the front; the **white chest covering** — two large padded lobes over the bust with cloud-scalloped lower edges curling in towards the centre, a narrow open strip up the middle where the purple shows, a soft rolled rim (thick under the lobes, slim along the halter line and the strip) — a separate raised layer, laid out on an unrolled cylinder round the torso and cast outward from its centre line so it wraps the chest to the side seams (it stands about 3.5 cm off the bust and reads in side and ¾ silhouettes); a high white collar; the **neck ornament** — a gold crescent frame with a crown point and boss, a purple inlay, and a gold diamond pendant with a purple stone on a short link; detached puffy sleeves gathered at puffed pink cuffs; white boots with a purple V and a rolled white lip at the top.
+
+**Hair and face**: straight, even bangs; long face-framing strands on spring chains; a smooth crown; the back hair in three offset layers of broad locks with varied lengths (not one sheet); pointed elf ears set out of the hair; a crown braid ending at a white flower; a coiled bun on the other side with two long purple ribbons riding the side-strand chain. Eyes: jewel irises (purple gradient, facets, inner ring, tall pupil with a streak, layered highlights), upper lash flicks, fine lower lashes, a lifted brow; not enlarged.
+
+**Cloak**: broad and flaring with deep folds, a lavender lining, a natural curved hem; a raised shoulder mantle that curves round the shoulders and falls behind; a round gold clasp. The hood-up cowl follows the skull in under the back of the head and spreads over the upper back; purple-tipped cat ears.
+
+**Validation**: front / ¾ / side / back / high ¾ back / upper-body ¾ and side / face for each state, plus detail close-ups (chest, ornament, cuff, boot, hair ornaments, hood down from behind), rendered in the game in a neutral A-pose. 64k triangles, the existing 74-bone rig.
+
 ## Testing
 - `npm run typecheck` — strict TypeScript.
 - `npm test` — Vitest unit tests (event bus, flag scoping/rewind, snapshot validation, scheduler, FSM, math, conditions, breadcrumb trail, character/chatter data validation), combat damage model and Health, pack attack tokens and fairness, telegraph areas and expiry, enemy data, dialogue runner (lines, conditions, effects, hidden/locked/once/insight choices, branching), quest evaluation, validation of every dialogue, quest, cinematic, story trigger and talk entry, the Return-by-Death rewind semantics, death/return-point data, save validation (corrupt/tampered/future saves rejected), the flats cover, Taygeta's constellations (the answer exists and is Orion's brightest star, lines are valid, every figure within reach and clear of the stair, the sky's Orion matches the trial's), and the button glyph mapping and pad detection. **72/72 passing.**
@@ -454,7 +466,7 @@ Taygeta's library was a destination; now it's the heart of the tower (`src/areas
 - Garment shells share the body's weights, so they deform with it; at extreme bends (deep crouches, arms raised overhead) the body can show through a seam.
 - Canon details were matched from reference images where available (Subaru, Reid, Patrasche, Emilia, Ram, Shaula); the others follow the series' common look and may differ from a specific arc's outfit in small ways.
 - Changing *Party outfits* re-dresses Emilia and Ram by respawning them at their places in the formation (a brief pop rather than a transition).
-- Emilia's hood is rigid to her head; the long braid hangs outside the cloak and can brush through it when she turns sharply.
+- Emilia's hood and cloak mantle are rigid to her head and upper chest (no cloth simulation); her face-framing strands and ribbons ride spring chains and can brush through the cloak when she turns sharply.
 - Party slots are path-based; in very cluttered rooms a companion may briefly take the breadcrumb route before a direct line opens. Warps only happen out of view.
 - `PlaceholderVisual` remains as the fallback if a character model fails to load.
 - Enemy steering is direct (no navmesh); jackals rely on open sand and circling slots. Interiors will need a navigation grid if beasts ever come inside.

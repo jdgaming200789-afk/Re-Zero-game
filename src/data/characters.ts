@@ -115,8 +115,8 @@ export const CHARACTERS: Record<string, CharacterDefinition> = {
       // Refined almond eyes — a little wider than tall, the iris cropped by
       // the lids — with a jewel-like iris and strong upper lashes (Arc 6).
       eyeSize: 1.0,
-      eyeWidth: 1.12,
-      eyeHeight: 0.8,
+      eyeWidth: 1.14,
+      eyeHeight: 0.76,
       almond: true,
       tilt: -0.02,
       lashWeight: 1.85,

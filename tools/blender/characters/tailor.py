@@ -609,6 +609,18 @@ def tube_along(bm, pts: list[Vector], radii: list[tuple[float, float]], ups: lis
     return rows
 
 
+def bvh_of(objs) -> BVHTree:
+    """One BVH over several objects' meshes (in world space)."""
+    verts: list[Vector] = []
+    polys: list[list[int]] = []
+    for o in objs:
+        base = len(verts)
+        mw = o.matrix_world
+        verts.extend(mw @ v.co for v in o.data.vertices)
+        polys.extend([base + i for i in p.vertices] for p in o.data.polygons)
+    return BVHTree.FromPolygons(verts, polys)
+
+
 def hood_down(name: str, j: Joints, mat, mat_lining=None, size: float = 1.0, over=None, skin: bool = True, span: float = 84.0, rim_folds: float = 0.0, soft: bool = False) -> bpy.types.Object:
     """A hood worn down: a thick rolled rim around the back of the neck from
     collarbone to collarbone, and the deflated hood lying on the upper back
@@ -648,7 +660,9 @@ def hood_down(name: str, j: Joints, mat, mat_lining=None, size: float = 1.0, ove
     parts.append(rim)
     # Deflated hood: a tapered, flattened sack draped down the upper back
     # (over the cloak when there is one).
-    if over is not None:
+    if isinstance(over, (list, tuple)):
+        tree = bvh_of(over)
+    elif over is not None:
         dg = bpy.context.evaluated_depsgraph_get()
         tree = BVHTree.FromObject(over, dg)
     else:

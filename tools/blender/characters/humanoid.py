@@ -273,10 +273,30 @@ def build_body(name: str, s: BodySpec, j: Joints) -> bpy.types.Object:
     obj.select_set(True)
     bpy.ops.object.modifier_apply(modifier=skin.name)
     bpy.ops.object.modifier_apply(modifier=sub.name)
+    if s.extra.get("chest_detail"):
+        refine_chest(obj, j, int(s.extra["chest_detail"]))
     shape_body(obj, s, j)
     if s.extra.get("muscle"):
         sculpt_muscles(obj, s, j, float(s.extra["muscle"]))
     return obj
+
+
+def refine_chest(obj, j: Joints, cuts: int) -> None:
+    """More rows over the front of the chest (on the smooth surface), so a
+    shaped bust keeps its rounded lower pole and under-bust fold instead of
+    being flattened into the coarse rows between the torso's joints."""
+    H = j.H
+    me = obj.data
+    bm = bmesh.new()
+    bm.from_mesh(me)
+
+    def region(p: Vector) -> bool:
+        return j.waist.z < p.z < j.neck_base.z and p.y < 0.02 * H and abs(p.x) < 0.12 * H
+
+    edges = [e for e in bm.edges if region(e.verts[0].co) and region(e.verts[1].co)]
+    bmesh.ops.subdivide_edges(bm, edges=edges, cuts=cuts, use_grid_fill=True, smooth=1.0)
+    bm.to_mesh(me)
+    bm.free()
 
 
 def sculpt_muscles(obj, s: BodySpec, j: Joints, amount: float) -> None:
@@ -441,7 +461,15 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
             q.z *= bs["upper"] if q.z > 0 else bs["lower"]
             d = q.length / (bs["r"] * H)
             if d < 1:
-                p.y -= bs["depth"] * H * (1 - d * d) ** 2
+                # "round" fills out the lower pole: below the centre the
+                # profile stays full longer (its fullest point a little
+                # below the centre) and turns back in more quickly at the
+                # bottom, so there is a clear under-bust fold.
+                w = 0.0
+                if q.z < 0 and bs.get("round"):
+                    v = min(1.0, -q.z / (bs["r"] * H) / 0.4)
+                    w = bs["round"] * v * v * (3 - 2 * v) * q.z * q.z / max(q.x * q.x + q.z * q.z, 1e-12)
+                p.y -= bs["depth"] * H * (1 - d * d) ** (2.0 - 1.2 * w)
         elif s.bust > 0 and p.y < 0:
             c = Vector((0.04 * H * math.copysign(1, p.x if p.x != 0 else 1), -0.045 * H, j.chest.z + 0.012 * H))
             d = (p - c).length / (0.05 * H)

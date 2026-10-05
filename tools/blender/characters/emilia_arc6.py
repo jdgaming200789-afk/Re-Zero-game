@@ -96,7 +96,7 @@ BACK_S = WRAP_R * math.pi
 LOBE_T0 = 0.7
 # Where each half's top edge ends, at the front of the armpit (s, fraction
 # of H): beyond it, round the side and the back, is the bodysuit.
-PETAL_S = 0.047
+PETAL_S = 0.041
 # The cloud scallops round each breast's hem, from its outer side round
 # underneath and up the inner side: (start, end, height), with start/end
 # along that arc (0..1) and height relative to its radius. Three broad ones
@@ -106,11 +106,11 @@ SCALLOPS_L = ((0.2, 0.45, 0.24), (0.45, 0.74, 0.36), (0.74, 1.0, 0.24))
 # Each half's inner edge up to the top of the opening: where it ends (x, and
 # dz from APEX), how high it rises before turning in (rise), and how round
 # the top is (c2x). The two differ a little, so the opening isn't a mirror.
-NOTCH_R = dict(x=0.0012, dz=0.0, rise=0.013, c2x=0.0032)
-NOTCH_L = dict(x=0.0006, dz=-0.0022, rise=0.009, c2x=0.0042, wave=0.0014)
+NOTCH_R = dict(x=0.0012, dz=0.0, rise=0.013, c2x=0.0055, s=-0.0022)
+NOTCH_L = dict(x=0.0006, dz=-0.0022, rise=0.009, c2x=0.0065, wave=0.0014, s=-0.0016)
 # The hem's soft roll: just inside the scalloped edge the cloth puffs out
 # (PUFF, fraction of H, peaking PUFF_W in from the edge) and curls back in.
-PUFF = 0.001
+PUFF = 0.0006
 PUFF_W = 0.005
 
 
@@ -176,7 +176,7 @@ def _half(scallops, notch) -> list[tuple[float, float, str]]:
         right.append((s_, top_z(s_), "top"))
     # The breast: the centre and radii of the petal's rounded lower part.
     cs, cz, rz = 0.036, 0.718, 0.024
-    rs_out, rs_in = 0.021, 0.026
+    rs_out, rs_in = 0.018, 0.026
     sj, zj = cs + rs_out * math.cos(LOBE_T0), cz + rz * math.sin(LOBE_T0)
 
     def bez(p0, p1, p2, p3, u):
@@ -186,7 +186,7 @@ def _half(scallops, notch) -> list[tuple[float, float, str]]:
     # Down the outer side of the breast into the rounded bottom.
     cx_, cz0 = right[-1][0], right[-1][1]
     for k in range(1, 9):
-        x, z = bez((cx_, cz0), (cx_ + 0.001, cz0 - 0.01), (sj + 0.004, zj + 0.012), (sj, zj), k / 8)
+        x, z = bez((cx_, cz0), (cx_ - 0.001, cz0 - 0.016), (sj + 0.002, zj + 0.016), (sj, zj), k / 8)
         right.append((x, z, "outer"))
     # Round the bottom and up the inner side: a few broad, soft cloud
     # scallops, each a rounded arc between two small cusps, drawn rather
@@ -205,7 +205,7 @@ def _half(scallops, notch) -> list[tuple[float, float, str]]:
         rs = rs_out if math.cos(ang) > 0 else rs_in
         # (On the inner side the scallops bulge down, not in towards the
         # opening, so it widens steadily downward.)
-        hx = h * (1 - 0.75 * max(0.0, -math.cos(ang)))
+        hx = h * (1 - 0.35 * max(0.0, -math.cos(ang)))
         right.append((cs + rs * (1 + hx) * math.cos(ang), cz + rz * (1 + h) * math.sin(ang), "lobe"))
     # Round the cusps between scallops a little, so the rolled edge can
     # turn them without folding over itself.
@@ -225,6 +225,8 @@ def _half(scallops, notch) -> list[tuple[float, float, str]]:
         u = k / 12
         x, z = bez((xs, zs), (xs, zs + notch["rise"]), (notch["c2x"], az_ - 0.004), (ax_, az_), u)
         x += notch.get("wave", 0.0) * math.sin(math.pi * u) ** 2
+        # Out from the top of the opening, then back in as it descends.
+        x += notch.get("s", 0.0) * math.sin(2 * math.pi * u)
         right.append((x, z, "notch"))
     return right
 
@@ -626,7 +628,7 @@ def high_collar(name: str, j: Joints, mat) -> bpy.types.Object:
     grid = []
     for r in range(rows + 1):
         v = r / rows
-        ease = (0.0016 + 0.0011 * (1 - v) ** 2) * H
+        ease = (0.001 + 0.0008 * (1 - v) ** 2) * H
         row = []
         for i in range(segs):
             a = 2 * math.pi * i / segs
@@ -840,7 +842,7 @@ def capelet(name: str, j: Joints, mat, lining, over=None) -> bpy.types.Object:
     a0, a1 = gap / 2, 2 * math.pi - gap / 2
     segs, rings = 112, 10
     rx_in, ry_in = 0.044 * H, 0.042 * H
-    scallops = 16
+    scallops = 10
     grid = []
     for r in range(rings + 1):
         tr = r / rings
@@ -862,7 +864,7 @@ def capelet(name: str, j: Joints, mat, lining, over=None) -> bpy.types.Object:
             x = radial.x * (rx_in + ext)
             y = j.neck_base.y + radial.y * (ry_in + ext)
             radial_d = math.hypot(x, y - j.neck_base.y)
-            slope = 0.65 + 0.55 * (1 - fb)
+            slope = 0.85 + 0.6 * (1 - fb)
             cone = j.neck_base.z + 0.004 * H - slope * max(0.0, radial_d - rx_in)
             p = drape_down(j, x, y, 0.009 * H)
             if tree is not None:
@@ -873,9 +875,9 @@ def capelet(name: str, j: Joints, mat, lining, over=None) -> bpy.types.Object:
                 p = Vector((x, y, cone))
             # Soft fullness: a puffed arch across it, falling away at the hem
             # in gathered folds.
-            arch = 0.013 * H * math.sin(math.pi * min(1.0, tr * 1.1)) ** 0.8
+            arch = 0.006 * H * math.sin(math.pi * min(1.0, tr * 1.1)) ** 0.8
             fall = 0.022 * H * t.smoothstep(0.6, 1.0, tr) ** 1.5
-            fold = math.sin(scallops * (a - a0)) * 0.0052 * H * tr ** 1.5
+            fold = math.sin(scallops * (a - a0)) * 0.007 * H * tr ** 1.5
             p = p + Vector((0, 0, arch - fall)) + radial * (fold + 0.007 * H * tr * tr)
             row.append(p)
         grid.append(row)
@@ -1082,18 +1084,18 @@ def emilia_arc6():
     spec = R.emilia()
     # Her figure carries the chest's shape; the covering is a fitted layer
     # over it (a modest bust: gentle above, rounder below, tucking under).
-    spec.body.extra["breasts"] = dict(x=0.05, sink=0.013, z=0.004, ax=0.045, ay=0.037, up=0.08, low=0.05, yaw=0.25, sag=0.08, top=0.5, blend=0.05, blend_out=0.032, fold=0.03, bridge=0.006, bridge_w=0.022)
+    spec.body.extra["breasts"] = dict(x=0.05, sink=0.013, z=0.002, ax=0.05, ay=0.034, up=0.088, low=0.056, yaw=0.25, sag=0.04, top=0.55, blend=0.06, blend_out=0.042, fold=0.042, bridge=0.006, bridge_w=0.024)
     # The body below the chest, shaped to match it: a soft waist, a gentle
     # hip flare, a belly with a soft plane change, a small navel, the
     # curve of the lower back.
-    spec.body.extra["torso_sculpt"] = dict(waist_in=0.06, waist_w=0.07, hip_out=0.06, hip_w=0.06, hip_dz=0.01, thigh_out=0.06, crotch_close=0.35, glute=0.012, glute_x=0.05, glute_dz=-0.012, shoulder_drop=0.022, neck_flare=0.12, under_ribs=0.0032, belly=0.0035, navel=0.0032, navel_rx=0.0032, navel_rz=0.0062, navel_dz=-0.014, iliac=0.0016, lumbar=0.006)
+    spec.body.extra["torso_sculpt"] = dict(waist_in=0.035, waist_w=0.1, hip_out=0.045, hip_w=0.09, hip_dz=0.01, thigh_out=0.06, crotch_close=0.35, glute=0.02, glute_x=0.05, glute_wx=0.05, glute_dz=-0.02, shoulder_drop=0.022, neck_flare=0.12, under_ribs=0.0032, belly=0.0035, navel=0.0032, navel_rx=0.0032, navel_rz=0.0062, navel_dz=-0.014, iliac=0.0016, lumbar=0.008, smooth=12)
     # One even step finer over the whole torso, one more over the bust.
     spec.body.extra["torso_detail"] = 1
     spec.body.extra["chest_detail"] = 2
     # A natural feminine frame rather than a stick: a fuller ribcage, a
     # softly defined waist, hips a little wider than it.
     spec.body.chest = BODY_CHEST
-    spec.body.waist = 0.86
+    spec.body.waist = 0.94
     spec.body.hips = 1.44
     spec.body.shoulder = BODY_SHOULDER
     # Fuller thighs and calves under the bodysuit, as drawn.
@@ -1253,6 +1255,9 @@ def emilia_arc6():
         s_, z = wrap_s(c.j, c.p), c.p.z / c.H
         # Under the bust the hem stands off the body, so more of it stays.
         margin = 0.011 + 0.014 * (1 - t.smoothstep(0.05, 0.068, abs(s_))) * (1 - t.smoothstep(0.71, 0.73, z))
+        # The cleavage stays: it is what shows through the opening.
+        if abs(s_) < 0.032 and z < SEAM_TOP + 0.01:
+            return False
         return _inside(chest_outline, s_, z) and _edge_dist(chest_outline, s_, z) > margin
 
     # EMILIA_BODY_ONLY=1 builds her without the chest garment, collar and
@@ -1375,6 +1380,14 @@ def emilia_arc6():
                 e["bone"] = "upperChest"
                 e["part"] = "hooddown"
                 g.objects.append(e)
+        # EMILIA_NO_CLOAK=1 leaves the cloak off, to judge the chest garment.
+        if os.environ.get("EMILIA_NO_CLOAK"):
+            drop = [o for o in g.objects if o.get("part") in ("cloak", "hooddown", "hoodup") or "clasp" in o.name]
+            g.objects = [o for o in g.objects if o not in drop]
+            g.bindings.clear()
+            g.chains.clear()
+            for o in drop:
+                bpy.data.objects.remove(o, do_unlink=True)
         return g
 
     def accessories(j: Joints, m: dict, head):

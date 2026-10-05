@@ -572,8 +572,8 @@ def _sculpt_torso(p: Vector, ts: dict, j: Joints) -> None:
         hx = j.hip_l.x / H
         if ax < hx and z < cz + 0.02:
             inner = 1 - ax / hx
-            k = ts["crotch_close"] * g(z, cz - 0.03, 0.045) * inner * inner
-            nx = max(0.004, ax - k * hx)
+            k = ts["crotch_close"] * (1.0 if z > cz - 0.03 else g(z, cz - 0.03, 0.05)) * inner * inner
+            nx = max(0.0015, ax - k * hx)
             p.x = math.copysign(nx * H, p.x)
     # The glutes: a soft, wide form low on the back of the pelvis that
     # runs on into the back of the thighs (no separate ball).
@@ -740,7 +740,7 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
             p.z = 0.0
         vert.co = p
     if ts:
-        _smooth_torso(obj, j)
+        _smooth_torso(obj, j, int(ts.get("smooth", 4)))
         if ts.get("navel"):
             _navel(obj, ts, j)
     if br:

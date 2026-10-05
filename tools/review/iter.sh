@@ -9,3 +9,4 @@ cp public/assets/models/characters/emilia.glb public/review/$tag.glb
 source ~/.nvm/nvm.sh
 node tools/review/review.mjs /home/ubuntu/rv_${tag}_side.png "$tag side" /review/$tag.glb tools/review/side_views.json hide=hair,part_,clasp,bow arms=70
 node tools/review/review.mjs /home/ubuntu/rv_${tag}_body.png "$tag body" /review/$tag.glb tools/review/body_views.json hide=hair,part_,clasp,bow
+node tools/review/review.mjs /home/ubuntu/rv_${tag}_flat.png "$tag flat" /review/$tag.glb tools/review/body_views.json hide=hair,part_,clasp,bow flat=1

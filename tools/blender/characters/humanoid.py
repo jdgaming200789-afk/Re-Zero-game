@@ -176,6 +176,7 @@ def add_chain(arm: bpy.types.Object, names_points: list[tuple[str, Vector, Vecto
 # --------------------------------------------------------------------------- body
 
 
+
 def build_body(name: str, s: BodySpec, j: Joints) -> bpy.types.Object:
     """Smooth body via Skin + Subdivision modifiers over a joint graph."""
     H = j.H
@@ -530,6 +531,44 @@ def _breast_wrap(p: Vector, br: dict, j: Joints, wall_y: float) -> None:
         p += d * (r / rp - 1)
 
 
+def _chest_field(p: Vector, br: dict, j: Joints) -> None:
+    """The chest as a smooth displacement of the torso wall (in place),
+    not a volume pushed out from a centre: each side is a broad bell in
+    (|x|, z) round (`x`, `z`), `wx` across, `up` above and `low` below.
+    Front-facing surface moves forward by `depth`, side-facing surface
+    outward by `side`, so front width and side projection are set
+    independently and nothing is pushed up over the shoulder. The two
+    sides join smoothly across the centre (a soft maximum, `bridge`)."""
+    H = j.H
+    if p.y > 0.02 * H:
+        return
+    cz = j.chest.z + br["z"] * H
+
+    def bell(sx: float) -> float:
+        u = (p.x - sx * br["x"] * H) / (br["wx"] * H)
+        dz = p.z - cz
+        v = dz / ((br["up"] if dz > 0 else br["low"]) * H)
+        r2 = u * u + v * v
+        return (1 - r2) ** 2 if r2 < 1 else 0.0
+
+    fl, fr = bell(1.0), bell(-1.0)
+    f = (fl ** 4 + fr ** 4) ** 0.25
+    f += br.get("bridge", 0.0) * min(fl, fr)
+    if f <= 0:
+        return
+    yc = br.get("axis_y", 0.0) * H
+    n = Vector((p.x, p.y - yc, 0.0))
+    if n.length < 1e-9:
+        return
+    n.normalize()
+    front = max(0.0, -n.y)
+    amt = f * (br["depth"] * front * front + br["side"] * n.x * n.x) * H
+    # Behind the side seam the displacement fades out.
+    amt *= min(1.0, max(0.0, (0.02 * H - p.y) / (0.03 * H)))
+    p.x += n.x * amt
+    p.y += n.y * amt
+
+
 def _sculpt_torso(p: Vector, ts: dict, j: Joints) -> None:
     """Soft anime body forms below the chest (in place): a waist that tapers
     without pinching, a gentle hip flare into the thighs, a belly with a
@@ -715,7 +754,9 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
             _sculpt_torso(p, ts, j)
         # Bust
         bs = s.extra.get("bust_shape")
-        if br and p.y < 0.01 * H:
+        if br and br.get("field"):
+            _chest_field(p, br, j)
+        elif br and p.y < 0.01 * H:
             _breast_wrap(p, br, j, wall_y)
             if br.get("bridge") and p.y < 0:
                 # Fill the centre between the breasts so they read as one

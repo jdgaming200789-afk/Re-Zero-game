@@ -39,6 +39,19 @@ if (q.get('arms')) {
   });
   root.updateMatrixWorld(true);
 }
+// down=deg lowers the upper arms toward the sides (a neutral review pose).
+if (q.get('down')) {
+  const ang = (+q.get('down') * Math.PI) / 180;
+  root.updateMatrixWorld(true);
+  root.traverse((o) => {
+    if (!o.isBone || !/^upperArm/.test(o.name)) return;
+    const s = /R$/.test(o.name) ? 1 : -1;
+    const pw = new THREE.Quaternion(); o.parent.getWorldQuaternion(pw);
+    const axis = new THREE.Vector3(0, 0, 1).applyQuaternion(pw.clone().invert());
+    o.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(axis, s * ang));
+  });
+  root.updateMatrixWorld(true);
+}
 const box = new THREE.Box3().setFromObject(root);
 const H = box.max.y - box.min.y;
 window.__H = H; 

@@ -1086,7 +1086,7 @@ def emilia_arc6():
     spec = R.emilia()
     # Her figure carries the chest's shape; the covering is a fitted layer
     # over it (a modest bust: gentle above, rounder below, tucking under).
-    spec.body.extra["breasts"] = dict(x=0.05, sink=0.013, z=-0.008, ax=0.046, ay=0.037, up=0.098, low=0.062, yaw=0.25, sag=0.04, top=0.65, blend=0.06, blend_out=0.05, fold=0.046, bridge=0.006, bridge_w=0.024)
+    spec.body.extra["breasts"] = dict(field=True, x=0.048, z=-0.008, wx=0.062, up=0.095, low=0.062, depth=0.05, side=0.012, bridge=0.35)
     # The body below the chest, shaped to match it: a soft waist, a gentle
     # hip flare, a belly with a soft plane change, a small navel, the
     # curve of the lower back.

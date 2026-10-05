@@ -10,7 +10,7 @@ const BASE = process.env.GAME_URL ?? 'http://127.0.0.1:5173/';
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? '/home/ubuntu/.local/bin/google-chrome', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 520, height: 640 } });
 page.on('pageerror', (e) => console.error(e));
-await page.goto(`${BASE}tools/review/review.html?glb=${encodeURIComponent(glb)}&hide=${opt.hide ?? ''}${opt.flat ? '&flat=1' : ''}${opt.arms ? `&arms=${opt.arms}` : ''}`);
+await page.goto(`${BASE}tools/review/review.html?glb=${encodeURIComponent(glb)}&hide=${opt.hide ?? ''}${opt.flat ? '&flat=1' : ''}${opt.arms ? `&arms=${opt.arms}` : ''}${opt.down ? `&down=${opt.down}` : ''}`);
 await page.waitForFunction(() => document.body.dataset.ready === '1', null, { timeout: 120000 });
 const shots = [];
 for (const v of views) {

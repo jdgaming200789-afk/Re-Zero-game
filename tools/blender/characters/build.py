@@ -181,30 +181,74 @@ def cut_planes(obj, planes) -> None:
     obj.data.update()
 
 
-def iso_cut(obj, fields) -> None:
-    """Cut the mesh along the zero level of each field: split every edge
-    whose ends lie on opposite sides, then join the new points across each
-    face, so a curved boundary becomes a clean edge loop."""
+def iso_cut(obj, fields, snap: float = 0.2) -> None:
+    """Cut the mesh along the zero level of each field, so a curved boundary
+    becomes a clean edge loop. Crossed faces are triangulated first (a triangle is
+    crossed at most twice, so every crossing face is split); a vertex that
+    lies within `snap` of an edge's length from the crossing is moved onto
+    it instead of leaving a sliver triangle beside it."""
     bm = bmesh.new()
     bm.from_mesh(obj.data)
     for f in fields:
         val = {v: f(v.co) for v in bm.verts}
+        crossed = [
+            x for x in bm.faces
+            if len(x.verts) > 3
+            and min(val[v] for v in x.verts) < 0 < max(val[v] for v in x.verts)
+        ]
+        bmesh.ops.triangulate(bm, faces=crossed)
+        for v in list(bm.verts):
+            best = None
+            for e in v.link_edges:
+                o = e.other_vert(v)
+                fa, fb = val[v], val[o]
+                if fa * fb < 0:
+                    t = fa / (fa - fb)
+                    if t < snap and (best is None or t < best[0]):
+                        best = (t, o)
+            if best:
+                t, o = best
+                v.co = v.co.lerp(o.co, t)
+                val[v] = 0.0
         new = set()
         for e in list(bm.edges):
             a, b = e.verts
             fa, fb = val[a], val[b]
-            if fa * fb < 0 and min(abs(fa), abs(fb)) > 1e-9:
+            if fa * fb < 0:
                 _e, nv = bmesh.utils.edge_split(e, a, fa / (fa - fb))
                 val[nv] = 0.0
                 new.add(nv)
         for face in list(bm.faces):
-            on = [v for v in face.verts if v in new]
-            if len(on) == 2 and not any(e in face.edges for e in on[0].link_edges if on[1] in e.verts):
+            on = [v for v in face.verts if v in new or val[v] == 0.0]
+            if len(on) == 2 and not any(on[1] in e.verts for e in on[0].link_edges):
                 bmesh.ops.connect_verts(bm, verts=on)
-    bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 4])
+    bmesh.ops.triangulate(bm, faces=[x for x in bm.faces if len(x.verts) > 4])
+    bm.normal_update()
     bm.to_mesh(obj.data)
     bm.free()
     obj.data.update()
+
+
+def report_intersections(obj, H: float, label: str) -> int:
+    """Print how many faces of `obj` cross each other (not merely touching
+    neighbours), binned by height / |x| (fractions of H). EMILIA review aid."""
+    from mathutils.bvhtree import BVHTree
+    import collections
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bm.faces.ensure_lookup_table()
+    tree = BVHTree.FromBMesh(bm)
+    pairs = [
+        (a, b) for a, b in tree.overlap(tree)
+        if a < b and not {v.index for v in bm.faces[a].verts} & {v.index for v in bm.faces[b].verts}
+    ]
+    reg = collections.Counter()
+    for a, _b in pairs:
+        c = bm.faces[a].calc_center_median()
+        reg[(round(c.z / H, 2), round(abs(c.x) / H, 2), "front" if c.y < 0 else "back")] += 1
+    print(f"  intersections[{label}]: {len(pairs)}", sorted(reg.items(), key=lambda kv: -kv[1])[:12])
+    bm.free()
+    return len(pairs)
 
 
 def build(spec: CharacterSpec) -> str:
@@ -214,11 +258,16 @@ def build(spec: CharacterSpec) -> str:
 
     arm = build_armature(spec.id, j)
     body = build_body(f"{spec.id}_body", spec.body, j)
+    check = os.environ.get("BODY_CHECK")
+    if check:
+        report_intersections(body, j.H, "body")
     if spec.cuts:
         cut_planes(body, spec.cuts(j))
     if spec.iso_cuts:
         iso_cut(body, spec.iso_cuts(j))
     zone(body, j, spec.zones, mats, spec.default_zone)
+    if check:
+        report_intersections(body, j.H, "after cuts")
     # Auto (heat) weights for the body against the humanoid bones only.
     select_only(body, arm)
     bpy.ops.object.parent_set(type="ARMATURE_AUTO")

@@ -176,7 +176,6 @@ def add_chain(arm: bpy.types.Object, names_points: list[tuple[str, Vector, Vecto
 # --------------------------------------------------------------------------- body
 
 
-
 def build_body(name: str, s: BodySpec, j: Joints) -> bpy.types.Object:
     """Smooth body via Skin + Subdivision modifiers over a joint graph."""
     H = j.H
@@ -531,44 +530,6 @@ def _breast_wrap(p: Vector, br: dict, j: Joints, wall_y: float) -> None:
         p += d * (r / rp - 1)
 
 
-def _chest_field(p: Vector, br: dict, j: Joints) -> None:
-    """The chest as a smooth displacement of the torso wall (in place),
-    not a volume pushed out from a centre: each side is a broad bell in
-    (|x|, z) round (`x`, `z`), `wx` across, `up` above and `low` below.
-    Front-facing surface moves forward by `depth`, side-facing surface
-    outward by `side`, so front width and side projection are set
-    independently and nothing is pushed up over the shoulder. The two
-    sides join smoothly across the centre (a soft maximum, `bridge`)."""
-    H = j.H
-    if p.y > 0.02 * H:
-        return
-    cz = j.chest.z + br["z"] * H
-
-    def bell(sx: float) -> float:
-        u = (p.x - sx * br["x"] * H) / (br["wx"] * H)
-        dz = p.z - cz
-        v = dz / ((br["up"] if dz > 0 else br["low"]) * H)
-        r2 = u * u + v * v
-        return (1 - r2) ** 2 if r2 < 1 else 0.0
-
-    fl, fr = bell(1.0), bell(-1.0)
-    f = (fl ** 4 + fr ** 4) ** 0.25
-    f += br.get("bridge", 0.0) * min(fl, fr)
-    if f <= 0:
-        return
-    yc = br.get("axis_y", 0.0) * H
-    n = Vector((p.x, p.y - yc, 0.0))
-    if n.length < 1e-9:
-        return
-    n.normalize()
-    front = max(0.0, -n.y)
-    amt = f * (br["depth"] * front * front + br["side"] * n.x * n.x) * H
-    # Behind the side seam the displacement fades out.
-    amt *= min(1.0, max(0.0, (0.02 * H - p.y) / (0.03 * H)))
-    p.x += n.x * amt
-    p.y += n.y * amt
-
-
 def _sculpt_torso(p: Vector, ts: dict, j: Joints) -> None:
     """Soft anime body forms below the chest (in place): a waist that tapers
     without pinching, a gentle hip flare into the thighs, a belly with a
@@ -586,31 +547,11 @@ def _sculpt_torso(p: Vector, ts: dict, j: Joints) -> None:
         # Width: in at the waist, out over the hips (thighs follow).
         wz = j.waist.z / H + ts.get("waist_dz", 0.0)
         hz = j.hips.z / H + ts.get("hip_dz", 0.0)
-        p.x *= 1 - ts.get("waist_in", 0.0) * g(z, wz, ts.get("waist_w", 0.05)) + ts.get("hip_out", 0.0) * g(z, hz, ts.get("hip_w", 0.04))
+        p.x *= 1 - ts.get("waist_in", 0.0) * g(z, wz, 0.05) + ts.get("hip_out", 0.0) * g(z, hz, 0.04)
         # The upper thighs carry the hips' line on down (outer side fuller).
         if ts.get("thigh_out") and z < j.hips.z / H:
             tz = j.hip_l.z / H - 0.035
             p.x *= 1 + ts["thigh_out"] * g(z, tz, 0.05) * min(1.0, ax / 0.04)
-    zones = ts.get("zones")
-    if zones and ax < 0.16:
-        # Separate torso regions (upper/lower ribcage, waist, upper pelvis,
-        # hip, upper thigh), each a local width scale and a little forward
-        # depth, eased into its neighbours.
-        keys = sorted(
-            ((getattr(j, a).z / H + dz, sx, fy) for a, dz, sx, fy in zones),
-            key=lambda k: k[0],
-        )
-        sx, fy = 1.0, 0.0
-        if keys[0][0] <= z <= keys[-1][0]:
-            for (z0, s0, f0), (z1, s1, f1) in zip(keys, keys[1:]):
-                if z0 <= z <= z1:
-                    u = (z - z0) / max(1e-9, z1 - z0)
-                    u = u * u * (3 - 2 * u)
-                    sx, fy = s0 + (s1 - s0) * u, f0 + (f1 - f0) * u
-                    break
-        p.x *= sx
-        if p.y < 0 and ax < 0.1:
-            p.y -= fy * H * max(0.0, 1 - (ax / 0.085) ** 2)
     if p.y < 0 and ax < 0.1:
         across = max(0.0, 1 - (ax / 0.085) ** 2)
         # Just under the ribcage the front settles in a little ...
@@ -624,33 +565,6 @@ def _sculpt_torso(p: Vector, ts: dict, j: Joints) -> None:
     if p.y > 0 and ax < 0.09:
         # The small of the back curves in.
         p.y -= ts.get("lumbar", 0.0) * H * g(z, j.waist.z / H, 0.045) * max(0.0, 1 - (ax / 0.09) ** 2)
-    # The inner thighs meet the pelvis lower and close together at the
-    # top, so the leg gap opens gradually below the crotch.
-    if ts.get("crotch_close"):
-        cz = (j.hip_l.z - (j.pelvis.z - j.hip_l.z) * 2 / 3) / H + ts.get("crotch_dz", 0.0)
-        hx = j.hip_l.x / H
-        if ax < hx and z < cz + 0.02:
-            inner = 1 - ax / hx
-            k = ts["crotch_close"] * (1.0 if z > cz - 0.03 else g(z, cz - 0.03, 0.05)) * inner * inner
-            nx = max(0.0015, ax - k * hx)
-            p.x = math.copysign(nx * H, p.x)
-    # The glutes: a soft, wide form low on the back of the pelvis that
-    # runs on into the back of the thighs (no separate ball).
-    if ts.get("glute") and p.y > 0:
-        gx, gz = ts.get("glute_x", 0.05), j.hip_l.z / H + ts.get("glute_dz", -0.01)
-        k = g(ax, gx, ts.get("glute_wx", 0.04)) * g(z, gz, ts.get("glute_wz", 0.05) if z > gz else ts.get("glute_wz_low", 0.04))
-        p.y += ts["glute"] * H * k * min(1.0, p.y / (0.02 * H))
-    # Shoulders slope down from the neck to the arm; the trapezius widens
-    # the base of the neck a little so it doesn't stand alone.
-    if ts.get("shoulder_drop") and z > j.upper_chest.z / H - 0.03:
-        ux, sx = 0.035, j.arm_l.x / H + 0.02
-        m = min(1.0, max(0.0, (ax - ux) / (sx - ux)))
-        up = min(1.0, max(0.0, (z - (j.upper_chest.z / H - 0.03)) / 0.04))
-        p.z -= ts["shoulder_drop"] * H * math.sin(m * math.pi / 2) * up * min(1.0, max(0.0, 1.5 - m))
-    if ts.get("neck_flare"):
-        nb = j.neck_base.z / H
-        if ax < 0.07 and nb - 0.02 < z < nb + 0.04:
-            p.x *= 1 + ts["neck_flare"] * g(z, nb, 0.018)
 
 
 def _navel(obj, ts: dict, j: Joints) -> None:
@@ -754,16 +668,8 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
             _sculpt_torso(p, ts, j)
         # Bust
         bs = s.extra.get("bust_shape")
-        if br and br.get("field"):
-            _chest_field(p, br, j)
-        elif br and p.y < 0.01 * H:
+        if br and p.y < 0.01 * H:
             _breast_wrap(p, br, j, wall_y)
-            if br.get("bridge") and p.y < 0:
-                # Fill the centre between the breasts so they read as one
-                # form across the chest, not two spheres with a crease.
-                bz = j.chest.z + br["z"] * H
-                w = math.exp(-(p.x / (br.get("bridge_w", 0.025) * H)) ** 2 - ((p.z - bz) / (br["up"] * 0.7 * H)) ** 2)
-                p.y -= br["bridge"] * H * w
         elif bs and p.y < 0:
             # A shaped bust: a gentle slope above, a rounder curve below
             # that tucks under (extents scaled separately above and below).
@@ -793,7 +699,7 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
             if d < 1:
                 p.y -= s.bust * 0.018 * H * (1 - d * d) ** 2
         # Buttocks
-        if not (ts and ts.get("glute")) and j.hip_l.z - 0.06 * H < p.z < j.hips.z and p.y > 0 and abs(p.x) < 0.09 * H:
+        if j.hip_l.z - 0.06 * H < p.z < j.hips.z and p.y > 0 and abs(p.x) < 0.09 * H:
             k = 1 - abs((p.z - (j.hip_l.z - 0.005 * H)) / (0.06 * H))
             p.y += max(0.0, k) * 0.008 * H
         # Flat soles
@@ -801,7 +707,7 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
             p.z = 0.0
         vert.co = p
     if ts:
-        _smooth_torso(obj, j, int(ts.get("smooth", 4)))
+        _smooth_torso(obj, j)
         if ts.get("navel"):
             _navel(obj, ts, j)
     if br:

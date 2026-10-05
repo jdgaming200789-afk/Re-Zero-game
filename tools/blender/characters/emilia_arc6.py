@@ -85,7 +85,7 @@ LIFT_FROM = 0.722
 # Each half is held up by the upper, outer bust and hovers in front of the
 # rest of the breast like a soft shell, up to this far off it (fraction of
 # H), most over the lower, inner front, where the scallops hang.
-HOVER = 0.006
+HOVER = 0.009
 # Round the back it is a band: its top edge rises from under the arms to
 # this height across the shoulder blades, and it closes in a seam at the
 # centre back (s = BACK_S).
@@ -96,7 +96,7 @@ BACK_S = WRAP_R * math.pi
 LOBE_T0 = 0.7
 # Where each half's top edge ends, at the front of the armpit (s, fraction
 # of H): beyond it, round the side and the back, is the bodysuit.
-PETAL_S = 0.051
+PETAL_S = 0.047
 # The cloud scallops round each breast's hem, from its outer side round
 # underneath and up the inner side: (start, end, height), with start/end
 # along that arc (0..1) and height relative to its radius. Three broad ones
@@ -110,8 +110,8 @@ NOTCH_R = dict(x=0.0012, dz=0.0, rise=0.013, c2x=0.0032)
 NOTCH_L = dict(x=0.0006, dz=-0.0022, rise=0.009, c2x=0.0042, wave=0.0014)
 # The hem's soft roll: just inside the scalloped edge the cloth puffs out
 # (PUFF, fraction of H, peaking PUFF_W in from the edge) and curls back in.
-PUFF = 0.0015
-PUFF_W = 0.006
+PUFF = 0.001
+PUFF_W = 0.005
 
 
 def halter_z(s: float) -> float:
@@ -424,7 +424,7 @@ def chest_cover(name: str, j: Joints, mat) -> bpy.types.Object:
     `_outline`); finished with a soft rolled edge."""
     H = j.H
     outline = _outline()
-    S, Z, R = _drape_field(j, -0.16, 0.16, 0.65, 0.836, 0.002, 0.004 * H, k_across=1.8, k_down=1.3, k_lift=LIFT)
+    S, Z, R = _drape_field(j, -0.16, 0.16, 0.65, 0.836, 0.002, 0.003 * H, k_across=1.8, k_down=1.3, k_lift=LIFT)
     pts2 = [Vector((x, z)) for x, z, _ in outline]
     step = 0.004
     for xi in range(-39, 40):
@@ -1082,11 +1082,11 @@ def emilia_arc6():
     spec = R.emilia()
     # Her figure carries the chest's shape; the covering is a fitted layer
     # over it (a modest bust: gentle above, rounder below, tucking under).
-    spec.body.extra["breasts"] = dict(x=0.052, sink=0.013, z=0.007, ax=0.045, ay=0.044, up=0.064, low=0.04, yaw=0.25, sag=0.14, top=0.38, blend=0.04, blend_out=0.034, fold=0.016)
+    spec.body.extra["breasts"] = dict(x=0.05, sink=0.013, z=0.004, ax=0.045, ay=0.037, up=0.08, low=0.05, yaw=0.25, sag=0.08, top=0.5, blend=0.05, blend_out=0.032, fold=0.03, bridge=0.006, bridge_w=0.022)
     # The body below the chest, shaped to match it: a soft waist, a gentle
     # hip flare, a belly with a soft plane change, a small navel, the
     # curve of the lower back.
-    spec.body.extra["torso_sculpt"] = dict(waist_in=0.07, hip_out=0.065, hip_dz=0.01, thigh_out=0.06, under_ribs=0.0032, belly=0.0035, navel=0.0032, navel_rx=0.0032, navel_rz=0.0062, navel_dz=-0.014, iliac=0.0016, lumbar=0.006)
+    spec.body.extra["torso_sculpt"] = dict(waist_in=0.06, waist_w=0.07, hip_out=0.06, hip_w=0.06, hip_dz=0.01, thigh_out=0.06, crotch_close=0.35, glute=0.012, glute_x=0.05, glute_dz=-0.012, shoulder_drop=0.022, neck_flare=0.12, under_ribs=0.0032, belly=0.0035, navel=0.0032, navel_rx=0.0032, navel_rz=0.0062, navel_dz=-0.014, iliac=0.0016, lumbar=0.006)
     # One even step finer over the whole torso, one more over the bust.
     spec.body.extra["torso_detail"] = 1
     spec.body.extra["chest_detail"] = 2

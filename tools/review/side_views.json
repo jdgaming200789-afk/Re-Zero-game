@@ -1,0 +1,7 @@
+[
+ {"label":"side","az":90,"cy":0.70,"size":0.36},
+ {"label":"side close","az":90,"cy":0.73,"size":0.2},
+ {"label":"full side","az":90,"cy":0.5,"size":1.05},
+ {"label":"pelvis side","az":90,"cy":0.5,"size":0.3},
+ {"label":"rear 3/4 pelvis","az":145,"cy":0.5,"size":0.3}
+]

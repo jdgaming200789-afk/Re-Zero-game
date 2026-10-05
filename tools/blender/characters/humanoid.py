@@ -547,7 +547,7 @@ def _sculpt_torso(p: Vector, ts: dict, j: Joints) -> None:
         # Width: in at the waist, out over the hips (thighs follow).
         wz = j.waist.z / H + ts.get("waist_dz", 0.0)
         hz = j.hips.z / H + ts.get("hip_dz", 0.0)
-        p.x *= 1 - ts.get("waist_in", 0.0) * g(z, wz, 0.05) + ts.get("hip_out", 0.0) * g(z, hz, 0.04)
+        p.x *= 1 - ts.get("waist_in", 0.0) * g(z, wz, ts.get("waist_w", 0.05)) + ts.get("hip_out", 0.0) * g(z, hz, ts.get("hip_w", 0.04))
         # The upper thighs carry the hips' line on down (outer side fuller).
         if ts.get("thigh_out") and z < j.hips.z / H:
             tz = j.hip_l.z / H - 0.035
@@ -565,6 +565,33 @@ def _sculpt_torso(p: Vector, ts: dict, j: Joints) -> None:
     if p.y > 0 and ax < 0.09:
         # The small of the back curves in.
         p.y -= ts.get("lumbar", 0.0) * H * g(z, j.waist.z / H, 0.045) * max(0.0, 1 - (ax / 0.09) ** 2)
+    # The inner thighs meet the pelvis lower and close together at the
+    # top, so the leg gap opens gradually below the crotch.
+    if ts.get("crotch_close"):
+        cz = (j.hip_l.z - (j.pelvis.z - j.hip_l.z) * 2 / 3) / H + ts.get("crotch_dz", 0.0)
+        hx = j.hip_l.x / H
+        if ax < hx and z < cz + 0.02:
+            inner = 1 - ax / hx
+            k = ts["crotch_close"] * g(z, cz - 0.03, 0.045) * inner * inner
+            nx = max(0.004, ax - k * hx)
+            p.x = math.copysign(nx * H, p.x)
+    # The glutes: a soft, wide form low on the back of the pelvis that
+    # runs on into the back of the thighs (no separate ball).
+    if ts.get("glute") and p.y > 0:
+        gx, gz = ts.get("glute_x", 0.05), j.hip_l.z / H + ts.get("glute_dz", -0.01)
+        k = g(ax, gx, ts.get("glute_wx", 0.04)) * g(z, gz, ts.get("glute_wz", 0.05) if z > gz else ts.get("glute_wz_low", 0.04))
+        p.y += ts["glute"] * H * k * min(1.0, p.y / (0.02 * H))
+    # Shoulders slope down from the neck to the arm; the trapezius widens
+    # the base of the neck a little so it doesn't stand alone.
+    if ts.get("shoulder_drop") and z > j.upper_chest.z / H - 0.03:
+        ux, sx = 0.035, j.arm_l.x / H + 0.02
+        m = min(1.0, max(0.0, (ax - ux) / (sx - ux)))
+        up = min(1.0, max(0.0, (z - (j.upper_chest.z / H - 0.03)) / 0.04))
+        p.z -= ts["shoulder_drop"] * H * math.sin(m * math.pi / 2) * up * min(1.0, max(0.0, 1.5 - m))
+    if ts.get("neck_flare"):
+        nb = j.neck_base.z / H
+        if ax < 0.07 and nb - 0.02 < z < nb + 0.04:
+            p.x *= 1 + ts["neck_flare"] * g(z, nb, 0.018)
 
 
 def _navel(obj, ts: dict, j: Joints) -> None:
@@ -670,6 +697,12 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
         bs = s.extra.get("bust_shape")
         if br and p.y < 0.01 * H:
             _breast_wrap(p, br, j, wall_y)
+            if br.get("bridge") and p.y < 0:
+                # Fill the centre between the breasts so they read as one
+                # form across the chest, not two spheres with a crease.
+                bz = j.chest.z + br["z"] * H
+                w = math.exp(-(p.x / (br.get("bridge_w", 0.025) * H)) ** 2 - ((p.z - bz) / (br["up"] * 0.7 * H)) ** 2)
+                p.y -= br["bridge"] * H * w
         elif bs and p.y < 0:
             # A shaped bust: a gentle slope above, a rounder curve below
             # that tucks under (extents scaled separately above and below).
@@ -699,7 +732,7 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
             if d < 1:
                 p.y -= s.bust * 0.018 * H * (1 - d * d) ** 2
         # Buttocks
-        if j.hip_l.z - 0.06 * H < p.z < j.hips.z and p.y > 0 and abs(p.x) < 0.09 * H:
+        if not (ts and ts.get("glute")) and j.hip_l.z - 0.06 * H < p.z < j.hips.z and p.y > 0 and abs(p.x) < 0.09 * H:
             k = 1 - abs((p.z - (j.hip_l.z - 0.005 * H)) / (0.06 * H))
             p.y += max(0.0, k) * 0.008 * H
         # Flat soles

@@ -1,0 +1,94 @@
+[
+{
+"label": "true front",
+"az": 0,
+"cy": 0.7,
+"size": 0.36
+},
+{
+"label": "3/4 front",
+"az": 38,
+"cy": 0.7,
+"size": 0.36
+},
+{
+"label": "true side",
+"az": 90,
+"cy": 0.7,
+"size": 0.36
+},
+{
+"label": "low front",
+"az": 0,
+"el": -18,
+"cy": 0.7,
+"size": 0.36,
+"persp": 1
+},
+{
+"label": "torso/pelvis",
+"az": 0,
+"cy": 0.55,
+"size": 0.42
+},
+{
+"label": "full front",
+"az": 0,
+"cy": 0.5,
+"size": 1.05
+},
+{
+"label": "full 3/4",
+"az": 38,
+"cy": 0.5,
+"size": 1.05
+},
+{
+"label": "full side",
+"az": 90,
+"cy": 0.5,
+"size": 1.05
+},
+{
+"label": "rear 3/4",
+"az": 145,
+"cy": 0.5,
+"size": 1.05
+},
+{
+"label": "true rear",
+"az": 180,
+"cy": 0.5,
+"size": 1.05
+},
+{
+"label": "side chest close",
+"az": 90,
+"cy": 0.72,
+"size": 0.18
+},
+{
+"label": "pelvis side",
+"az": 90,
+"cy": 0.52,
+"size": 0.3
+},
+{
+"label": "pelvis rear 3/4",
+"az": 145,
+"cy": 0.52,
+"size": 0.3
+},
+{
+"label": "pelvis rear",
+"az": 180,
+"cy": 0.52,
+"size": 0.3
+},
+{
+"label": "pelvis front",
+"az": 0,
+"cy": 0.5,
+"size": 0.3
+}
+]

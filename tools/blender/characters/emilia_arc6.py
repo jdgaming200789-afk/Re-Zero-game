@@ -1086,16 +1086,16 @@ def emilia_arc6():
     spec = R.emilia()
     # Her figure carries the chest's shape; the covering is a fitted layer
     # over it (a modest bust: gentle above, rounder below, tucking under).
-    spec.body.extra["breasts"] = dict(x=0.05, sink=0.013, z=0.002, ax=0.05, ay=0.034, up=0.088, low=0.056, yaw=0.25, sag=0.04, top=0.55, blend=0.06, blend_out=0.042, fold=0.042, bridge=0.006, bridge_w=0.024)
+    spec.body.extra["breasts"] = dict(x=0.05, sink=0.013, z=-0.008, ax=0.046, ay=0.037, up=0.098, low=0.062, yaw=0.25, sag=0.04, top=0.65, blend=0.06, blend_out=0.05, fold=0.046, bridge=0.006, bridge_w=0.024)
     # The body below the chest, shaped to match it: a soft waist, a gentle
     # hip flare, a belly with a soft plane change, a small navel, the
     # curve of the lower back.
     spec.body.extra["torso_sculpt"] = dict(waist_in=0.035, waist_w=0.1, hip_out=0.045, hip_w=0.09, hip_dz=0.01, thigh_out=0.06, crotch_close=0.35, glute=0.02, glute_x=0.05, glute_wx=0.05, glute_dz=-0.02, shoulder_drop=0.022, neck_flare=0.12, under_ribs=0.0032, belly=0.0035, navel=0.0032, navel_rx=0.0032, navel_rz=0.0062, navel_dz=-0.014, iliac=0.0016, lumbar=0.008, smooth=12, zones=[
         # (joint, dz, width scale, forward depth): pass 17 body as the base.
         ("chest", 0.01, 1.0, 0.0),        # upper ribcage
-        ("chest", -0.045, 0.982, -0.0015),  # lower ribcage: tapers, settles in
+        ("chest", -0.045, 1.004, -0.0015),  # lower ribcage: tapers, settles in
         ("waist", 0.0, 1.022, 0.0),       # waist: a little less cinched
-        ("waist", -0.045, 1.012, 0.005), # upper pelvis / low belly: forward
+        ("waist", -0.04, 1.03, 0.007), # upper pelvis / low belly: forward
         ("hips", 0.0, 1.0, 0.0),          # hip
         ("hip_l", -0.035, 1.0, 0.0),      # upper thigh
     ])
@@ -1252,7 +1252,13 @@ def emilia_arc6():
             return sleeve_field(c.j, c.p) > 0
         return skin_field(c.j, c.p) > 0
 
-    spec.iso_cuts = lambda j: [lambda p: skin_field(j, p), lambda p: arm_field(j, p), lambda p: sleeve_field(j, p)]
+    spec.iso_cuts = lambda j: [
+        lambda p: skin_field(j, p),
+        lambda p: arm_field(j, p),
+        lambda p: sleeve_field(j, p),
+        # The neck rule (`is_skin_neck`): a level line at the neck base.
+        lambda p: (p.z - j.neck_base.z) / j.H - 0.004,
+    ]
 
     def navel_mark(c: ZoneContext) -> bool:
         ts = spec.body.extra["torso_sculpt"]

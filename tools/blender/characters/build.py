@@ -17,6 +17,8 @@ from typing import Callable
 
 import bpy  # noqa: F401
 import bmesh
+import mathutils
+import mathutils.kdtree
 from mathutils import Vector
 
 HERE = os.path.dirname(__file__)
@@ -520,6 +522,14 @@ def consolidate(cid: str, arm, keep: set[str], skip_roles: frozenset[str] = froz
             skin_obj.data = me.copy()
             bpy.context.scene.collection.objects.link(skin_obj)
             si = idx["skin"]
+            # Both halves keep the whole body's smooth normals, so the cut
+            # between them does not shade as a crease.
+            me.update()
+            vn = [v.normal.copy() for v in me.vertices]
+            kd = mathutils.kdtree.KDTree(len(me.vertices))
+            for i, v in enumerate(me.vertices):
+                kd.insert(v.co, i)
+            kd.balance()
             for target, drop in ((o, lambda f: f.material_index == si), (skin_obj, lambda f: f.material_index != si)):
                 bm = bmesh.new()
                 bm.from_mesh(target.data)
@@ -527,6 +537,8 @@ def consolidate(cid: str, arm, keep: set[str], skip_roles: frozenset[str] = froz
                 bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
                 bm.to_mesh(target.data)
                 bm.free()
+                tm = target.data
+                tm.normals_split_custom_set_from_vertices([vn[kd.find(v.co)[1]] for v in tm.vertices])
             pieces["main"].append(o)
             pieces["skin"].append(skin_obj)
         else:

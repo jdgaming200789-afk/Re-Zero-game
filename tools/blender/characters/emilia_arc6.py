@@ -1086,11 +1086,19 @@ def emilia_arc6():
     spec = R.emilia()
     # Her figure carries the chest's shape; the covering is a fitted layer
     # over it (a modest bust: gentle above, rounder below, tucking under).
-    spec.body.extra["breasts"] = dict(x=0.05, sink=0.013, z=0.002, ax=0.046, ay=0.036, up=0.088, low=0.066, yaw=0.25, sag=0.04, top=0.55, blend=0.065, blend_out=0.056, fold=0.05, bridge=0.006, bridge_w=0.024)
+    spec.body.extra["breasts"] = dict(x=0.05, sink=0.013, z=0.002, ax=0.05, ay=0.034, up=0.088, low=0.056, yaw=0.25, sag=0.04, top=0.55, blend=0.06, blend_out=0.042, fold=0.042, bridge=0.006, bridge_w=0.024)
     # The body below the chest, shaped to match it: a soft waist, a gentle
     # hip flare, a belly with a soft plane change, a small navel, the
     # curve of the lower back.
-    spec.body.extra["torso_sculpt"] = dict(waist_in=0.0, waist_w=0.1, hip_out=0.03, hip_w=0.1, hip_dz=0.01, thigh_out=0.06, crotch_close=0.35, glute=0.02, glute_x=0.05, glute_wx=0.05, glute_dz=-0.02, glute_wz=0.075, shoulder_drop=0.022, neck_flare=0.12, under_ribs=0.0032, belly=0.005, navel=0.0032, navel_rx=0.0032, navel_rz=0.0062, navel_dz=-0.014, iliac=0.0016, lumbar=0.008, smooth=12, refit=dict(widen=0.05, ease=1.15))
+    spec.body.extra["torso_sculpt"] = dict(waist_in=0.035, waist_w=0.1, hip_out=0.045, hip_w=0.09, hip_dz=0.01, thigh_out=0.06, crotch_close=0.35, glute=0.02, glute_x=0.05, glute_wx=0.05, glute_dz=-0.02, shoulder_drop=0.022, neck_flare=0.12, under_ribs=0.0032, belly=0.0035, navel=0.0032, navel_rx=0.0032, navel_rz=0.0062, navel_dz=-0.014, iliac=0.0016, lumbar=0.008, smooth=12, zones=[
+        # (joint, dz, width scale, forward depth): pass 17 body as the base.
+        ("chest", 0.01, 1.0, 0.0),        # upper ribcage
+        ("chest", -0.045, 0.982, -0.0015),  # lower ribcage: tapers, settles in
+        ("waist", 0.0, 1.022, 0.0),       # waist: a little less cinched
+        ("waist", -0.045, 1.012, 0.005), # upper pelvis / low belly: forward
+        ("hips", 0.0, 1.0, 0.0),          # hip
+        ("hip_l", -0.035, 1.0, 0.0),      # upper thigh
+    ])
     # One even step finer over the whole torso, one more over the bust.
     spec.body.extra["torso_detail"] = 1
     spec.body.extra["chest_detail"] = 2
@@ -1218,7 +1226,7 @@ def emilia_arc6():
         cut into the mesh (`iso_cuts`), so the boundary is a clean line."""
         s = abs(s)
         if body_only:
-            line = max(top_z(s) + 0.004, 0.775 * t.smoothstep(0.044, 0.056, s) + (top_z(s) + 0.004) * (1 - t.smoothstep(0.044, 0.056, s)))
+            line = max(top_z(s) + 0.004, 0.762 * t.smoothstep(0.044, 0.056, s) + (top_z(s) + 0.004) * (1 - t.smoothstep(0.044, 0.056, s)))
         else:
             line = top_z(s) - (0.013 - 0.015 * t.smoothstep(PETAL_S - 0.006, PETAL_S + 0.004, s))
         # Centre front: the neck rule decides; this line rises out of reach.

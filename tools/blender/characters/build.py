@@ -165,10 +165,45 @@ def weight_by_chain(obj, arm, base_bone: str, chain_bones: list[str], guide: lis
             groups[chain_bones[i0 + 1]].add([v.index], frac * 0.5, "ADD")
 
 
+def cut_level(bm, f) -> None:
+    """Cut the mesh along the curve where f(point, normal) changes sign, so a
+    zone boundary there follows it exactly instead of the faces' stair
+    steps. f returns None outside the region to cut (edges touching such a
+    vertex are left alone)."""
+    bm.normal_update()
+    val = {v: f(v.co.copy(), v.normal.copy()) for v in bm.verts}
+    eps = 1e-7
+    zero = {v for v, x in val.items() if x is not None and abs(x) < eps}
+    for e in list(bm.edges):
+        a, b = e.verts
+        fa, fb = val[a], val[b]
+        if fa is None or fb is None or a in zero or b in zero or (fa > 0) == (fb > 0):
+            continue
+        _e, v = bmesh.utils.edge_split(e, a, fa / (fa - fb))
+        zero.add(v)
+    for face in list(bm.faces):
+        zs = [v for v in face.verts if v in zero]
+        if len(zs) != 2:
+            continue
+        a, b = zs
+        if any(a in e.verts and b in e.verts for e in face.edges):
+            continue
+        try:
+            bmesh.utils.face_split(face, a, b)
+        except ValueError:
+            pass
+
+
 def cut_planes(obj, planes) -> None:
+    """Cut the body along planes ((point, normal) pairs) and level curves
+    (callables, see `cut_level`) before zoning."""
     bm = bmesh.new()
     bm.from_mesh(obj.data)
-    for co, no in planes:
+    for cut in planes:
+        if callable(cut):
+            cut_level(bm, cut)
+            continue
+        co, no = cut
         geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
         bmesh.ops.bisect_plane(bm, geom=geom, plane_co=co, plane_no=no)
     bm.to_mesh(obj.data)

@@ -232,8 +232,22 @@ def build_body(name: str, s: BodySpec, j: Joints) -> bpy.types.Object:
         bm.edges.new((verts[a], verts[b]))
 
     e("pelvis", "hips")
-    e("hips", "waist")
-    e("waist", "chest")
+    # Optional in-between spine nodes: the waist narrows over a longer
+    # span (a rounded U, not a cinched V). f = how far each sits from the
+    # waist's radius towards its neighbour's.
+    mid = s.extra.get("spine_mid")
+    if mid:
+        for key, other, f in (("belly", "hips", mid["belly"]), ("ribs", "chest", mid["ribs"])):
+            wv, ov = verts["waist"], verts[other]
+            (wx, wy), (ox, oy) = radii["waist"], radii[other]
+            v(key, wv.co.lerp(ov.co, mid.get("at", 0.5)), (wx + f * (ox - wx)) / H, (wy + 0.5 * (oy - wy)) / H)
+        e("hips", "belly")
+        e("belly", "waist")
+        e("waist", "ribs")
+        e("ribs", "chest")
+    else:
+        e("hips", "waist")
+        e("waist", "chest")
     e("chest", "upper_chest")
     e("upper_chest", "neck_base")
     e("neck_base", "neck_top")
@@ -611,6 +625,59 @@ def _navel(obj, ts: dict, j: Joints) -> None:
             p.y += ts["navel"] * H * k
 
 
+def _refit_width(obj, j: Joints, rf: dict) -> None:
+    """Re-draw the front silhouette from under the bust to the hips as one
+    eased curve: measure the half-width at each height, then scale each
+    height laterally onto a smooth U (flat at the narrowest point, easing
+    into the ribcage above and the pelvis below), so the waist is not set
+    by where the base body's control rings happen to sit."""
+    H = j.H
+    me = obj.data
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    zt = j.chest.z + rf.get("top", -0.03) * H
+    zb = j.hip_l.z + rf.get("bottom", 0.0) * H
+    zw = j.waist.z + rf.get("dz", 0.0) * H
+    n = 48
+    dz = (zt - zb) / n
+    w0 = [0.0] * (n + 1)
+    for v in bm.verts:
+        p = v.co
+        if zb - dz / 2 <= p.z <= zt + dz / 2 and abs(p.x) < 0.16 * H:
+            i = round((p.z - zb) / dz)
+            w0[i] = max(w0[i], abs(p.x))
+    # Upper envelope (bands between vertex rows only catch inner points),
+    # then a light average, so the scale factor is smooth from band to band.
+    w0 = [max(w0[max(0, i - 3):i + 4]) for i in range(n + 1)]
+    for _ in range(3):
+        w0 = [(w0[max(0, i - 1)] + 2 * w0[i] + w0[min(n, i + 1)]) / 4 for i in range(n + 1)]
+    iw = round((zw - zb) / dz)
+    ww = w0[iw] * (1 + rf.get("widen", 0.0))
+    wt, wb = w0[n], w0[0]
+    ease = rf.get("ease", 1.0)
+
+    def target(i: int) -> float:
+        if i >= iw:
+            u = (i - iw) / max(1, n - iw)
+            top = wt
+        else:
+            u = (iw - i) / max(1, iw)
+            top = wb
+        u = u ** ease
+        return ww + (top - ww) * u * u * (3 - 2 * u)
+
+    k = [target(i) / w0[i] if w0[i] > 1e-6 else 1.0 for i in range(n + 1)]
+    for v in bm.verts:
+        p = v.co
+        if zb <= p.z <= zt and abs(p.x) < 0.16 * H:
+            f = (p.z - zb) / dz
+            i0 = min(n - 1, int(f))
+            u = f - i0
+            p.x *= k[i0] * (1 - u) + k[i0 + 1] * u
+    bm.to_mesh(me)
+    bm.free()
+
+
 def _smooth_torso(obj, j: Joints, iterations: int = 4) -> None:
     """Relax the whole torso a little (shrink-free), so the chest, waist,
     belly and hips read as one continuous surface without visible rows."""
@@ -740,6 +807,8 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
             p.z = 0.0
         vert.co = p
     if ts:
+        if ts.get("refit"):
+            _refit_width(obj, j, ts["refit"])
         _smooth_torso(obj, j, int(ts.get("smooth", 4)))
         if ts.get("navel"):
             _navel(obj, ts, j)

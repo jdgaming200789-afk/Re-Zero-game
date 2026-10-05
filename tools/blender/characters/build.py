@@ -48,6 +48,9 @@ class CharacterSpec:
     # Planes (point, normal) the body is cut along before zoning, so colour
     # boundaries follow clean lines instead of the stair-step of whole faces.
     cuts: Callable[[Joints], list] | None = None
+    # Scalar fields f(point) whose zero level the body is also cut along
+    # (for curved colour boundaries).
+    iso_cuts: Callable[[Joints], list] | None = None
     # Body faces hidden under opaque garments (deleted after tailoring, so
     # they can't poke through the clothes when joints bend).
     hidden: Callable[[object], bool] | None = None
@@ -176,6 +179,32 @@ def cut_planes(obj, planes) -> None:
     obj.data.update()
 
 
+def iso_cut(obj, fields) -> None:
+    """Cut the mesh along the zero level of each field: split every edge
+    whose ends lie on opposite sides, then join the new points across each
+    face, so a curved boundary becomes a clean edge loop."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    for f in fields:
+        val = {v: f(v.co) for v in bm.verts}
+        new = set()
+        for e in list(bm.edges):
+            a, b = e.verts
+            fa, fb = val[a], val[b]
+            if fa * fb < 0 and min(abs(fa), abs(fb)) > 1e-9:
+                _e, nv = bmesh.utils.edge_split(e, a, fa / (fa - fb))
+                val[nv] = 0.0
+                new.add(nv)
+        for face in list(bm.faces):
+            on = [v for v in face.verts if v in new]
+            if len(on) == 2 and not any(e in face.edges for e in on[0].link_edges if on[1] in e.verts):
+                bmesh.ops.connect_verts(bm, verts=on)
+    bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 4])
+    bm.to_mesh(obj.data)
+    bm.free()
+    obj.data.update()
+
+
 def build(spec: CharacterSpec) -> str:
     reset()
     j = Joints(spec.body)
@@ -185,6 +214,8 @@ def build(spec: CharacterSpec) -> str:
     body = build_body(f"{spec.id}_body", spec.body, j)
     if spec.cuts:
         cut_planes(body, spec.cuts(j))
+    if spec.iso_cuts:
+        iso_cut(body, spec.iso_cuts(j))
     zone(body, j, spec.zones, mats, spec.default_zone)
     # Auto (heat) weights for the body against the humanoid bones only.
     select_only(body, arm)

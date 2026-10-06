@@ -708,10 +708,18 @@ def shape_body(obj, s: BodySpec, j: Joints) -> None:
         vert.co = p
     if ts:
         _smooth_torso(obj, j)
-        if ts.get("navel"):
+        if ts.get("navel") and s.extra.get("torso_contours") is None:
             _navel(obj, ts, j)
     if br:
         _smooth_breasts(obj, br, j)
+    contours = s.extra.get("torso_contours")
+    if contours is not None:
+        from torso_contours import fit_torso
+
+        fit_torso(obj, contours, H)
+        # A tiny navel is a local detail, applied after the global contour.
+        if ts and ts.get("navel"):
+            _navel(obj, ts, j)
 
 
 # --------------------------------------------------------------------------- hands

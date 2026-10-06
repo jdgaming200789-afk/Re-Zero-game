@@ -39,6 +39,7 @@ import roster as R
 import tailor as t
 from hair import Clump, HeadFrame
 from humanoid import Joints
+from torso_contours import TorsoContours
 from outfit import Garments, ZoneContext, cape
 from party import arm_axis, cat_ear, hood_up, shoes, under_shoes, wrist_cuts
 
@@ -1080,13 +1081,28 @@ def _bow_knot(name: str, at: Vector, n: Vector, side: Vector, size: float, mat) 
 
 def emilia_arc6():
     spec = R.emilia()
-    # Her figure carries the chest's shape; the covering is a fitted layer
-    # over it (a modest bust: gentle above, rounder below, tucking under).
-    spec.body.extra["breasts"] = dict(x=0.052, sink=0.013, z=0.007, ax=0.045, ay=0.044, up=0.064, low=0.04, yaw=0.25, sag=0.14, top=0.38, blend=0.04, blend_out=0.034, fold=0.016)
-    # The body below the chest, shaped to match it: a soft waist, a gentle
-    # hip flare, a belly with a soft plane change, a small navel, the
-    # curve of the lower back.
-    spec.body.extra["torso_sculpt"] = dict(waist_in=0.07, hip_out=0.065, hip_dz=0.01, thigh_out=0.06, under_ribs=0.0032, belly=0.0035, navel=0.0032, navel_rx=0.0032, navel_rz=0.0062, navel_dz=-0.014, iliac=0.0016, lumbar=0.006)
+    # One continuous torso, constrained by front widths and side depths.
+    # These are section landmarks in H units, not breast-size multipliers.
+    # The broad transverse front and its shallow center share the ribcage.
+    # No ellipsoid wrap or legacy spherical bust runs for Emilia.
+    spec.body.bust = 0.0
+    spec.body.extra["torso_contours"] = TorsoContours(sections=(
+        # z       width   front   back    front spread
+        (0.560,   0.0720, 0.0580, 0.0450, 0.000),
+        (0.600,   0.0628, 0.0550, 0.0400, 0.000),
+        (0.635,   0.0643, 0.0540, 0.0415, 0.000),
+        (0.670,   0.0700, 0.0590, 0.0435, 0.020),
+        (0.690,   0.0750, 0.0680, 0.0450, 0.070),
+        (0.715,   0.0795, 0.0740, 0.0460, 0.130),
+        (0.735,   0.0815, 0.0740, 0.0455, 0.135),
+        (0.755,   0.0830, 0.0670, 0.0446, 0.105),
+        (0.775,   0.0840, 0.0540, 0.0430, 0.052),
+        (0.795,   0.0860, 0.0400, 0.0400, 0.012),
+        (0.818,   0.0720, 0.0330, 0.0350, 0.000),
+    ))
+    # Retain the Claude pelvis, hips, thighs and lumbar line. No abdominal
+    # protrusion, under-rib indentation or iliac bumps are added.
+    spec.body.extra["torso_sculpt"] = dict(waist_in=0.07, hip_out=0.065, hip_dz=0.01, thigh_out=0.06, navel=0.0009, navel_rx=0.0032, navel_rz=0.0062, navel_dz=-0.014, lumbar=0.006)
     # One even step finer over the whole torso, one more over the bust.
     spec.body.extra["torso_detail"] = 1
     spec.body.extra["chest_detail"] = 2

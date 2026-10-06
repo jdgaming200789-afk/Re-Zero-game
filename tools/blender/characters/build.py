@@ -104,6 +104,36 @@ def hide_under(body, j, pred) -> None:
     body.data.update()
 
 
+def preserve_body_normals(body) -> None:
+    """Carry the connected contour surface's normals through material splits.
+
+    Deleting covered faces or separating skin from cloth otherwise recomputes
+    different normals on each side of the same smooth body, making the color
+    boundary look like a geometric crease. The point layer survives BMesh
+    deletion and object consolidation, and is restored after those operations.
+    """
+    if body.get("torso_surface") != "continuous_cubic_contours":
+        return
+    me = body.data
+    normals = [v.vector.copy() for v in me.vertex_normals]
+    attr = me.attributes.new("_body_surface_normal", "FLOAT_VECTOR", "POINT")
+    for value, normal in zip(attr.data, normals):
+        value.vector = normal
+
+
+def restore_body_normals(me) -> None:
+    attr = me.attributes.get("_body_surface_normal")
+    if attr is None:
+        return
+    normals = [v.vector.copy() for v in me.corner_normals]
+    for loop in me.loops:
+        normal = attr.data[loop.vertex_index].vector
+        if normal.length_squared > 0.5:
+            normals[loop.index] = normal.normalized()
+    me.normals_split_custom_set(normals)
+    me.attributes.remove(attr)
+
+
 def resample(line: list[Vector], n: int) -> list[Vector]:
     """Resample a polyline to n+1 evenly spaced points."""
     lengths = [0.0]
@@ -277,6 +307,7 @@ def build(spec: CharacterSpec) -> str:
         # Each vertex follows its nearest chain(s), blended by height.
         assign_nearest_chain(o, arm, base_bone, {c: (cloth_names[c], garments.chains[c]) for c in chains})
 
+    preserve_body_normals(body)
     if spec.hidden:
         hide_under(body, j, spec.hidden)
 
@@ -523,6 +554,7 @@ def consolidate(cid: str, arm, keep: set[str], skip_roles: frozenset[str] = froz
             p.material_index = i
         if me.color_attributes.get("Col"):
             me.color_attributes.active_color = me.color_attributes["Col"]
+        restore_body_normals(me)
 
 
 def meta_face(meta: dict) -> dict:

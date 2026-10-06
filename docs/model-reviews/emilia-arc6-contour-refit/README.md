@@ -65,3 +65,33 @@ python tools/blender/review_emilia.py \
 
 The checked-in `00-baseline-body.jpg` and `00-baseline-garment.jpg` document
 the starting shape. They are diagnostics, not visual design references.
+
+## Continuous body checkpoint
+
+Emilia now opts into `TorsoContours` in `torso_contours.py`. Eleven section
+landmarks constrain width, front depth, posterior depth, and broad anterior
+spread. Natural cubic interpolation gives continuous longitudinal curvature.
+Each transverse section is one closed smooth curve: an elliptical ribcage
+plus a broad anterior extension whose first two derivatives vanish at the
+sides. The two forward peaks share a shallow central surface. No breast
+ellipsoid, radial smooth maximum, or legacy spherical bump runs for Emilia.
+
+The connected Skin/Subdivision topology supplies polar coordinates, rather
+than independent chest centers. The new deformation leaves every vertex's Z
+coordinate alone. Quintic blending joins the profile to the original waist
+and shoulder web. Direct polar coordinates avoid treating the A-posed arm
+span as a torso radius. Other characters retain their existing shaping path.
+
+The Gaussian belly, under-rib indentation, and iliac bumps are removed. The
+existing hip/thigh width settings and lumbar curve stay. The navel becomes a
+small local dimple applied after fitting. Shared surface normals survive
+covered-face deletion and the skin/suit material split, preventing a color
+boundary from looking like a seam in the body.
+
+`01-contour-body.jpg` and `emilia-body-only.glb` record this checkpoint. The
+uncut body audit has 14,624 vertices and 14,452 faces, no nonmanifold or boundary
+edges, no degenerate faces, and no nonfinite vertices. Baseline and corrected
+raw meshes have the same vertex/face counts. Below the hip joint, the maximum
+coordinate displacement is about 0.004 mm. The pelvis ray width remains
+unchanged. The small changes above the pelvis remove abdominal sculpting.
+`body-geometry.json` includes front, oblique, and side ray samples in H units.

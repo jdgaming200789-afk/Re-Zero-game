@@ -1,0 +1,44 @@
+[worker] start tools/blender/test_emilia_v3.py
+[v3-build 5489.473] construct CURRENT uncut body once; no garments, hair, cape, ornaments or character suite
+[v3-build 5493.076] body ready: 26972 vertices; 14570 existing loft vertices
+[v3-build 5493.149] audit complete baseline body intersections
+[v3-build 5493.211] load existing GLB for immutable head context
+00:33:20 | INFO: Data are loaded, start creating Blender stuff
+00:33:20 | INFO: Blender create Mesh node emilia_chest
+00:33:20 | INFO: Blender create Mesh node emilia_hair
+00:33:20 | INFO: Blender create Mesh node emilia_head
+00:33:20 | INFO: Blender create Mesh node emilia_body
+00:33:21 | INFO: Blender create Mesh node emilia_clasp
+00:33:21 | INFO: Blender create Mesh node emilia_head_ears1
+00:33:21 | INFO: Blender create Mesh node emilia_hair.001
+00:33:21 | INFO: Blender create Mesh node emilia_hd_ear-1_0
+00:33:21 | INFO: Blender create Mesh node emilia_ear-1_0
+00:33:21 | INFO: Blender create Mesh node emilia_bow
+00:33:21 | INFO: Blender create Mesh node emilia_body.002
+00:33:21 | INFO: glTF import finished in 0.43s
+[v3-build 5493.673] export body-before-v3.glb
+ERROR Draco mesh compression is not available because library could not be found at /workspace/scratch/170b29a27787/Re-Zero-game/4.2/python/lib/python3.11/site-packages/libextern_draco.so
+00:33:21 | INFO: Starting glTF 2.0 export
+00:33:21 | INFO: Extracting primitive: emilia_v3_test_body
+00:33:21 | INFO: Primitives created: 1
+00:33:21 | INFO: Extracting primitive: emilia_head.001
+00:33:21 | INFO: Primitives created: 1
+00:33:21 | INFO: Extracting primitive: emilia_head_ears1.001
+00:33:21 | INFO: Primitives created: 1
+00:33:21 | INFO: Finished glTF 2.0 export in 0.050780296325683594 s
+
+[v3-build 5493.742] register frozen V3 once and solve front / side / oblique section constraints together
+[v3-build 5495.459] apply only existing upper-torso grid vertices; lock graft / arms / lower body
+[v3-build 5497.114] audit complete test body intersections
+[v3-build 5497.211] export body-v3-test.glb
+00:33:24 | INFO: Starting glTF 2.0 export
+00:33:24 | INFO: Extracting primitive: emilia_v3_test_body
+00:33:24 | INFO: Primitives created: 1
+00:33:24 | INFO: Extracting primitive: emilia_head.001
+00:33:24 | INFO: Primitives created: 1
+00:33:24 | INFO: Extracting primitive: emilia_head_ears1.001
+00:33:24 | INFO: Primitives created: 1
+00:33:24 | INFO: Finished glTF 2.0 export in 0.04657793045043945 s
+
+[v3-build 5497.416] DONE: 10144 torso vertices changed; all 16700 protected body vertices exact; zero topology changes
+[worker] script complete

@@ -1,0 +1,26 @@
+{
+  "source_glb_sha256": "1f8037018073aa095ebbc404957acc7cc595d376bbced1836cd85185a581eac9",
+  "view": "low_front",
+  "projection": "orthographic",
+  "azimuth": 0,
+  "elevation": -14,
+  "target": [
+    0.0,
+    0.0,
+    1.139799952507019
+  ],
+  "scale": 0.7052000164985657,
+  "resolution": [
+    600,
+    720
+  ],
+  "arm_sweep_degrees": 0,
+  "meshes": [
+    "emilia_v3_test_body",
+    "locked_context_emilia_head",
+    "locked_context_emilia_part_elfears"
+  ],
+  "lighting": "original review",
+  "elapsed_seconds": 11.26252129400018,
+  "blender": "4.2.0"
+}

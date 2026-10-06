@@ -53,6 +53,9 @@ class CharacterSpec:
     hidden: Callable[[object], bool] | None = None
     # Make the ears a part the game can hide (under a hood worn up).
     ear_part: str | None = None
+    # Named exported meshes retained from an immutable GLB when those parts
+    # are outside the current modeling task (avoids indirect drape changes).
+    frozen_parts: dict[str, str] = field(default_factory=dict)
 
 
 def reset():
@@ -339,6 +342,14 @@ def build(spec: CharacterSpec) -> str:
         export_all_vertex_colors=False,
         export_active_vertex_color_when_no_material=True,
     )
+    if spec.frozen_parts:
+        from gltf_parts import retain_parts
+
+        sources = {}
+        for part, source in spec.frozen_parts.items():
+            sources.setdefault(source, []).append(part)
+        for source, parts in sources.items():
+            retain_parts(path, source, parts)
     tris = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in bpy.data.objects if o.type == "MESH")
     print(f"{spec.id}: {tris} tris, {len(arm.data.bones)} bones → {os.path.relpath(path, ROOT)} ({os.path.getsize(path) / 1024:.0f} KB)")
     return path

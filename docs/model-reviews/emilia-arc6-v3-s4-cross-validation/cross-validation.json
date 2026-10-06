@@ -1,0 +1,438 @@
+{
+  "evidence_method": "approved_by_user",
+  "guide_geometry": "not_approved",
+  "S4_primary": true,
+  "S1_secondary_only": true,
+  "new_S4_annotations": [
+    {
+      "name": "emilia_s4_seated_near_side.jpeg",
+      "title": "NEW S4 / SEATED NEAR SIDE",
+      "box": [
+        330,
+        198,
+        430,
+        328
+      ],
+      "full_box": [
+        0,
+        0,
+        554,
+        554
+      ],
+      "A": [],
+      "B": [
+        [
+          [
+            "M",
+            356,
+            216
+          ],
+          [
+            "C",
+            350,
+            228,
+            352,
+            236,
+            363,
+            241
+          ],
+          [
+            "C",
+            374,
+            247,
+            365,
+            247,
+            367,
+            255
+          ],
+          [
+            "C",
+            367,
+            266,
+            376,
+            269,
+            386,
+            270
+          ]
+        ],
+        [
+          [
+            "M",
+            387,
+            270
+          ],
+          [
+            "C",
+            386,
+            280,
+            397,
+            291,
+            414,
+            285
+          ]
+        ],
+        [
+          [
+            "M",
+            347,
+            242
+          ],
+          [
+            "C",
+            347,
+            254,
+            355,
+            263,
+            364,
+            268
+          ]
+        ]
+      ],
+      "P": [
+        [
+          [
+            "M",
+            394,
+            310
+          ],
+          [
+            "L",
+            380,
+            213
+          ]
+        ]
+      ],
+      "C": [
+        [
+          [
+            359,
+            211
+          ],
+          [
+            376,
+            205
+          ],
+          [
+            392,
+            226
+          ],
+          [
+            384,
+            241
+          ],
+          [
+            370,
+            239
+          ]
+        ],
+        [
+          [
+            372,
+            244
+          ],
+          [
+            390,
+            251
+          ],
+          [
+            409,
+            276
+          ],
+          [
+            402,
+            284
+          ],
+          [
+            382,
+            276
+          ]
+        ],
+        [
+          [
+            412,
+            228
+          ],
+          [
+            429,
+            230
+          ],
+          [
+            429,
+            309
+          ],
+          [
+            414,
+            290
+          ]
+        ]
+      ],
+      "notes": [
+        "A  Purple is visible. No reliable free chest contour.",
+        "B  White panel edges bound the purple opening.",
+        "P  Sitting, hip flexion, braced arms and near-side view.",
+        "C  Onset, crest silhouette and rear depth stay hidden."
+      ],
+      "interpretation": {
+        "A": "Visible upper and lower purple fields, but no reliable free torso silhouette in the relevant crop. No A chest curve traced.",
+        "B": "Inner white-panel boundaries and hanging front cloth. Purple/white borders belong to occlusion, not a free body profile.",
+        "P": "Seated hips and knees, braced arms, shoulder position and uncalibrated near-side camera. No numeric deprojection.",
+        "C": "Upper onset, free crest profile, medial distribution and rear torso edge under collar, hair, panel and sleeve.",
+        "conceptual_test": "A neutral continuous torso fits the visible purple patches without requiring a separate front object. Hip flexion and bracing explain apparent lower-torso changes. Exact neutral depth and lower return are untested."
+      },
+      "source_sha256": "75773149c0023a145a8165286546f65d4529734557cfc1e047032ef10fd9dab0"
+    },
+    {
+      "name": "emilia_s4_standing_side_oblique.webp",
+      "title": "NEW S4 / STANDING SIDE / 3/4",
+      "box": [
+        220,
+        190,
+        328,
+        325
+      ],
+      "full_box": [
+        0,
+        0,
+        696,
+        392
+      ],
+      "A": [
+        [
+          [
+            "M",
+            248,
+            295
+          ],
+          [
+            "C",
+            248,
+            305,
+            239,
+            313,
+            232,
+            319
+          ]
+        ],
+        [
+          [
+            "M",
+            303,
+            289
+          ],
+          [
+            "C",
+            301,
+            300,
+            299,
+            311,
+            299,
+            323
+          ]
+        ]
+      ],
+      "B": [
+        [
+          [
+            "M",
+            242,
+            286
+          ],
+          [
+            "C",
+            249,
+            300,
+            263,
+            293,
+            274,
+            285
+          ],
+          [
+            "C",
+            282,
+            294,
+            290,
+            286,
+            295,
+            282
+          ]
+        ],
+        [
+          [
+            "M",
+            247,
+            235
+          ],
+          [
+            "C",
+            267,
+            246,
+            289,
+            249,
+            300,
+            245
+          ]
+        ],
+        [
+          [
+            "M",
+            306,
+            242
+          ],
+          [
+            "C",
+            320,
+            250,
+            318,
+            278,
+            306,
+            284
+          ]
+        ]
+      ],
+      "P": [
+        [
+          [
+            "M",
+            254,
+            319
+          ],
+          [
+            "L",
+            273,
+            211
+          ]
+        ]
+      ],
+      "C": [
+        [
+          [
+            271,
+            217
+          ],
+          [
+            292,
+            221
+          ],
+          [
+            307,
+            239
+          ],
+          [
+            310,
+            262
+          ],
+          [
+            291,
+            280
+          ],
+          [
+            271,
+            269
+          ]
+        ],
+        [
+          [
+            235,
+            217
+          ],
+          [
+            247,
+            232
+          ],
+          [
+            246,
+            266
+          ],
+          [
+            239,
+            280
+          ],
+          [
+            230,
+            268
+          ]
+        ]
+      ],
+      "notes": [
+        "A  Exposed purple front / rear sides below the hem.",
+        "B  Sleeve and scalloped hem conceal the chest return.",
+        "P  Oblique camera, forward hands and trunk inclination.",
+        "C  Arms / hair cover upper, medial and rear chest."
+      ],
+      "interpretation": {
+        "A": "Two free purple/background contours below the white hem. Smooth exposed anterior and posterior lower-torso edges; no upper-chest target read.",
+        "B": "White sleeve, cuff and lower hem. These edges are garment boundaries even beside purple.",
+        "P": "Standing oblique camera, inclined trunk and joined hands / forearms in front of the chest. No neutral orthographic reconstruction.",
+        "C": "Upper onset, medial fullness, near-side crest and upper posterior boundary obscured by arms, sleeve and hair.",
+        "conceptual_test": "A connected neutral ribcage wrapping toward the front is compatible with the visible lower contours. Near-side arm occlusion explains the hidden front. The frame cannot settle the upper wrap, true depth or crest height."
+      },
+      "source_sha256": "cbca5a8507ddd623f9f2775ac0b2788432579dbbfdc4ecc8172d98f82fa63cb8"
+    }
+  ],
+  "region_verdicts": [
+    {
+      "region": "FRONT / upper outer turn",
+      "status": "COMPATIBLE BUT UNRESOLVED",
+      "seated": "No new true-front width. White cloth covers the outer chest.",
+      "standing": "Oblique arms and sleeve hide the chest width.",
+      "basis": "Neither new view measures the neutral front width."
+    },
+    {
+      "region": "FRONT / medial shape",
+      "status": "COMPATIBLE BUT UNRESOLVED",
+      "seated": "Purple opening is visible, but garment borders hide the free medial profile.",
+      "standing": "Joined hands and forearms cover the medial join.",
+      "basis": "No direct evidence for exact medial fullness or a central depression."
+    },
+    {
+      "region": "3/4 / ribcage wrap",
+      "status": "COMPATIBLE BUT UNRESOLVED",
+      "seated": "Connected visible purple fields fit a continuous torso concept.",
+      "standing": "Exposed lower sides are connected, but upper wrap is covered.",
+      "basis": "One connected surface is plausible. Exact upper turning remains concealed."
+    },
+    {
+      "region": "SIDE / upper onset",
+      "status": "COMPATIBLE BUT UNRESOLVED",
+      "seated": "Collar, hair and upper panel hide the onset.",
+      "standing": "Arms, sleeve and hair hide the onset.",
+      "basis": "A gentle onset has no repeated visible conflict, but lacks a free contour test."
+    },
+    {
+      "region": "SIDE / crest and depth",
+      "status": "COMPATIBLE BUT UNRESOLVED",
+      "seated": "Visible purple patch is bounded by cloth and hair. Rear torso is covered.",
+      "standing": "No exposed upper crest. Upper rear boundary stays hidden.",
+      "basis": "Neither frame supplies total neutral torso depth or a crest measurement."
+    },
+    {
+      "region": "SIDE / long lower return",
+      "status": "COMPATIBLE BUT UNRESOLVED",
+      "seated": "White panels cover the upper return. Seated lower purple field is continuous.",
+      "standing": "Scalloped hem hides the upper return. Exposed edges below stay smooth.",
+      "basis": "A long return is compatible. Its full course is hidden in both frames."
+    },
+    {
+      "region": "RIBCAGE / visible continuation",
+      "status": "SUPPORTED",
+      "seated": "Visible lower purple field continues without a separated anterior piece.",
+      "standing": "The two free A contours taper smoothly below the hem.",
+      "basis": "Local exposed continuity is supported. This does not validate the hidden chest."
+    }
+  ],
+  "decision": {
+    "repeated_S4_contradictions": [],
+    "guide_paths_revised": false,
+    "supported_regions": 1,
+    "compatible_but_unresolved_regions": 6,
+    "contradicted_regions": 0,
+    "outcome": "freeze_unchanged_V3_for_user_review",
+    "scope": "qualitative plausibility and visibility, not calibrated 3D projection or hidden-body validation"
+  },
+  "conceptual_projection_only": true,
+  "camera_calibration": null,
+  "posed_mesh_created": false,
+  "new_metric_body_targets": null,
+  "fan_measurements_used": false,
+  "historical_model_renders_used_as_evidence": false
+}

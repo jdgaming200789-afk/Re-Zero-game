@@ -1,0 +1,9 @@
+{
+  "model_files_unchanged": 30,
+  "V3_reference_analysis_files_unchanged": 10,
+  "guide_payload_sha256_equal": true,
+  "new_mesh_edits": 0,
+  "new_garment_edits": 0,
+  "new_GLB_builds": 0,
+  "new_character_render_calls": 0
+}

@@ -1,0 +1,5 @@
+# Tested headless Emilia build/review runtime, Python 3.11.
+bpy==4.2.0
+numpy==2.4.6
+scipy==1.17.1
+Pillow==12.3.0

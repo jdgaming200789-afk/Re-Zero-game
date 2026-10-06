@@ -1,0 +1,16 @@
+{
+  "body_source_commit": "944c4e270fa6c85e903e5a9c4a89797d7706a0c1",
+  "panel_rollback_commit": "be2d6eb9f3bbf09109f211b6a4ece67490c846c9",
+  "unchanged_meshes": [
+    "emilia_hair",
+    "emilia_head",
+    "emilia_main",
+    "emilia_part_cloak",
+    "emilia_part_elfears",
+    "emilia_part_hairback",
+    "emilia_part_hooddown",
+    "emilia_part_hoodup",
+    "emilia_part_ornaments",
+    "emilia_skin"
+  ]
+}

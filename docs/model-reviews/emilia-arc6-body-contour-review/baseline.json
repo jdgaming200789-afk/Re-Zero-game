@@ -1,0 +1,16 @@
+{
+  "commit": "944c4e270fa6c85e903e5a9c4a89797d7706a0c1",
+  "preserved_without_rerendering": true,
+  "files_sha256": {
+    "before/body/cameras.json": "4414e4221b314d9c64662111f4467290f1fcae247d604052281406d83bc728ac",
+    "before/body/front.png": "1ed4022823011cb87cd6620bb08bce0fe10cd8428061f96db2b9c0df5d80f1ba",
+    "before/body/full_front.png": "ecf7dc671aeec35ae0c19dcb9d649c5964869b7868a274a81dfba117344f157a",
+    "before/body/full_side.png": "28bc8b3b675d63e2cfecffd41877ba1776abb250f08a5c8f86978709c2a8b0b3",
+    "before/body/low_front.png": "2c1ae0f3053b3da691bd6edc92caf4edb97f1d4090c750ee32e4ccf9d5a06973",
+    "before/body/side.png": "af57944389be9c27fb4602e430664f34b075f122bdea09ee43190120e3e02d25",
+    "before/body/source.json": "bab02e1d321b7f61a1c7d739c14f0b8be8aa87be09fd9f253305a60e42a06d16",
+    "before/body/three_quarter.png": "e1d13cf381d53a536d4c5ad0f36284c004f651af95ba909b5ff046d50d3860c9",
+    "before/body-sheet.jpg": "9ba542733c9a73887144d0df13a3b47a9845081b82f68d78d58569762a970ba3",
+    "before/emilia-body-only.glb": "3e962e739b5c62613c7e100555c9923da51ba784d9c393e76b26b2e6adaa4f7d"
+  }
+}

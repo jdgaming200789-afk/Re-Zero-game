@@ -1,0 +1,28 @@
+[worker] start tools/blender/build_characters.py
+ERROR Draco mesh compression is not available because library could not be found at /workspace/scratch/170b29a27787/Re-Zero-game/4.2/python/lib/python3.11/site-packages/libextern_draco.so
+10:48:19 | INFO: Starting glTF 2.0 export
+10:48:19 | INFO: Extracting primitive: emilia_hair
+10:48:19 | INFO: Primitives created: 1
+10:48:19 | INFO: Extracting primitive: emilia_head
+10:48:19 | INFO: Primitives created: 1
+10:48:19 | INFO: Extracting primitive: emilia_body
+10:48:19 | INFO: Primitives created: 1
+10:48:19 | WARNING: There are more than 4 joint vertex influences.The 4 with highest weight will be used (and normalized).
+10:48:19 | INFO: Extracting primitive: emilia_clasp
+10:48:19 | INFO: Primitives created: 2
+10:48:19 | INFO: Extracting primitive: emilia_head_ears1
+10:48:19 | INFO: Primitives created: 1
+10:48:19 | INFO: Extracting primitive: emilia_hair.001
+10:48:19 | INFO: Primitives created: 1
+10:48:19 | INFO: Extracting primitive: emilia_hd_ear-1_0
+10:48:19 | INFO: Primitives created: 1
+10:48:19 | INFO: Extracting primitive: emilia_ear-1_0
+10:48:19 | INFO: Primitives created: 1
+10:48:19 | INFO: Extracting primitive: emilia_bow
+10:48:19 | INFO: Primitives created: 2
+10:48:19 | INFO: Extracting primitive: emilia_body.002
+10:48:19 | INFO: Primitives created: 1
+10:48:19 | INFO: Finished glTF 2.0 export in 0.5008432865142822 s
+
+emilia: 136280 tris, 74 bones → test-results/emilia-body-contours/05-body/emilia.glb (4429 KB)
+[worker] script complete

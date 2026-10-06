@@ -31,7 +31,7 @@ def values(doc, raw, index):
                       strides=(view.get("byteStride", dtype.itemsize * width), dtype.itemsize))
 
 
-def validate(glb, baseline):
+def validate(glb, baseline, body_only=False):
     doc, raw = read_glb(glb)
     source, source_raw = read_glb(baseline)
     assert source["asset"]["extras"]["frozen_parts_origin"] == "c97eceef3b469d9c2bf650ed62f1e5b3679874ab"
@@ -83,13 +83,18 @@ def validate(glb, baseline):
                 for key in ("matrix", "translation", "rotation", "scale"):
                     assert doc["nodes"][i].get(key) == source["nodes"][old_i].get(key)
         retained.append(name)
-    cloth = nodes["emilia_chest"]
-    assert cloth["extras"]["panel_count"] == 2
-    assert 0.001 < cloth["extras"]["cloth_thickness_m"] < 0.002
+    if body_only:
+        assert "emilia_chest" not in nodes, "Body-only review includes chest panels"
+        cloth_report = {"body_only": True, "panel_count": 0}
+    else:
+        cloth = nodes["emilia_chest"]
+        assert cloth["extras"]["panel_count"] == 2
+        assert 0.001 < cloth["extras"]["cloth_thickness_m"] < 0.002
+        cloth_report = {"panel_count": 2, "cloth_thickness_m": cloth["extras"]["cloth_thickness_m"]}
     return {"glb": str(glb), "sha256": hashlib.sha256(Path(glb).read_bytes()).hexdigest(),
             "triangles": triangles, "skinned_primitives": skinned,
             "max_weight_sum_error": max_weight_error, "retained_parts_identical": retained,
-            "panel_count": 2, "cloth_thickness_m": cloth["extras"]["cloth_thickness_m"]}
+            **cloth_report}
 
 
 if __name__ == "__main__":
@@ -97,8 +102,9 @@ if __name__ == "__main__":
     parser.add_argument("--glb", required=True)
     parser.add_argument("--baseline", default=str(Path(__file__).resolve().parent / "characters/frozen/emilia_cloak_c97eceef.glb"))
     parser.add_argument("--out")
+    parser.add_argument("--body-only", action="store_true")
     args = parser.parse_args()
-    report = validate(args.glb, args.baseline)
+    report = validate(args.glb, args.baseline, args.body_only)
     encoded = json.dumps(report, indent=2) + "\n"
     if args.out:
         Path(args.out).write_text(encoded)

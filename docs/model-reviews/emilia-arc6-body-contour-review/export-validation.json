@@ -1,0 +1,14 @@
+{
+  "glb": "test-results/emilia-body-contours/05-body/emilia.glb",
+  "sha256": "e9d742c7f3737cf50dd5307aa861a9ea01d0e018fe93bcf0a5af4e595fbb413a",
+  "triangles": 136264,
+  "skinned_primitives": 12,
+  "max_weight_sum_error": 2.384185791015625e-07,
+  "retained_parts_identical": [
+    "emilia_part_cloak",
+    "emilia_part_hooddown",
+    "emilia_part_hoodup"
+  ],
+  "body_only": true,
+  "panel_count": 0
+}

@@ -1,0 +1,30 @@
+{
+  "tools/blender/characters/emilia_arc6.py": {
+    "before_sha256": "bae2407e688e99fdabe1808fd50d0a8e5ed2753743852768f2a46119232e98a5",
+    "restored_sha256": "0d1f9125e259fbad9c7875487341020ba8dbdd9c16b749e4ebf86d5e650b128f",
+    "byte_identical_to_previous_revision": true
+  },
+  "tools/blender/characters/emilia_torso_surface.py": {
+    "before_sha256": "45e6fe3e778d4051546c0e5ba71054369c6dc307d61a5c220c79496d23c7a774",
+    "restored_sha256": "4ae55f354a4340cd0c77c394d5f8f483cc5546913026f091d73404a2604145e9",
+    "byte_identical_to_previous_revision": true
+  },
+  "tools/blender/characters/torso_contours.py": {
+    "before_sha256": "493e5bd10061f94178d6e73a6ed7b3de23621660b445d83af3bf6362ad7c6fed",
+    "restored_sha256": "621dcfffecab36a7b57203a6f665f0da4fd2cbbbe927740be38101c422d994e2",
+    "byte_identical_to_previous_revision": true
+  },
+  "body_asset": {
+    "restored_path": "restored-body-only.glb",
+    "source_body_revision": "944c4e270fa6c85e903e5a9c4a89797d7706a0c1",
+    "sha256": "3e962e739b5c62613c7e100555c9923da51ba784d9c393e76b26b2e6adaa4f7d",
+    "byte_identical": true
+  },
+  "game_asset": {
+    "unchanged": true,
+    "sha256": "ee577f97baadf502176f7e69f1e1c3ff8abc56026be4606b8116065b97b21c3d",
+    "body_precedes_rejected_pass": true,
+    "prior_panel_rollback_preserved": true
+  },
+  "modeling_status": "Stopped: rejected pass is archived. No new fit, build, or render was run."
+}

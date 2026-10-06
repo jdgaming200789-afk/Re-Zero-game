@@ -1,0 +1,55 @@
+{
+  "baseline_commit": "944c4e270fa6c85e903e5a9c4a89797d7706a0c1",
+  "coordinate_matching": "nearest coordinate, unchanged topology",
+  "regions": {
+    "waist_and_lower_body": {
+      "vertices": 7225,
+      "maximum_coordinate_drift_m": 0.0,
+      "max_xyz_drift_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "numeric_tolerance_m": 0,
+      "vertices_over_tolerance": 0
+    },
+    "outer_arms": {
+      "vertices": 4812,
+      "maximum_coordinate_drift_m": 0.0,
+      "max_xyz_drift_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "numeric_tolerance_m": 0,
+      "vertices_over_tolerance": 0
+    },
+    "shoulder_graft_core": {
+      "vertices": 3930,
+      "maximum_coordinate_drift_m": 1.3124235259833996e-06,
+      "max_xyz_drift_m": [
+        4.470348358154297e-08,
+        2.5331974029541016e-07,
+        1.3113021850585938e-06
+      ],
+      "numeric_tolerance_m": 2e-06,
+      "vertices_over_tolerance": 0
+    },
+    "upper_neck": {
+      "vertices": 2761,
+      "maximum_coordinate_drift_m": 1.1920928955078125e-07,
+      "max_xyz_drift_m": [
+        0.0,
+        1.862645149230957e-09,
+        1.1920928955078125e-07
+      ],
+      "numeric_tolerance_m": 2e-06,
+      "vertices_over_tolerance": 0
+    }
+  },
+  "shoulder_note": "The existing fairing is rebuilt unchanged. The contour solve excludes the shoulder graft; tiny float32 roundoff is reported, not hidden.",
+  "all_six_cameras_identical": true,
+  "head_position_buffers_identical": [
+    "emilia_head"
+  ]
+}

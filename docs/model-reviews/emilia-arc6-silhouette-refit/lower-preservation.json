@@ -1,7 +1,7 @@
 {
-  "boundary_height_H": 0.655,
-  "vertices_checked": 6321,
-  "max_vertex_displacement_m": 0.0,
-  "same_topology_vertex_count": true,
-  "baseline_commit": "279324b"
+  "height_cutoff_H": 0.655,
+  "baseline_vertex_count": 6321,
+  "current_vertex_count": 6321,
+  "baseline_to_current_max_m": 0.0,
+  "current_to_baseline_max_m": 0.0
 }

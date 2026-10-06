@@ -34,6 +34,48 @@ def topology(obj):
     return result
 
 
+def surface_crossings(obj):
+    """Check transverse intersections between nonadjacent actual triangles.
+
+    Closed/manifold edges alone do not detect a folded Skin branch. Coplanar
+    contacts and triangles sharing vertices are excluded from this check.
+    """
+    obj.data.calc_loop_triangles()
+    coords = [v.co.copy() for v in obj.data.vertices]
+    triangles = [tuple(t.vertices) for t in obj.data.loop_triangles]
+    tree = BVHTree.FromPolygons(coords, triangles, all_triangles=True)
+
+    def crosses(start, end, tri):
+        a, b, c = (coords[i] for i in tri)
+        direction, e1, e2 = end - start, b - a, c - a
+        h = direction.cross(e2)
+        det = e1.dot(h)
+        if abs(det) < 1e-13:
+            return False
+        q = start - a
+        u = q.dot(h) / det
+        if not 1e-7 < u < 1 - 1e-7:
+            return False
+        r = q.cross(e1)
+        v = direction.dot(r) / det
+        if v <= 1e-7 or u + v >= 1 - 1e-7:
+            return False
+        return 1e-7 < e2.dot(r) / det < 1 - 1e-7
+
+    pairs, candidates = [], 0
+    for a, b in tree.overlap(tree):
+        if a >= b or set(triangles[a]) & set(triangles[b]):
+            continue
+        candidates += 1
+        hit = any(crosses(coords[first[k]], coords[first[(k + 1) % 3]], second)
+                  for first, second in ((triangles[a], triangles[b]), (triangles[b], triangles[a]))
+                  for k in range(3))
+        if hit:
+            pairs.append((a, b))
+    return {"scope": "complete body, transverse nonadjacent triangles; coplanar/shared-vertex contacts excluded",
+            "candidates_checked": candidates, "crossing_pairs": len(pairs), "examples": pairs[:20]}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--code-dir", default=str(Path(__file__).resolve().parents[2]))
@@ -53,6 +95,7 @@ def main():
     vertices = np.array([v.co[:] for v in body.data.vertices], dtype=np.float64)
     report = {"source_code": str(Path(args.code_dir).resolve()), "body": topology(body)}
     _triangulate_chest(j)
+    report["surface_crossings"] = surface_crossings(body)
     body.data.calc_loop_triangles()
     tree = BVHTree.FromPolygons([v.co.copy() for v in body.data.vertices], [list(t.vertices) for t in body.data.loop_triangles], all_triangles=True)
     report["sections"] = []

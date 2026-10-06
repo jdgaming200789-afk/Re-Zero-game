@@ -1,9 +1,8 @@
-"""Continuous torso cross sections, independent of Blender mesh topology.
+"""Contour curves for the preserved body and the new upper-torso mesh.
 
-Each row is (height, half-width, center-front depth, back depth, front spread),
-in fractions of character height. Natural cubic splines make the longitudinal
-curvature continuous. One periodic transverse curve describes the entire
-section; no ellipsoids, smooth-max unions, or separate chest volumes are used.
+Natural C2 height curves and clamped C2 transverse curves pass through direct
+front, oblique and side landmarks. The accepted lower-body fitter is retained
+unchanged; the new upper surface replaces the original Skin branch entirely.
 """
 from __future__ import annotations
 
@@ -107,64 +106,26 @@ def silhouette_point(angle, section):
     return width * math.sin(angle), -depth
 
 
-def fair_shoulder_junction(obj, height):
-    """Fair the connected axillary patch, holding the rib width/lower body.
-
-    Screened harmonic fairing removes the Skin branch's ridges and hollows.
-    The footprint fades to zero at every boundary. No added volume or global
-    torso widening is involved, and the original branch topology stays.
-    """
-    from mathutils import Vector
-
-    verts = obj.data.vertices
-    original = [v.co.copy() for v in verts]
-    weights = []
-    neighbors = [[] for _ in verts]
-    for edge in obj.data.edges:
-        a, b = edge.vertices
-        neighbors[a].append(b)
-        neighbors[b].append(a)
-    for p in original:
-        x, z = abs(p.x) / height, p.z / height
-        weights.append(fade(0.025, 0.055, x) * (1 - fade(0.130, 0.155, x)) * fade(0.742, 0.767, z) * (1 - fade(0.830, 0.850, z)))
-    coords = [p.copy() for p in original]
-    for _ in range(240):
-        moved = coords[:]
-        step = 0.0
-        for i, w in enumerate(weights):
-            if w and neighbors[i]:
-                average = sum((coords[k] for k in neighbors[i]), Vector()) / len(neighbors[i])
-                # A weak position anchor prevents broad shoulder shrinkage.
-                # Fixed X preserves the entire front width at every step.
-                delta = (average - coords[i]) * 0.35 + (original[i] - coords[i]) * 0.012
-                delta.x = 0
-                moved[i] = coords[i] + delta * w
-                step = max(step, (delta * w).length)
-        coords = moved
-        if step < 1e-7 * height:
-            break
-    for i, v in enumerate(verts):
-        v.co = coords[i]
-    obj.data.update()
-
-
 def fit_torso(obj, profile: TorsoContours, height: float) -> None:
-    """Fit the closed trunk, then transport the branching shoulder surface.
+    """Preserve stable regions, then construct the explicit upper loft.
 
-    Radial coordinates are valid on the ribs/waist, but not on an arm root.
-    The upper transition therefore uses a positive transverse scale and a
-    monotone anterior displacement. This keeps the connected shoulder web
-    instead of collapsing its inner and outer walls onto the same section.
-    The lower body stays unchanged. Local shoulder fairing follows the loft.
+    The retained fitter runs unchanged before the central upper region is
+    replaced. It therefore cannot alter accepted lower-body coordinates.
     """
     from mathutils import Vector
     from mathutils.bvhtree import BVHTree
 
+    if profile.silhouette_rows:
+        from dataclasses import replace
+        from emilia_torso_surface import rebuild_upper_torso
+
+        fit_torso(obj, replace(profile, silhouette_rows=()), height)
+        rebuild_upper_torso(obj, profile, height)
+        return
+
     verts = obj.data.vertices
     z0, z1 = profile.sections[0][0], profile.sections[-1][0]
     curves = profile.curves()
-    rows = profile.silhouette_rows
-    loft = tuple(CubicCurve([r[0] for r in rows], [r[k] for r in rows]) for k in range(1, 6)) if rows else None
     tree = BVHTree.FromPolygons([v.co.copy() for v in verts], [list(f.vertices) for f in obj.data.polygons])
     zs = [r[0] for r in profile.sections]
     depths = []
@@ -189,33 +150,14 @@ def fit_torso(obj, profile: TorsoContours, height: float) -> None:
         section = tuple(c(z) for c in curves)
         angle = math.atan2(x, dy)
         tx, ty = section_point(angle, section)
-        loft_section = tuple(c(z) for c in loft) if loft else None
-        upper_weight = fade(0.655, 0.685, z) if loft else 0.0
-        if loft_section:
-            lx, ly = silhouette_point(angle, loft_section)
-            tx += (lx - tx) * upper_weight
-            ty += (ly - ty) * upper_weight
         switch = fade(0.745, 0.777, z)
-        width = section[0] + ((loft_section[0] - section[0]) * upper_weight if loft_section else 0)
-        scale = width / base_width(z)
+        scale = section[0] / base_width(z)
         upper_x = x * scale
         u = min(1.0, abs(x) / base_width(z))
         cs3 = max(0.0, 1 - u * u) ** 1.5
         delta = max(0.0, section[1] - base_front(z)) * cs3 + section[3] * u * u * cs3
         upper_y = p.y / height - delta * fade(0.0, 0.015, dy)
-        if loft_section:
-            # A continuous signed shear preserves the two branch walls.
-            # Ray-to-ray scaling fails at the axilla because first hits jump
-            # between trunk and arm. Use one smooth reference wall instead.
-            lateral = abs(upper_x) / width
-            a = math.asin(min(1.0, lateral))
-            target_depth = -silhouette_point(a, loft_section)[1]
-            source_depth = base_front(z) * math.sqrt(max(0.0, 1 - min(1.0, lateral) ** 2))
-            shift = (target_depth - source_depth) * (1 - fade(0.78, 1.12, lateral))
-            upper_y = p.y / height - shift * fade(0.0, 0.015, dy)
         p.x += ((1 - switch) * tx + switch * upper_x - x) * height * w
         p.y += ((1 - switch) * (ty + profile.center_y) + switch * upper_y - p.y / height) * height * w
     obj.data.update()
-    if loft:
-        fair_shoulder_junction(obj, height)
-    obj["torso_surface"] = "tensor_silhouette_loft" if loft else "continuous_cubic_contours"
+    obj["torso_surface"] = "continuous_cubic_contours"

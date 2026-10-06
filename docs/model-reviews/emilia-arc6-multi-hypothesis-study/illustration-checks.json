@@ -1,0 +1,115 @@
+{
+  "purpose": "drawing quality and distinctness only; NOT anime evidence",
+  "distinctness": [
+    {
+      "section": "A",
+      "pair": "A/B",
+      "normalized_paper_outline_difference": 0.03631704939714464,
+      "shared_ribcage_join": false
+    },
+    {
+      "section": "A",
+      "pair": "A/C",
+      "normalized_paper_outline_difference": 0.03449069275849148,
+      "shared_ribcage_join": false
+    },
+    {
+      "section": "A",
+      "pair": "B/C",
+      "normalized_paper_outline_difference": 0.06710434412881644,
+      "shared_ribcage_join": false
+    },
+    {
+      "section": "B",
+      "pair": "A/B",
+      "normalized_paper_outline_difference": 0.07061249495910006,
+      "shared_ribcage_join": false
+    },
+    {
+      "section": "B",
+      "pair": "A/C",
+      "normalized_paper_outline_difference": 0.06302993391661112,
+      "shared_ribcage_join": false
+    },
+    {
+      "section": "B",
+      "pair": "B/C",
+      "normalized_paper_outline_difference": 0.10590290003863753,
+      "shared_ribcage_join": false
+    },
+    {
+      "section": "C",
+      "pair": "A/B",
+      "normalized_paper_outline_difference": 0.0872049911989896,
+      "shared_ribcage_join": false
+    },
+    {
+      "section": "C",
+      "pair": "A/C",
+      "normalized_paper_outline_difference": 0.027047537208788705,
+      "shared_ribcage_join": false
+    },
+    {
+      "section": "C",
+      "pair": "B/C",
+      "normalized_paper_outline_difference": 0.0770032468654808,
+      "shared_ribcage_join": false
+    },
+    {
+      "section": "D",
+      "pair": "A/B",
+      "normalized_paper_outline_difference": 0.06043465120841504,
+      "shared_ribcage_join": false
+    },
+    {
+      "section": "D",
+      "pair": "A/C",
+      "normalized_paper_outline_difference": 0.050584607186517604,
+      "shared_ribcage_join": false
+    },
+    {
+      "section": "D",
+      "pair": "B/C",
+      "normalized_paper_outline_difference": 0.023328549048229053,
+      "shared_ribcage_join": false
+    },
+    {
+      "section": "E",
+      "pair": "A/B",
+      "normalized_paper_outline_difference": 0.0,
+      "shared_ribcage_join": true
+    },
+    {
+      "section": "E",
+      "pair": "A/C",
+      "normalized_paper_outline_difference": 0.0,
+      "shared_ribcage_join": true
+    },
+    {
+      "section": "E",
+      "pair": "B/C",
+      "normalized_paper_outline_difference": 0.0,
+      "shared_ribcage_join": true
+    }
+  ],
+  "profiles": [
+    {
+      "candidate": "A",
+      "maximum_height_paper_only": 200.75,
+      "depth_paper_only": 70.23011280076196
+    },
+    {
+      "candidate": "B",
+      "maximum_height_paper_only": 255.5,
+      "depth_paper_only": 73.91212589820896
+    },
+    {
+      "candidate": "C",
+      "maximum_height_paper_only": 286.25,
+      "depth_paper_only": 72.11285368548626
+    }
+  ],
+  "shared_lower_drawing_context": true,
+  "existing_files_unchanged": 311,
+  "anatomical_validation": false
+}

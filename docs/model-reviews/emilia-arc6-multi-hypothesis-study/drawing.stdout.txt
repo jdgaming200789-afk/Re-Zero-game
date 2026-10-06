@@ -1,0 +1,6 @@
+Drawing original evidence atlas
+Drawing three-hypothesis overview
+Drawing candidate A
+Drawing candidate B
+Drawing candidate C
+{"sheets": 6, "candidates": 3, "assessment_records": 288, "existing_files_unchanged": 311, "winner": null}

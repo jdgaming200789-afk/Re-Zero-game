@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2100" height="2470" viewBox="0 0 2100 2470">
+<rect width="2100" height="2470" fill="#F3F5F9"/>
+<text x="45" y="25" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="40" font-weight="700" dominant-baseline="text-before-edge">Emilia | ORIGINAL-FRAME CONSTRAINT ASSESSMENT</text>
+<text x="45" y="83" fill="#9A5877" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">NO CANDIDATE IS SUFFICIENTLY SUPPORTED TO SELECT. Covered pixels do not validate hidden shape.</text>
+<text x="45" y="138" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">D  DIRECTLY SUPPORTED</text>
+<text x="1080" y="138" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">O  CONSISTENT BUT UNOBSERVED</text>
+<text x="45" y="183" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">W  WEAKLY CONSTRAINED</text>
+<text x="1080" y="183" fill="#B74646" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">X  CONTRADICTED</text>
+<text x="45" y="243" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">O is not positive evidence. W is a weak clue, not an approved contour. D supports only the property stated.</text>
+<text x="45" y="282" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">Each cell lists hypothesis A / B / C. Identical labels expose underdetermination; no score or winner is computed.</text>
+<text x="570" y="341" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">F1</text>
+<text x="753" y="341" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">F2</text>
+<text x="936" y="341" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">F3</text>
+<text x="1119" y="341" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">F4</text>
+<text x="1302" y="341" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">F5</text>
+<text x="1485" y="341" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">F6</text>
+<text x="1668" y="341" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">F7</text>
+<text x="1851" y="341" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">F8</text>
+<text x="45" y="341" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="24" font-weight="700" dominant-baseline="text-before-edge">Constraint / property</text>
+<rect x="40" y="392" width="2020" height="65" rx="14" fill="white" stroke="#D6DEE8" stroke-width="2"/>
+<text x="55" y="407" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">Exposed purple surface is connected</text>
+<text x="570" y="413" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="753" y="413" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="936" y="413" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="1119" y="413" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="1302" y="413" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="1485" y="413" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="1668" y="413" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="1851" y="413" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<rect x="40" y="461" width="2020" height="65" rx="14" fill="#EAF0F6" stroke="#D6DEE8" stroke-width="2"/>
+<text x="55" y="476" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">White cloth edges bound / overlap</text>
+<text x="55" y="500" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">purple</text>
+<text x="570" y="482" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="753" y="482" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="936" y="482" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="1119" y="482" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="1302" y="482" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="1485" y="482" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="1668" y="482" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="1851" y="482" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<rect x="40" y="530" width="2020" height="65" rx="14" fill="white" stroke="#D6DEE8" stroke-width="2"/>
+<text x="55" y="545" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">Smooth exposed lower torso connection</text>
+<text x="570" y="551" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">D / D / D</text>
+<text x="753" y="551" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="936" y="551" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1119" y="551" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="1302" y="551" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="1485" y="551" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="1668" y="551" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="1851" y="551" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<rect x="40" y="599" width="2020" height="65" rx="14" fill="#EAF0F6" stroke="#D6DEE8" stroke-width="2"/>
+<text x="55" y="614" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">Upper front width / outer transition</text>
+<text x="570" y="620" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="753" y="620" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="936" y="620" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1119" y="620" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1302" y="620" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1485" y="620" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1668" y="620" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1851" y="620" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<rect x="40" y="668" width="2020" height="65" rx="14" fill="white" stroke="#D6DEE8" stroke-width="2"/>
+<text x="55" y="683" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">Outer-to-medial anterior distribution</text>
+<text x="570" y="689" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="753" y="689" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="936" y="689" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="1119" y="689" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="1302" y="689" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1485" y="689" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1668" y="689" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1851" y="689" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<rect x="40" y="737" width="2020" height="65" rx="14" fill="#EAF0F6" stroke="#D6DEE8" stroke-width="2"/>
+<text x="55" y="752" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">Neutral upper onset trajectory</text>
+<text x="570" y="758" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="753" y="758" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="936" y="758" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1119" y="758" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1302" y="758" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1485" y="758" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1668" y="758" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1851" y="758" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<rect x="40" y="806" width="2020" height="65" rx="14" fill="white" stroke="#D6DEE8" stroke-width="2"/>
+<text x="55" y="821" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">Maximum neutral forward depth</text>
+<text x="570" y="827" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="753" y="827" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="936" y="827" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1119" y="827" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1302" y="827" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1485" y="827" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1668" y="827" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1851" y="827" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<rect x="40" y="875" width="2020" height="65" rx="14" fill="#EAF0F6" stroke="#D6DEE8" stroke-width="2"/>
+<text x="55" y="890" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">Height and breadth of maximum depth</text>
+<text x="570" y="896" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="753" y="896" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="936" y="896" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1119" y="896" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1302" y="896" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1485" y="896" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1668" y="896" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1851" y="896" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<rect x="40" y="944" width="2020" height="65" rx="14" fill="white" stroke="#D6DEE8" stroke-width="2"/>
+<text x="55" y="959" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">Continuous turn toward the ribcage</text>
+<text x="570" y="965" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="753" y="965" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="936" y="965" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1119" y="965" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="1302" y="965" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="1485" y="965" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="1668" y="965" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1851" y="965" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<rect x="40" y="1013" width="2020" height="65" rx="14" fill="#EAF0F6" stroke="#D6DEE8" stroke-width="2"/>
+<text x="55" y="1028" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">Hidden lower return length / curvature</text>
+<text x="570" y="1034" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="753" y="1034" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="936" y="1034" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1119" y="1034" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="1302" y="1034" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="1485" y="1034" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<text x="1668" y="1034" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1851" y="1034" fill="#3270B0" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">W / W / W</text>
+<rect x="40" y="1082" width="2020" height="65" rx="14" fill="white" stroke="#D6DEE8" stroke-width="2"/>
+<text x="55" y="1097" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">Complete horizontal section shape</text>
+<text x="570" y="1103" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="753" y="1103" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="936" y="1103" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1119" y="1103" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1302" y="1103" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1485" y="1103" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1668" y="1103" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1851" y="1103" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<rect x="40" y="1151" width="2020" height="65" rx="14" fill="#EAF0F6" stroke="#D6DEE8" stroke-width="2"/>
+<text x="55" y="1166" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="400" dominant-baseline="text-before-edge">Physical cloth/body contact map</text>
+<text x="570" y="1172" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="753" y="1172" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="936" y="1172" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1119" y="1172" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1302" y="1172" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1485" y="1172" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1668" y="1172" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="1851" y="1172" fill="#6C7687" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700" dominant-baseline="text-before-edge">O / O / O</text>
+<text x="45" y="1257" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" dominant-baseline="text-before-edge">F1 = S4-FRONT</text>
+<text x="1080" y="1257" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" dominant-baseline="text-before-edge">F2 = S4-NEAR-FRONT</text>
+<text x="45" y="1291" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" dominant-baseline="text-before-edge">F3 = S4-OPENING</text>
+<text x="1080" y="1291" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" dominant-baseline="text-before-edge">F4 = S4-RUNNING</text>
+<text x="45" y="1325" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" dominant-baseline="text-before-edge">F5 = S4-SEATED</text>
+<text x="1080" y="1325" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" dominant-baseline="text-before-edge">F6 = S4-STANDING-OBLIQUE</text>
+<text x="45" y="1359" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" dominant-baseline="text-before-edge">F7 = S4-TILTED</text>
+<text x="1080" y="1359" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="400" dominant-baseline="text-before-edge">F8 = S4-LEANING</text>
+<text x="45" y="1440" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="28" font-weight="700" dominant-baseline="text-before-edge">WHAT MULTIPLE S4 OBSERVATIONS REALLY CONSTRAIN</text>
+<rect x="45" y="1495" width="965" height="470" rx="14" fill="white" stroke="#D6DEE8" stroke-width="2"/>
+<rect x="1050" y="1495" width="1005" height="470" rx="14" fill="white" stroke="#D6DEE8" stroke-width="2"/>
+<text x="65" y="1514" fill="#16815C" font-family="DejaVu Sans, sans-serif" font-size="25" font-weight="700" dominant-baseline="text-before-edge">Visible / partially constrained</text>
+<text x="65" y="1564" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">Purple surfaces appear in the opening and below cloth.</text>
+<text x="65" y="1609" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">Scalloped white boundaries cross purple and change with pose.</text>
+<text x="65" y="1654" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">Some lower purple outlines are smooth and taper toward the waist.</text>
+<text x="65" y="1699" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">Purple paint marks weakly suggest curvature; they do not measure</text>
+<text x="65" y="1728" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">it.</text>
+<text x="65" y="1773" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">Side exposure limits some local connections, not complete upper</text>
+<text x="65" y="1802" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">depth.</text>
+<text x="1070" y="1514" fill="#9A5877" font-family="DejaVu Sans, sans-serif" font-size="25" font-weight="700" dominant-baseline="text-before-edge">Free / unresolved variables</text>
+<text x="1070" y="1564" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">Upper onset under white panels.</text>
+<text x="1070" y="1609" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">Medial-versus-outer forward distribution and exact front width.</text>
+<text x="1070" y="1654" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">Maximum depth, its height and the span of the fullest region.</text>
+<text x="1070" y="1699" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">Hidden lower-return length, anterior-to-lateral wrap and whole</text>
+<text x="1070" y="1728" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">sections.</text>
+<text x="1070" y="1773" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">Physical garment contact, lift and clearance; all remain UNKNOWN.</text>
+<text x="45" y="2010" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="24" font-weight="700" dominant-baseline="text-before-edge">No direct hidden-geometry support. No candidate-specific contradiction is established from covered pixels.</text>
+<text x="45" y="2065" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">The absence of contradiction is not support. X is reserved for conflict with an actual observed body constraint.</text>
+<text x="45" y="2107" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">S1 contributes neutral posture and landmark ordering only. Costume cups, bodice outline and depth are excluded.</text>
+<text x="45" y="2149" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">Candidate C bridge depth is explicitly free. A/B anterior turning and B widest span are equally unobserved.</text>
+<text x="45" y="2191" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">All chosen dimensions, section handles, synthetic tones and flow lines are proposal choices, never anime measurements.</text>
+<text x="45" y="2268" fill="#9A5877" font-family="DejaVu Sans, sans-serif" font-size="29" font-weight="700" dominant-baseline="text-before-edge">DECISION: STOP FOR REVIEW. NO WINNER. NO MODELING TARGET FROZEN.</text>
+<text x="45" y="2320" fill="#5A6B80" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="400" dominant-baseline="text-before-edge">Complete per-candidate / per-frame / per-constraint reasons are in the CSV, JSON and written study.</text>
+<text x="45" y="2383" fill="#24344B" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="700" dominant-baseline="text-before-edge">No mesh edits. No garment mesh edits. No GLB builds. No Geometry Test 3.</text>
+</svg>

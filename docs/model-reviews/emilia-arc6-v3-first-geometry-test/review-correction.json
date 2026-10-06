@@ -1,0 +1,10 @@
+{
+  "supersedes": "SIDE SMALL DEVIATION classification in original Test 1 sheets and report",
+  "SIDE": "MAJOR DEVIATION",
+  "FRONT": "MAJOR DEVIATION",
+  "3/4": "MAJOR DEVIATION",
+  "curvature": "FAILED",
+  "reason": "Wedge silhouette, straight/sloped onset, concentrated crest, diagonal return. Whole-curve curvature fails despite close landmark coordinates.",
+  "original_outputs_preserved": true,
+  "full_diagnosis": "../emilia-arc6-v3-geometry-test-2/test1-diagnosis.json"
+}

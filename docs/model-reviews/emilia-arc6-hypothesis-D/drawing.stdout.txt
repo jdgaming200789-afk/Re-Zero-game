@@ -1,0 +1,3 @@
+Drawing D from one analytic surface
+Testing predictions against eight original S4 frames
+{"sheets": 2, "original_s4_frames": 8, "prediction_tests": 24, "existing_files_unchanged": 329, "winner": null}

@@ -115,7 +115,7 @@ def preserve_body_normals(body) -> None:
     boundary look like a geometric crease. The point layer survives BMesh
     deletion and object consolidation, and is restored after those operations.
     """
-    if body.get("torso_surface") != "continuous_cubic_contours":
+    if body.get("torso_surface") not in {"continuous_cubic_contours", "tensor_silhouette_loft"}:
         return
     me = body.data
     normals = [v.vector.copy() for v in me.vertex_normals]

@@ -23,35 +23,17 @@ from torso_contours import CubicCurve, fade
 THICKNESS = 0.00085  # H, about 1.4 mm at Emilia's height
 EASE = 0.0022       # mid-surface clearance at supported points
 
-# Independent front-image traces, in supplied IMG_1592 pixel coordinates.
-# Normalize between neck foot y=245 and navel y=451. These are approximate
-# garment edge observations, not a radial outline derived from the torso.
-FRONT_ORIGIN_X = 276
-FRONT_NECK_Y = 245
-FRONT_PIXELS_PER_H = 899
-FRONT_TRACES = {
-    1: {
-        "outer": ((304, 248), (329, 268), (339, 294), (343, 325),
-                  (341, 352), (340, 372), (347, 400), (364, 429)),
-        "inner": ((364, 429), (343, 421), (328, 407), (319, 398),
-                  (317, 386), (311, 380), (308, 365), (299, 353),
-                  (292, 342), (288, 330), (288, 318)),
-    },
-    -1: {
-        "outer": ((248, 248), (220, 267), (211, 294), (209, 324),
-                  (213, 350), (216, 370), (208, 399), (190, 429)),
-        "inner": ((190, 429), (212, 419), (226, 407), (235, 398),
-                  (239, 387), (245, 381), (247, 364), (255, 354),
-                  (262, 343), (265, 330), (264, 318)),
-    },
-}
-
-
-def from_front_pixel(point):
-    x, y = point
-    return (x - FRONT_ORIGIN_X) / FRONT_PIXELS_PER_H, 0.829 - (y - FRONT_NECK_Y) / FRONT_PIXELS_PER_H
-
-
+# Cubic Bezier segments (start, controls, end), in front projection H units.
+# The lower outline descends toward the outer tip instead of circling an
+# ellipsoidal lower pole. Small changes of direction make broad soft scallops.
+PATTERN = (
+    ((0.000, 0.829), (0.014, 0.830), (0.026, 0.829), (0.031, 0.826), "top"),
+    ((0.031, 0.826), (0.049, 0.824), (0.065, 0.809), (0.073, 0.794), "top"),
+    ((0.073, 0.794), (0.076, 0.781), (0.080, 0.765), (0.078, 0.748), "outer"),
+    ((0.078, 0.748), (0.080, 0.729), (0.074, 0.709), (0.067, 0.696), "outer"),
+    ((0.067, 0.696), (0.065, 0.670), (0.080, 0.642), (0.095, 0.627), "outer"),
+    ((0.034, 0.697), (0.029, 0.708), (0.010, 0.731), (0.013, 0.748), "opening"),
+)
 SEAM = (
     ((0.013, 0.748), (0.004, 0.749), (-0.017, 0.756), (-0.015, 0.771), "seam"),
     ((-0.015, 0.771), (-0.017, 0.785), (-0.012, 0.796), (0.000, 0.804), "seam"),
@@ -66,35 +48,47 @@ def bezier(segment, u):
 
 
 def outline(side):
-    """Two independent C2 outlines traced before any body fitting."""
-    trace = FRONT_TRACES[side]
-    outer = [from_front_pixel(p) for p in trace["outer"]]
-    inner = [from_front_pixel(p) for p in trace["inner"]]
     points = []
-    root = (-0.0006 if side > 0 else 0.0006, 0.829)
-    top = (root, (side * 0.013, 0.831), (side * 0.024, 0.830), outer[0], "top")
-    points.extend((*bezier(top, k / 20), "top") for k in range(20))
-    for data, descending, tag in ((outer, True, "outer"), (inner, False, "opening")):
-        rows = sorted(data, key=lambda p: p[1])
-        curve = CubicCurve([p[1] for p in rows], [p[0] for p in rows])
-        z0, z1 = (rows[-1][1], rows[0][1]) if descending else (rows[0][1], rows[-1][1])
-        count = math.ceil(abs(z1 - z0) / 0.0012)
-        for k in range(count):
-            z = z0 + (z1 - z0) * k / count
-            points.append((curve(z), z, "hem" if not descending and z < 0.698 else tag))
-    # Join the traced opening to the shared soft upper lap without forcing
-    # either lower half to be a mirror of the other.
-    x0, z0 = inner[-1]
-    seam_start = SEAM[0][0]
+    for segment in PATTERN:
+        if segment[4] == "opening":
+            # Interpolate the traced lower contour with continuous curvature.
+            # Independent Bezier scallops create sharp tangent changes at
+            # their joins; these broad lobes have no faceted cusps.
+            zs = (0.627, 0.636, 0.647, 0.656, 0.670, 0.680, 0.688, 0.697)
+            curve = CubicCurve(zs, (0.095, 0.069, 0.064, 0.053, 0.049, 0.040, 0.037, 0.034))
+            for k in range(75):
+                z = zs[0] + (zs[-1] - zs[0]) * k / 75
+                zz = z + (0.0012 * math.sin(math.pi * fade(0.627, 0.748, z)) if side < 0 else 0)
+                points.append((side * curve(z), zz, "hem"))
+        if segment[4] == "opening":
+            # Traced from the close-up and front frame: the exposed purple
+            # stays narrow above the lower return, then broadens smoothly.
+            # One broad diagonal Bezier widened it too early at mid-height.
+            zs = (0.697, 0.707, 0.716, 0.726, 0.739, 0.748)
+            curve = CubicCurve(zs, (0.034, 0.025, 0.018, 0.013, 0.0127, 0.013))
+            for k in range(48):
+                z = zs[0] + (zs[-1] - zs[0]) * k / 48
+                zz = z + (0.0012 * math.sin(math.pi * fade(0.627, 0.748, z)) if side < 0 else 0)
+                points.append((side * curve(z), zz, "opening"))
+            continue
+        length = sum(math.dist(a, b) for a, b in zip(segment[:3], segment[1:4]))
+        for k in range(max(4, math.ceil(length / 0.0018))):
+            x, z = bezier(segment, k / max(4, math.ceil(length / 0.0018)))
+            # Slightly different free hems, without changing either support.
+            if side < 0 and segment[4] in ("hem", "opening"):
+                z += 0.0012 * math.sin(math.pi * fade(0.627, 0.748, z))
+            points.append((side * x, z, segment[4]))
     if side < 0:
-        bridge = ((x0, z0), (-0.004, z0 - 0.0007), (0.006, 0.7475), seam_start, "opening")
-        points.extend((*bezier(bridge, k / 16), "opening") for k in range(16))
-    else:
-        points.append((x0, z0, "opening"))
+        # The left panel forms the soft top of the purple opening. The
+        # other panel laps over it at the end of the curved upper seam.
+        bridge = ((-0.013, 0.748), (-0.002, 0.7474), (0.006, 0.7476), (0.013, 0.748), "opening")
+        points.extend((*bezier(bridge, k / 14), "opening") for k in range(14))
     for segment in SEAM:
         for k in range(20):
             x, z = bezier(segment, k / 20)
             points.append((x + (-0.0006 if side > 0 else 0.0006), z, "seam"))
+    # Root sits under the collar; keep the two halves overlapped there too.
+    points[0] = (-0.0006 if side > 0 else 0.0006, points[0][1], points[0][2])
     area = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(points, points[1:] + points[:1]))
     if area < 0:
         points.reverse()
@@ -110,81 +104,46 @@ def inside(points, x, z):
 
 
 def drape_field(j):
-    """C2 hanging sheet supported by upper/outer torso, with body obstacles.
+    """Downward cloth envelope, supported by the existing upper/outer torso.
 
-    A continuous depth loft releases below the support instead of using a
-    row-wise minimum slope. That hard switch imprinted a horizontal cup-like
-    band. Constrained bending fairing bridges hollows and keeps the free spans
-    smooth. No thickness, puff, rim, or body displacement is added.
+    Rays measure real body depth. Below a support the cloth returns toward
+    the body with a bounded slope, so it falls off the lower pole instead of
+    acquiring a padded rim. Outside the torso the same field continues the
+    free hanging cloth. This changes spacing, never thickness or body volume.
     """
     step = 0.00125
     xs = [i * step for i in range(81)]
     zs = [0.625 + i * step for i in range(169)]
-    body, obstacles = [], []
+    rows = []
     for z in zs:
-        row, obstacle = [], []
+        row = []
         last = -0.022 * j.H
         for x in xs:
             hit = t.front_point(j, x * j.H, z * j.H)
             if hit is not None:
                 last = hit[0].y
-                obstacle.append(last)
             else:
                 last += step * j.H * 0.45
-                obstacle.append(None)
             row.append(last)
-        body.append(row)
-        obstacles.append(obstacle)
-
-    def at_height(z, i):
-        f = min(len(zs) - 1.001, max(0, (z - zs[0]) / step))
-        k = int(f)
-        return body[k][i] * (1 - (f - k)) + body[k + 1][i] * (f - k)
-
-    columns = []
-    for i, x in enumerate(xs):
-        crest_rows = [k for k, z in enumerate(zs) if 0.715 <= z <= 0.745]
-        crest = min(crest_rows, key=lambda k: body[k][i])
-        support_z, support = zs[crest], body[crest][i]
-        # The side frame shows cloth returning gently toward its lower edge.
-        # These release landmarks govern slope/curvature, never panel outline.
-        # The outer tips fall beside the torso in the running reference.
-        # Applying the central return there pushed them behind the back and
-        # produced fins. Keep the outer hanging span near its own support.
-        release = 1 - fade(0.050, 0.080, x)
-        heights = (0.625, 0.666, 0.695, support_z, 0.763, 0.788, 0.812, 0.835)
-        depths = (support + 0.041 * j.H * release, support + 0.013 * j.H * release,
-                  support + 0.002 * j.H * release, support,
-                  at_height(0.763, i), at_height(0.788, i),
-                  at_height(0.812, i), at_height(0.835, i))
-        columns.append(CubicCurve(heights, depths))
-    rest = [[columns[i](z) for i in range(len(xs))] for z in zs]
-    rows = [[min(value, limit) if limit is not None else value
-             for value, limit in zip(row, obstacle)]
-            for row, obstacle in zip(rest, obstacles)]
-    # Minimize thin-sheet bending energy, with a weak rest-shape anchor and
-    # the torso as a unilateral obstacle. Membrane averaging alone leaves a
-    # curvature band at lift-off. The biharmonic stencil fairs the slope and
-    # curvature across that transition without inflating the contact surface.
-    # Real body hits alone constrain cloth outside the silhouette.
-    for _ in range(1000):
+        rows.append(row)
+    contact = [row[:] for row in rows]
+    for k in range(len(zs) - 2, -1, -1):
+        for i, x in enumerate(xs):
+            if zs[k] < 0.752:
+                slope = 0.34 + 0.10 * fade(0.055, 0.080, x)
+                rows[k][i] = min(rows[k][i], rows[k + 1][i] + step * j.H * slope)
+    # Fair the depth field as a thin sheet. This smooths the contact-to-free
+    # transition and the extrapolated outer hems without adding a rim or puff.
+    # A tensioned sheet bridges small triangulation/axillary hollows. The
+    # body is an obstacle, not a pointwise imprint on the cloth: constrained
+    # fairing leaves supported points in contact and smooths the free spans.
+    for _ in range(64):
         smooth = [row[:] for row in rows]
-        change = 0
-        for k in range(2, len(zs) - 2):
-            for i in range(2, len(xs) - 2):
-                bending = (20 * rows[k][i]
-                           - 8 * (rows[k - 1][i] + rows[k + 1][i] + rows[k][i - 1] + rows[k][i + 1])
-                           + 2 * (rows[k - 1][i - 1] + rows[k - 1][i + 1]
-                                  + rows[k + 1][i - 1] + rows[k + 1][i + 1])
-                           + rows[k - 2][i] + rows[k + 2][i] + rows[k][i - 2] + rows[k][i + 2])
-                value = rows[k][i] - 0.025 * (bending + 0.005 * (rows[k][i] - rest[k][i]))
-                if obstacles[k][i] is not None:
-                    value = min(obstacles[k][i], value)
-                smooth[k][i] = value
-                change = max(change, abs(value - rows[k][i]))
+        for k in range(1, len(zs) - 1):
+            for i in range(1, len(xs) - 1):
+                average = 0.5 * rows[k][i] + 0.125 * (rows[k - 1][i] + rows[k + 1][i] + rows[k][i - 1] + rows[k][i + 1])
+                smooth[k][i] = min(contact[k][i], average)
         rows = smooth
-        if change < 1e-7 * j.H:
-            break
 
     def sample(x, z):
         fi = min(len(xs) - 1.001, max(0.0, abs(x) / step))

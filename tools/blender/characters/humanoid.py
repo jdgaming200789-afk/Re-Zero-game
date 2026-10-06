@@ -194,6 +194,13 @@ def build_body(name: str, s: BodySpec, j: Joints) -> bpy.types.Object:
     v("hips", j.hips, 0.082 * s.hips * tc, 0.058 * tc)
     v("waist", j.waist, 0.072 * s.waist * tc, 0.052 * tc)
     v("chest", j.chest, 0.086 * s.chest * tc, 0.06 * tc)
+    contours = s.extra.get("torso_contours")
+    if contours is not None:
+        # Keep a closed upper ribcage below the arm junction. A single long
+        # chest-to-branch edge pinches the original Skin surface into the
+        # armpit and supplies poor surface coordinates for a cloth fit.
+        rib = j.chest.lerp(j.upper_chest, 0.52)
+        v("upper_ribs", rib, 0.086 * s.chest * tc, 0.060 * tc)
     v("upper_chest", j.upper_chest, 0.094 * s.shoulder * tc, 0.056 * tc)
     v("neck_base", j.neck_base, 0.037, 0.036)
     v("neck_top", j.neck_top, 0.03, 0.031)
@@ -234,7 +241,11 @@ def build_body(name: str, s: BodySpec, j: Joints) -> bpy.types.Object:
     e("pelvis", "hips")
     e("hips", "waist")
     e("waist", "chest")
-    e("chest", "upper_chest")
+    if contours is not None:
+        e("chest", "upper_ribs")
+        e("upper_ribs", "upper_chest")
+    else:
+        e("chest", "upper_chest")
     e("upper_chest", "neck_base")
     e("neck_base", "neck_top")
     for side in ("l", "r"):

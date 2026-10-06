@@ -79,33 +79,52 @@ def section_point(angle: float, section) -> tuple[float, float]:
 
 
 def fit_torso(obj, profile: TorsoContours, height: float) -> None:
-    """Reparameterize the existing connected body onto the contour surface.
+    """Fit the closed trunk, then transport the branching shoulder surface.
 
-    Original vertices, faces, and Z coordinates are preserved. Their polar
-    angles supply surface coordinates. The target dimensions all come from
-    the reference-guided profile. The pelvis and thighs lie outside the
-    deformation, and C2 blending connects to the original waist/shoulder mesh.
+    Radial coordinates are valid on the ribs/waist, but not on an arm root.
+    The upper transition therefore uses a positive transverse scale and a
+    monotone anterior displacement. This keeps the connected shoulder web
+    instead of collapsing its inner and outer walls onto the same section.
+    All vertex heights and the lower-body topology remain unchanged.
     """
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+
     verts = obj.data.vertices
     z0, z1 = profile.sections[0][0], profile.sections[-1][0]
     curves = profile.curves()
+    tree = BVHTree.FromPolygons([v.co.copy() for v in verts], [list(f.vertices) for f in obj.data.polygons])
+    zs = [r[0] for r in profile.sections]
+    depths = []
+    for z in zs:
+        hit = tree.ray_cast(Vector((0, -height, z * height)), Vector((0, 1, 0)))[0]
+        depths.append(profile.center_y - hit.y / height)
+    base_front = CubicCurve(zs, depths)
+    # The closed ribcage width, measured below the arm branch. Above that
+    # branch, the side ray would measure an arm or the inside of an armpit.
+    width_zs = (0.690, 0.715, 0.735, 0.750)
+    widths = [tree.ray_cast(Vector((0, profile.center_y * height, z * height)), Vector((1, 0, 0)))[0].x / height for z in width_zs]
+    base_width = CubicCurve(width_zs + (0.785, 0.818), tuple(widths) + (widths[-1], widths[-1]))
     for v in verts:
         p = v.co
         z, x, dy = p.z / height, p.x / height, profile.center_y - p.y / height
         if not z0 <= z <= z1:
             continue
         w = fade(*profile.lower_blend, z) * (1 - fade(*profile.upper_blend, z))
-        # Leave A-pose arms and the outer shoulder web alone. This boundary
-        # also has zero first/second derivatives and lies above the chest.
-        w *= 1 - fade(0.10, 0.145, abs(x))
+        w *= 1 - fade(0.10, 0.18, abs(x))
         if w <= 0:
             continue
-        # Direct polar coordinates remain stable across the shoulder web.
-        # A radius sampled toward the A-posed arm would normalize unrelated
-        # torso vertices by the arm span and fold this transition inward.
+        section = tuple(c(z) for c in curves)
         angle = math.atan2(x, dy)
-        tx, ty = section_point(angle, tuple(c(z) for c in curves))
-        p.x += (tx * height - p.x) * w
-        p.y += ((ty + profile.center_y) * height - p.y) * w
+        tx, ty = section_point(angle, section)
+        switch = fade(0.745, 0.777, z)
+        scale = section[0] / base_width(z)
+        upper_x = x * scale
+        u = min(1.0, abs(x) / base_width(z))
+        cs3 = max(0.0, 1 - u * u) ** 1.5
+        delta = max(0.0, section[1] - base_front(z)) * cs3 + section[3] * u * u * cs3
+        upper_y = p.y / height - delta * fade(0.0, 0.015, dy)
+        p.x += ((1 - switch) * tx + switch * upper_x - x) * height * w
+        p.y += ((1 - switch) * (ty + profile.center_y) + switch * upper_y - p.y / height) * height * w
     obj.data.update()
     obj["torso_surface"] = "continuous_cubic_contours"

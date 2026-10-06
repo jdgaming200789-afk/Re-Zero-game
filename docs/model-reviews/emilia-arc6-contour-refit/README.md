@@ -76,22 +76,26 @@ plus a broad anterior extension whose first two derivatives vanish at the
 sides. The two forward peaks share a shallow central surface. No breast
 ellipsoid, radial smooth maximum, or legacy spherical bump runs for Emilia.
 
-The connected Skin/Subdivision topology supplies polar coordinates, rather
-than independent chest centers. The new deformation leaves every vertex's Z
-coordinate alone. Quintic blending joins the profile to the original waist
-and shoulder web. Direct polar coordinates avoid treating the A-posed arm
-span as a torso radius. Other characters retain their existing shaping path.
+The Skin graph now has an upper-rib row below the arm branch. This prevents
+its long chest-to-branch edge from pinching the ribcage into the armpit.
+Closed trunk sections supply polar coordinates. Above them, a positive
+transverse scale and monotone anterior transport preserve the branching
+shoulder web; projecting both arm walls onto a single radial section caused
+folds and was rejected. Quintic blending connects both methods without
+moving vertex heights. Other characters retain their existing shaping path.
 
 The Gaussian belly, under-rib indentation, and iliac bumps are removed. The
-existing hip/thigh width settings and lumbar curve stay. The navel becomes a
+existing hip/thigh radius settings and lumbar curve stay. The navel becomes a
 small local dimple applied after fitting. Shared surface normals survive
 covered-face deletion and the skin/suit material split, preventing a color
 boundary from looking like a seam in the body.
 
-`01-contour-body.jpg` and `emilia-body-only.glb` record this checkpoint. The
-uncut body audit has 14,624 vertices and 14,452 faces, no nonmanifold or boundary
-edges, no degenerate faces, and no nonfinite vertices. Baseline and corrected
-raw meshes have the same vertex/face counts. Below the hip joint, the maximum
-coordinate displacement is about 0.004 mm. The pelvis ray width remains
-unchanged. The small changes above the pelvis remove abdominal sculpting.
-`body-geometry.json` includes front, oblique, and side ray samples in H units.
+`01-contour-body.jpg` and `emilia-body-only.glb` record the corrected body.
+The uncut audit has 15,692 vertices and 15,504 faces, no nonmanifold or boundary
+edges, no degenerate faces, and no nonfinite vertices. The extra upper-rib
+row changes sampling in the torso, not the leg graph or lower-body settings.
+Below z=0.52H, both meshes retain 1,989 vertices; bidirectional nearest-vertex
+displacement is at most 0.122 mm. Pelvis width at z=0.55H changes by 0.32 mm,
+while its anterior depth decreases by 2.96 mm as abdominal sculpting is
+removed. No belly volume is added. `body-geometry.json` contains front,
+oblique, and side ray samples in H units.

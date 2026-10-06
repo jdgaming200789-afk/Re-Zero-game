@@ -341,15 +341,15 @@
     }
   ],
   "cloth": {
-    "vertices": 7398,
-    "faces": 14146,
+    "vertices": 7726,
+    "faces": 14760,
     "boundary_edges": 0,
     "nonmanifold_edges": 0,
     "degenerate_faces": 0,
     "nonfinite_vertices": 0
   },
   "cloth_fit": {
-    "samples": 43726,
+    "samples": 45652,
     "min_signed_clearance_m": 0.0019044210785068572,
     "penetrating_samples": 0
   },

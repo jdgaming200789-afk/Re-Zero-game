@@ -76,11 +76,16 @@ def main():
         samples.extend((coords[e.vertices[0]] + coords[e.vertices[1]]) * 0.5 for e in cloth.data.edges)
         samples.extend(sum((coords[i] for i in tri.vertices), Vector()) / 3 for tri in cloth.data.loop_triangles)
         gaps = []
+        worst = []
         for p in samples:
             q, normal, _, _ = tree.find_nearest(p)
             if q is not None:
-                gaps.append((p - q).dot(normal))
+                gap = (p - q).dot(normal)
+                gaps.append(gap)
+                if gap < -1e-5:
+                    worst.append({"gap_m": gap, "point_H": [c / j.H for c in p], "nearest_H": [c / j.H for c in q], "normal": list(normal)})
         report["cloth_fit"] = {"samples": len(gaps), "min_signed_clearance_m": min(gaps), "penetrating_samples": sum(g < -1e-5 for g in gaps)}
+        report["worst_clearances"] = sorted(worst, key=lambda w: w["gap_m"])[:30]
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     np.save(out / "body_vertices.npy", vertices)

@@ -1,0 +1,14 @@
+{
+  "glb": "public/assets/models/characters/emilia.glb",
+  "sha256": "90dc0470fe00633493da3feef8ec98d2fff897049fe9c097a543451f55a2fde4",
+  "triangles": 132628,
+  "skinned_primitives": 14,
+  "max_weight_sum_error": 1.7881393432617188e-07,
+  "retained_parts_identical": [
+    "emilia_part_cloak",
+    "emilia_part_hooddown",
+    "emilia_part_hoodup"
+  ],
+  "panel_count": 2,
+  "cloth_thickness_m": 0.0013939999999999998
+}

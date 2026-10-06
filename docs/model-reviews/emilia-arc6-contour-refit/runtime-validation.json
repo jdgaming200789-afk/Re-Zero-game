@@ -1,0 +1,18 @@
+{
+  "glb": "/assets/models/characters/emilia.glb",
+  "loadedModel": "/assets/models/characters/emilia.glb",
+  "projection": "orthographic",
+  "rigBones": 22,
+  "skinnedMeshes": 25,
+  "face": true,
+  "renderer": {
+    "frame": 13,
+    "calls": 11,
+    "triangles": 179648,
+    "points": 0,
+    "lines": 0
+  },
+  "errors": [],
+  "sha256": "90dc0470fe00633493da3feef8ec98d2fff897049fe9c097a543451f55a2fde4",
+  "production_asset_matches": true
+}

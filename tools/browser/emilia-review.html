@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Emilia orthographic review</title></head>
+<body style="margin:0;background:#41454f;overflow:hidden">
+<script type="module">
+import { AmbientLight, Color, DirectionalLight, Euler, OrthographicCamera, Quaternion, Scene, Vector3, WebGLRenderer } from 'three';
+import { AnimeCharacter } from '../../src/characters/AnimeCharacter.ts';
+import { CharacterLighting } from '../../src/characters/render/AnimeMaterial.ts';
+import { CHARACTERS } from '../../src/data/characters.ts';
+import { Scheduler } from '../../src/core/Scheduler.ts';
+
+const params = new URLSearchParams(location.search);
+const scene = new Scene();
+scene.background = new Color(0x41454f);
+scene.add(new AmbientLight(0xffffff, 1.3));
+const key = new DirectionalLight(0xfff6ee, 2.2);
+key.position.set(-3, 5, 4);
+scene.add(key);
+const fill = new DirectionalLight(0xe4eaff, 0.7);
+fill.position.set(3, 3, -2);
+scene.add(fill);
+const renderer = new WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1);
+renderer.setSize(600, 720);
+document.body.appendChild(renderer.domElement);
+const camera = new OrthographicCamera(-1, 1, 1, -1, 0.01, 30);
+const def = { ...CHARACTERS.emilia, model: params.get('glb') || '/assets/models/characters/emilia.glb', defaultLook: 'no_cloak' };
+CharacterLighting.cameraFade = false;
+const character = await AnimeCharacter.create(def, new Scheduler());
+scene.add(character.root);
+character.root.traverse(o => {
+  if (/hair|part_cloak|part_hood|part_ornaments/.test(o.name)) o.visible = false;
+});
+const H = def.height;
+const views = {
+  front: [0, 0, .695, .43], three_quarter: [40, 0, .695, .43],
+  side: [90, 0, .695, .43], low_front: [0, -14, .695, .43],
+  full_front: [0, 0, .505, 1.11], full_side: [90, 0, .505, 1.11],
+};
+function pose(name = 'review') {
+  character.rig.resetPose();
+  const angles = name === 'run'
+    ? { upperArmL: [-52, 0, 0], lowerArmL: [-62, 0, 0], upperArmR: [42, 0, 0], lowerArmR: [-58, 0, 0], spine: [8, 0, 0], chest: [2, 0, 0] }
+    : name === 'bend'
+    ? { spine: [20, 0, 0], chest: [12, 0, 0], upperArmL: [35, 0, 0], upperArmR: [35, 0, 0] }
+    : name === 'standing'
+    ? { upperArmL: [0, 0, 0], upperArmR: [0, 0, 0], lowerArmL: [0, 0, 0], lowerArmR: [0, 0, 0], handL: [0, 0, 0], handR: [0, 0, 0] }
+    : { upperArmL: [58, 0, 0], upperArmR: [58, 0, 0], lowerArmL: [0, 0, 0], lowerArmR: [0, 0, 0], handL: [0, 0, 0], handR: [0, 0, 0] };
+  for (const [bone, degrees] of Object.entries(angles)) {
+    character.rig.setHuman(bone, new Quaternion().setFromEuler(new Euler(...degrees.map(v => v * Math.PI / 180), 'XYZ')));
+  }
+  character.root.updateMatrixWorld(true);
+}
+function render(name = 'front') {
+  const [az, el, center, scale] = views[name];
+  const a = az * Math.PI / 180, e = el * Math.PI / 180;
+  const at = new Vector3(0, center * H, 0);
+  // Orthographic proportions are distance independent. Keep the camera
+  // close enough that the game's perspective outline heuristic does not
+  // inflate a thin hem in these review views.
+  camera.position.copy(at).addScaledVector(new Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e)), 1.2);
+  camera.lookAt(at);
+  camera.top = scale * H / 2;
+  camera.bottom = -camera.top;
+  camera.right = camera.top * 600 / 720;
+  camera.left = -camera.right;
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+}
+window.emiliaReview = { render, pose, character, scene, camera, renderer };
+pose(); render();
+document.body.dataset.ready = '1';
+</script>
+</body></html>

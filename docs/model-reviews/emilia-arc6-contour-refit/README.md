@@ -99,3 +99,111 @@ displacement is at most 0.122 mm. Pelvis width at z=0.55H changes by 0.32 mm,
 while its anterior depth decreases by 2.96 mm as abdominal sculpting is
 removed. No belly volume is added. `body-geometry.json` contains front,
 oblique, and side ray samples in H units.
+
+## Cloth checkpoint
+
+`emilia_panels.py` replaces the old cylindrical drape field, hover/lift/puff
+terms, and rolled tubular border. Each panel has its own constrained
+triangulated X/Z pattern, a shared curved lapped upper seam, and a 1.394 mm
+solidified thickness. The lower outline and opening use C2 curves through
+image-space landmarks. The opening stays narrow above the lower return;
+it broadens smoothly near the underside, instead of widening diagonally
+all the way from the top. No cup volume is modeled in the garment.
+
+A body ray field supplies the supports. A bounded downward slope releases
+the cloth from the lower chest, and obstacle-constrained fairing bridges
+small surface hollows instead of imprinting every body triangle. Exact
+triangle barycentric coordinates transfer skin weights, including the free
+hems. Clearance corrections preserve the traced X/Z outline. The complete
+body stays under the panels; deleting chest faces cannot conceal a bad fit.
+The suit's upper color boundary is cut before zoning so it does not follow
+whole-face stair steps from the removed cylindrical pattern.
+
+Front tracing is normalized between the neck foot (image y about 245,
+model z=0.829H) and navel (image y about 451, model z about 0.600H). This is
+an approximate alignment of the supplied drawing, not a claim that it is
+an orthographic photograph. It gives about 899 image pixels per H. Source
+aspect ratio is preserved in `comparison-front.jpg`.
+
+| Front landmark | Approximate supplied pixels | Pattern target, H units |
+| --- | --- | --- |
+| White chest envelope | x=207..344 near y=320..340 | about +/-0.078 |
+| Purple opening top | x=264..289, y=318 | x about +/-0.013, z=0.748 |
+| Opening at mid-height | x about 264 on left, y=338 | left x=-0.013, z=0.726 |
+| Opening lower return | x=246..309, y=364 | x about +/-0.034, z=0.697 |
+| Free white tips | x about 190..363, y about 426..429 | x about +/-0.095, z=0.627 |
+| Waist | x about 219..331 near y=400 | body width about 0.125H |
+
+`comparison-side.jpg` compares side curvature and cloth release with the
+supplied running frame. Its cape, pose, and camera obscure exact depths;
+front/oblique/side agreement is checked on the single shared 3D surface.
+`comparison-opening.jpg` shows the supplied close-up beside the new inner
+edges, with the differing framing labeled. These comparisons use only the
+three supplied reference images.
+
+## Cape preservation
+
+Cape and hood modeling code is unchanged. Those parts normally sample the
+body during procedural draping, which would change them indirectly during
+this task. `gltf_parts.py` therefore retains only the three excluded meshes
+from a fresh rebuild of c97eceef. The cache contains no body geometry or
+shape target. It carries the original attributes, indices, materials,
+ordered joint mapping, inverse bind matrices, and cape spring rest
+transforms. The final export validator checks their identity. This does not
+attempt to refit the unchanged cape over the new torso.
+
+## Final review and validation
+
+- `01-contour-body.jpg` and `02-thin-panels.jpg`: all six orthographic views.
+- `views/body/` and `views/panels/`: full-resolution matched PNGs and exact camera records.
+- `comparison-front.jpg`, `comparison-side.jpg`, `comparison-opening.jpg`: supplied references beside the current geometry.
+- `03-runtime-poses.jpg`: actual game shader in review, standing, running, and bending poses.
+- `emilia-body-only.glb`: unobstructed companion asset. The garment-on asset is `public/assets/models/characters/emilia.glb`.
+- `body-geometry.json`: uncut body/cloth topology and static clearance samples. This is a sampled audit, not a proof for every possible animation.
+- `export-validation.json`: delivered GLB buffer/skin validation and excluded-part identity.
+- `runtime-validation.json`: exact loaded model, shader/rig/face status, and browser errors.
+
+The final raw body and both cloth panels have no boundary/nonmanifold edges,
+degenerate faces, or nonfinite vertices. The cloth audit checks 45,652
+vertices, edge midpoints, and triangle centroids against the complete body:
+zero penetrating samples, minimum signed clearance about 1.90 mm. The
+export uses 74 named joints; the game recognizes all 22 humanoid bones,
+loads the painted face, and produces no browser errors in the reviewed
+poses. `npm test` passes all 72 tests, and `npm run build` passes TypeScript
+checking and the production build.
+
+To review a rebuilt asset with the actual game materials:
+
+```bash
+CHROMIUM_PATH=/path/to/chromium node tools/browser/emilia-review.mjs \
+  --serve --glb=/assets/models/characters/emilia.glb --out=test-results/emilia/game
+python tools/blender/audit_emilia.py --out test-results/emilia/audit --cloth
+python tools/blender/validate_emilia_export.py \
+  --glb public/assets/models/characters/emilia.glb
+```
+
+The Python build/audit/render scripts require the same Blender/Python
+installation. All modeling data is in H units (Emilia H=1.64 m). The game
+review uses a close orthographic camera so its perspective outline-width
+heuristic does not inflate the apparent cloth thickness.
+
+## View the evidence
+
+![Aligned supplied front, body, and thin panels](comparison-front.jpg)
+
+![Matched six-view panel checkpoint](02-thin-panels.jpg)
+
+| Camera | Body only | Panels on |
+| --- | --- | --- |
+| True front | [PNG](views/body/front.png) | [PNG](views/panels/front.png) |
+| Front 3/4, 40 degrees | [PNG](views/body/three_quarter.png) | [PNG](views/panels/three_quarter.png) |
+| True side | [PNG](views/body/side.png) | [PNG](views/panels/side.png) |
+| Low front | [PNG](views/body/low_front.png) | [PNG](views/panels/low_front.png) |
+| Full-body front | [PNG](views/body/full_front.png) | [PNG](views/panels/full_front.png) |
+| Full-body side | [PNG](views/body/full_side.png) | [PNG](views/panels/full_side.png) |
+
+![Supplied running side and current side contours](comparison-side.jpg)
+
+![Supplied opening and current inner edges](comparison-opening.jpg)
+
+![Game shader and pose checks](03-runtime-poses.jpg)

@@ -1,0 +1,1077 @@
+{
+  "status": "UNAPPROVED_ANALYSIS_STOP_FOR_REVIEW",
+  "evidence_source": "original supplied S4 artwork only",
+  "synthetic_drawing_used_as_evidence": false,
+  "synthetic_cloth_drawn": false,
+  "classification": {
+    "K": "CONTACT / CLOSE FOLLOW",
+    "F": "FREE OR PROJECTING CLOTH",
+    "E": "OVERLAP EDGE",
+    "V": "VISIBLE PURPLE BODY/BODYSUIT",
+    "H": "HIDDEN / UNRESOLVED BODY"
+  },
+  "frames": [
+    {
+      "id": "S4-FRONT",
+      "title": "S4 | front, no cape covering the panels",
+      "path": "docs/model-reviews/emilia-arc6-body-contour-review/references/emilia_front_reference.jpeg",
+      "box": [
+        177,
+        240,
+        377,
+        449
+      ],
+      "marks": {
+        "K": [
+          [
+            271,
+            334
+          ]
+        ],
+        "F": [
+          [
+            199,
+            420
+          ],
+          [
+            355,
+            419
+          ]
+        ],
+        "E": [
+          [
+            242,
+            386
+          ]
+        ],
+        "V": [
+          [
+            279,
+            343
+          ],
+          [
+            278,
+            399
+          ]
+        ],
+        "H": [
+          [
+            230,
+            310
+          ],
+          [
+            321,
+            310
+          ]
+        ]
+      },
+      "lines": {
+        "K": [
+          [
+            [
+              "M",
+              269,
+              321
+            ],
+            [
+              "C",
+              272,
+              332,
+              269,
+              342,
+              264,
+              348
+            ]
+          ]
+        ],
+        "F": [
+          [
+            [
+              "M",
+              213,
+              407
+            ],
+            [
+              "C",
+              207,
+              419,
+              198,
+              423,
+              192,
+              425
+            ]
+          ],
+          [
+            [
+              "M",
+              340,
+              408
+            ],
+            [
+              "C",
+              344,
+              418,
+              355,
+              424,
+              362,
+              426
+            ]
+          ]
+        ],
+        "E": [
+          [
+            [
+              "M",
+              262,
+              349
+            ],
+            [
+              "C",
+              247,
+              360,
+              246,
+              373,
+              240,
+              390
+            ],
+            [
+              "C",
+              229,
+              412,
+              209,
+              422,
+              193,
+              426
+            ]
+          ],
+          [
+            [
+              "M",
+              299,
+              353
+            ],
+            [
+              "C",
+              318,
+              362,
+              317,
+              381,
+              326,
+              404
+            ],
+            [
+              "C",
+              334,
+              418,
+              350,
+              424,
+              361,
+              426
+            ]
+          ]
+        ],
+        "V": [
+          [
+            [
+              "M",
+              224,
+              430
+            ],
+            [
+              "C",
+              224,
+              436,
+              223,
+              442,
+              222,
+              447
+            ]
+          ],
+          [
+            [
+              "M",
+              328,
+              430
+            ],
+            [
+              "C",
+              329,
+              435,
+              330,
+              441,
+              332,
+              447
+            ]
+          ]
+        ]
+      },
+      "notes": [
+        [
+          "K",
+          "Likely close-follow at the inner opening. Physical contact is NOT resolved."
+        ],
+        [
+          "F",
+          "Outer tips extend past the exposed purple sides in the image. Air-gap size is unknown."
+        ],
+        [
+          "E",
+          "The lower cloth edges cover purple areas at different heights. No body shelf is observed."
+        ],
+        [
+          "V",
+          "Purple is visible in the opening and below the panels. Only short lower side outlines are free."
+        ],
+        [
+          "H",
+          "Upper, outer and medial depth under white cloth remains hidden."
+        ]
+      ],
+      "opening": "Narrow upper opening, widening below the inner cloth edges; this is a garment aperture.",
+      "pose": "Near front, small pose/camera effects still present."
+    },
+    {
+      "id": "S4-NEAR-FRONT",
+      "title": "S4 | standing near front",
+      "path": "docs/model-reviews/emilia-arc6-reference-analysis-v2/references/emilia_neutral_front.jpeg",
+      "box": [
+        432,
+        188,
+        623,
+        374
+      ],
+      "marks": {
+        "K": [
+          [
+            507,
+            281
+          ]
+        ],
+        "F": [
+          [
+            588,
+            347
+          ]
+        ],
+        "E": [
+          [
+            536,
+            327
+          ]
+        ],
+        "V": [
+          [
+            511,
+            302
+          ],
+          [
+            520,
+            353
+          ]
+        ],
+        "H": [
+          [
+            468,
+            273
+          ],
+          [
+            549,
+            281
+          ]
+        ]
+      },
+      "lines": {
+        "K": [
+          [
+            [
+              "M",
+              507,
+              269
+            ],
+            [
+              "C",
+              505,
+              282,
+              507,
+              291,
+              513,
+              297
+            ]
+          ]
+        ],
+        "F": [
+          [
+            [
+              "M",
+              570,
+              337
+            ],
+            [
+              "C",
+              580,
+              345,
+              590,
+              350,
+              598,
+              348
+            ]
+          ]
+        ],
+        "E": [
+          [
+            [
+              "M",
+              516,
+              301
+            ],
+            [
+              "C",
+              518,
+              316,
+              530,
+              326,
+              543,
+              324
+            ],
+            [
+              "C",
+              548,
+              337,
+              562,
+              346,
+              571,
+              339
+            ],
+            [
+              "C",
+              579,
+              346,
+              588,
+              350,
+              598,
+              348
+            ]
+          ],
+          [
+            [
+              "M",
+              489,
+              302
+            ],
+            [
+              "C",
+              486,
+              317,
+              475,
+              322,
+              463,
+              322
+            ],
+            [
+              "C",
+              458,
+              332,
+              450,
+              337,
+              442,
+              338
+            ]
+          ]
+        ],
+        "V": [
+          [
+            [
+              "M",
+              566,
+              352
+            ],
+            [
+              "C",
+              569,
+              360,
+              572,
+              369,
+              575,
+              373
+            ]
+          ]
+        ]
+      },
+      "notes": [
+        [
+          "K",
+          "The inner white/purple boundary is a likely close-follow zone, not a measured contact seam."
+        ],
+        [
+          "F",
+          "The outer white lip flares. Panel and sleeve overlap makes the side junction uncertain."
+        ],
+        [
+          "E",
+          "Scallops overlap the bodysuit. Their heights differ across the two visible sides."
+        ],
+        [
+          "V",
+          "Center and lower purple surface is visible. Shaded strokes do not supply a depth scan."
+        ],
+        [
+          "H",
+          "The broad white fields conceal the anterior surface and most of the side wrap."
+        ]
+      ],
+      "opening": "The aperture appears less symmetric than the near-front frame above.",
+      "pose": "Near-front oblique pose; sleeve and hair obscure some panel boundaries."
+    },
+    {
+      "id": "S4-OPENING",
+      "title": "S4 | original opening close-up",
+      "path": "docs/model-reviews/emilia-arc6-body-contour-review/references/emilia_opening_reference.jpeg",
+      "box": [
+        0,
+        0,
+        495,
+        232
+      ],
+      "marks": {
+        "K": [
+          [
+            151,
+            139
+          ]
+        ],
+        "F": [],
+        "E": [
+          [
+            209,
+            94
+          ]
+        ],
+        "V": [
+          [
+            310,
+            66
+          ],
+          [
+            210,
+            184
+          ]
+        ],
+        "H": [
+          [
+            78,
+            86
+          ]
+        ]
+      },
+      "lines": {
+        "K": [
+          [
+            [
+              "M",
+              141,
+              141
+            ],
+            [
+              "C",
+              146,
+              151,
+              148,
+              165,
+              147,
+              176
+            ]
+          ]
+        ],
+        "E": [
+          [
+            [
+              "M",
+              220,
+              24
+            ],
+            [
+              "C",
+              230,
+              50,
+              230,
+              70,
+              218,
+              93
+            ],
+            [
+              "C",
+              205,
+              116,
+              176,
+              136,
+              134,
+              138
+            ],
+            [
+              "C",
+              147,
+              168,
+              144,
+              204,
+              111,
+              228
+            ]
+          ],
+          [
+            [
+              "M",
+              403,
+              11
+            ],
+            [
+              "C",
+              395,
+              44,
+              407,
+              78,
+              429,
+              102
+            ]
+          ]
+        ]
+      },
+      "notes": [
+        [
+          "K",
+          "Purple continues under the inner white edge. Close-follow is plausible; no gap is measurable."
+        ],
+        [
+          "F",
+          "NOT RESOLVED in this crop. White shading alone does not prove projecting cloth."
+        ],
+        [
+          "E",
+          "The curved inner white edges belong to the garment, not a medial anatomical boundary."
+        ],
+        [
+          "V",
+          "Purple inside the opening is directly visible. Painted shadow/crease marks are not 3D contour measurements."
+        ],
+        [
+          "H",
+          "The body beneath the white portions and beyond the crop remains concealed."
+        ]
+      ],
+      "opening": "The aperture exposes one continuous purple field; its outline does not define two rigid pads.",
+      "pose": "Close crop and foreground rods limit context; viewing direction is not calibrated."
+    },
+    {
+      "id": "S4-RUNNING",
+      "title": "S4 | running oblique / side support",
+      "path": "docs/model-reviews/emilia-arc6-body-contour-review/references/emilia_running_side_reference.jpg",
+      "box": [
+        257,
+        507,
+        700,
+        783
+      ],
+      "marks": {
+        "K": [
+          [
+            568,
+            638
+          ]
+        ],
+        "F": [
+          [
+            284,
+            665
+          ]
+        ],
+        "E": [
+          [
+            399,
+            700
+          ]
+        ],
+        "V": [
+          [
+            621,
+            650
+          ],
+          [
+            485,
+            735
+          ]
+        ],
+        "H": [
+          [
+            440,
+            570
+          ]
+        ]
+      },
+      "lines": {
+        "K": [
+          [
+            [
+              "M",
+              575,
+              612
+            ],
+            [
+              "C",
+              575,
+              634,
+              565,
+              655,
+              548,
+              667
+            ]
+          ]
+        ],
+        "F": [
+          [
+            [
+              "M",
+              270,
+              651
+            ],
+            [
+              "C",
+              258,
+              661,
+              265,
+              674,
+              322,
+              673
+            ]
+          ]
+        ],
+        "E": [
+          [
+            [
+              "M",
+              324,
+              673
+            ],
+            [
+              "C",
+              309,
+              697,
+              326,
+              708,
+              367,
+              702
+            ],
+            [
+              "C",
+              383,
+              715,
+              429,
+              708,
+              442,
+              699
+            ],
+            [
+              "C",
+              463,
+              710,
+              501,
+              696,
+              506,
+              676
+            ],
+            [
+              "C",
+              545,
+              686,
+              576,
+              656,
+              576,
+              603
+            ]
+          ]
+        ],
+        "V": [
+          [
+            [
+              "M",
+              357,
+              726
+            ],
+            [
+              "C",
+              351,
+              746,
+              342,
+              764,
+              328,
+              778
+            ]
+          ]
+        ]
+      },
+      "notes": [
+        [
+          "K",
+          "The inner border follows the visible purple region locally. True contact remains inferred."
+        ],
+        [
+          "F",
+          "The near lower lip flares beyond exposed purple. No fixed cloth/body offset follows from this."
+        ],
+        [
+          "E",
+          "Lifted scallops cross over purple at unequal heights. The white outline is not the torso profile."
+        ],
+        [
+          "V",
+          "The opening and lower bodysuit are visible. Internal painted lines do not determine hidden depth."
+        ],
+        [
+          "H",
+          "Most anterior fullness is hidden. Cape above and behind the panel is excluded from body evidence."
+        ]
+      ],
+      "opening": "Near and far white regions are differently foreshortened; do not mirror this posed aperture.",
+      "pose": "Forward lean, arm pose, perspective and cloth motion confound a neutral true-side contour."
+    },
+    {
+      "id": "S4-SEATED",
+      "title": "S4 | seated near-side support",
+      "path": "docs/model-reviews/emilia-arc6-v3-s4-cross-validation/references/emilia_s4_seated_near_side.jpeg",
+      "box": [
+        331,
+        190,
+        438,
+        330
+      ],
+      "marks": {
+        "K": [
+          [
+            367,
+            249
+          ]
+        ],
+        "F": [
+          [
+            371,
+            293
+          ]
+        ],
+        "E": [
+          [
+            379,
+            267
+          ]
+        ],
+        "V": [
+          [
+            355,
+            241
+          ],
+          [
+            390,
+            304
+          ]
+        ],
+        "H": [
+          [
+            375,
+            225
+          ]
+        ]
+      },
+      "lines": {
+        "K": [
+          [
+            [
+              "M",
+              365,
+              244
+            ],
+            [
+              "C",
+              364,
+              251,
+              366,
+              257,
+              370,
+              261
+            ]
+          ]
+        ],
+        "F": [
+          [
+            [
+              "M",
+              359,
+              286
+            ],
+            [
+              "C",
+              365,
+              285,
+              369,
+              290,
+              376,
+              298
+            ]
+          ]
+        ],
+        "E": [
+          [
+            [
+              "M",
+              368,
+              260
+            ],
+            [
+              "C",
+              371,
+              266,
+              379,
+              269,
+              388,
+              270
+            ]
+          ],
+          [
+            [
+              "M",
+              349,
+              258
+            ],
+            [
+              "C",
+              346,
+              265,
+              350,
+              270,
+              358,
+              271
+            ]
+          ]
+        ],
+        "V": []
+      },
+      "notes": [
+        [
+          "K",
+          "A narrow inner white/purple boundary is visible. Contact depth is still unresolved."
+        ],
+        [
+          "F",
+          "A small lower white lip projects in the image; sleeve/cloth overlap obscures its 3D gap."
+        ],
+        [
+          "E",
+          "Visible hem segments cover purple. The large white arm region is not a free chest outline."
+        ],
+        [
+          "V",
+          "A narrow purple strip and lower purple surface are visible. No clean complete upper-body outline is exposed."
+        ],
+        [
+          "H",
+          "White panels, sleeves and pose hide anterior and rear limits of the upper torso."
+        ]
+      ],
+      "opening": "The near-side angle compresses the opening into a partial strip; far edges are occluded.",
+      "pose": "Sitting and bracing alter posture. This is near-side artwork, not an orthographic body scan."
+    },
+    {
+      "id": "S4-STANDING-OBLIQUE",
+      "title": "S4 | standing oblique, arms forward",
+      "path": "docs/model-reviews/emilia-arc6-v3-s4-cross-validation/references/emilia_s4_standing_side_oblique.webp",
+      "box": [
+        220,
+        185,
+        329,
+        330
+      ],
+      "marks": {
+        "K": [],
+        "F": [
+          [
+            237,
+            287
+          ]
+        ],
+        "E": [
+          [
+            268,
+            287
+          ]
+        ],
+        "V": [
+          [
+            268,
+            309
+          ],
+          [
+            267,
+            236
+          ]
+        ],
+        "H": [
+          [
+            282,
+            254
+          ]
+        ]
+      },
+      "lines": {
+        "F": [
+          [
+            [
+              "M",
+              248,
+              278
+            ],
+            [
+              "C",
+              244,
+              284,
+              236,
+              289,
+              232,
+              290
+            ]
+          ]
+        ],
+        "E": [
+          [
+            [
+              "M",
+              238,
+              287
+            ],
+            [
+              "C",
+              249,
+              300,
+              263,
+              293,
+              274,
+              285
+            ],
+            [
+              "C",
+              282,
+              294,
+              290,
+              286,
+              295,
+              282
+            ]
+          ]
+        ],
+        "V": [
+          [
+            [
+              "M",
+              248,
+              301
+            ],
+            [
+              "C",
+              246,
+              310,
+              240,
+              320,
+              235,
+              327
+            ]
+          ],
+          [
+            [
+              "M",
+              300,
+              298
+            ],
+            [
+              "C",
+              299,
+              309,
+              299,
+              318,
+              299,
+              328
+            ]
+          ]
+        ]
+      },
+      "notes": [
+        [
+          "K",
+          "NOT RESOLVED. Raised arms and sleeves hide any defensible panel-contact location."
+        ],
+        [
+          "F",
+          "The outer/lower white lip extends past visible purple. Panel/sleeve identity is partly occluded."
+        ],
+        [
+          "E",
+          "The scalloped edge overlaps the bodysuit. This is not the body lower-return contour."
+        ],
+        [
+          "V",
+          "Lower purple sides are exposed. The upper purple armhole band is separate clothing evidence."
+        ],
+        [
+          "H",
+          "The fullest anterior region and center opening are hidden behind posed arms and white cloth."
+        ]
+      ],
+      "opening": "The center opening is mostly occluded, so its width and hidden side cannot be traced here.",
+      "pose": "Inclination, oblique camera and forward arms prevent a neutral depth measurement."
+    }
+  ],
+  "reference_sha256": {
+    "docs/model-reviews/emilia-arc6-body-contour-review/references/emilia_front_reference.jpeg": "4e734c9b7aa338f6e7939a5459a0e078d2662aaf88a01164f2ef0d38385f0c72",
+    "docs/model-reviews/emilia-arc6-reference-analysis-v2/references/emilia_neutral_front.jpeg": "918fd95bce21edb987df448224651e1a039628bc4eafe867831560940abdd969",
+    "docs/model-reviews/emilia-arc6-body-contour-review/references/emilia_opening_reference.jpeg": "621a13bf26e32f0a694eeb3aa9b9039eaab193833ba833c5e84204cd84a7d5a4",
+    "docs/model-reviews/emilia-arc6-body-contour-review/references/emilia_running_side_reference.jpg": "1a9de6419f64219c3648b83f2be2d78769a881f0bcc0bcad6c150709f31b554c",
+    "docs/model-reviews/emilia-arc6-v3-s4-cross-validation/references/emilia_s4_seated_near_side.jpeg": "75773149c0023a145a8165286546f65d4529734557cfc1e047032ef10fd9dab0",
+    "docs/model-reviews/emilia-arc6-v3-s4-cross-validation/references/emilia_s4_standing_side_oblique.webp": "cbca5a8507ddd623f9f2775ac0b2788432579dbbfdc4ecc8172d98f82fa63cb8",
+    "docs/model-reviews/emilia-arc6-reference-analysis-v2/references/emilia_tilted_three_quarter.webp": "becb78cf6f7d37f2bf5bbfebdb721aa4755d47f1e122073a8e4e79242548456d",
+    "docs/model-reviews/emilia-arc6-reference-analysis-v2/references/emilia_leaning_three_quarter.jpeg": "b90dcf7d46364e3812ffa6435cb8f2b6d888015cf5052e2f845afa6c55ef82a7"
+  },
+  "supplementary_pose_checks": "tilted and leaning frames were inspected; they add arm/cloth occlusion, not neutral hidden-depth measurements",
+  "contact_limit": "physical contact not resolved; K is an inference",
+  "free_cloth_limit": "projecting image outline observed; physical air gap not measured",
+  "hypothesis_test": [
+    [
+      "Continuous exposed purple surface",
+      "All primary frames reveal purple in the opening and/or below the hems.",
+      "One continuous torso supplies this surface. No seam, attached pad or medial groove is required.",
+      "COMPATIBLE; EXACT HIDDEN DEPTH UNRESOLVED"
+    ],
+    [
+      "Changing scalloped overlap and outer flare",
+      "Front and running frames show unequal cloth edges crossing purple; side frames retain partial overlaps.",
+      "The same smooth body permits independent cloth overlap. Hem height never fixes a body shelf or pocket.",
+      "COMPATIBLE IF CLOTH IS FREE TO OVERLAP"
+    ],
+    [
+      "Center aperture and side wrap",
+      "The opening appears near symmetric in front, partial/asymmetric in oblique views, and hidden behind arms.",
+      "A continuous surface works behind these apertures. The white borders cannot set anterior depth or far-side width.",
+      "COMPATIBLE; CONTACT MAP UNRESOLVED"
+    ],
+    [
+      "Neutral depth / onset / lower return",
+      "Seated/running upper limits are cloth- and pose-dependent; standing oblique arms conceal the fullest region.",
+      "No repeated original S4 observation proves or refutes the present section depths. S1 costume edges do not resolve them.",
+      "UNRESOLVED; NOT BODY APPROVAL"
+    ]
+  ],
+  "body_contours_changed": false,
+  "body_sections_changed": false,
+  "prior_hypothesis_sha256": "391154c989fdda509c2eab3ec1b164e44b16d3fbc81857d2405f785fd91cca8d",
+  "section_data_sha256": "3438e327ff933cc37ccd79a7ea53404c58514a7aee3c13c28ce7d89775c30742",
+  "body_proposal_status": "COMPATIBLE IN TOPOLOGY; HIDDEN GEOMETRY AND CLOTH FIT UNRESOLVED",
+  "old_photo_hypothesis_overlay_status": "withdrawn as shape evidence; historical uncalibrated speculation only",
+  "mesh_edits": 0,
+  "garment_mesh_edits": 0,
+  "glb_builds": 0,
+  "new_geometry_tests": 0,
+  "next_action": "STOP FOR USER REVIEW"
+}

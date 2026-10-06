@@ -1,0 +1,25 @@
+{
+  "tests": {
+    "command": "npm test",
+    "files_passed": 10,
+    "tests_passed": 72
+  },
+  "production_build": {
+    "command": "npm run build",
+    "status": "passed"
+  },
+  "render_views": [
+    "front",
+    "three_quarter",
+    "side",
+    "low_front",
+    "full_front",
+    "full_side"
+  ],
+  "camera_and_arm_sweep_records_identical": true,
+  "render_exit_status": 0,
+  "render_timeout_seconds": 90,
+  "build_timeout_seconds": 240,
+  "delivered_glb_matches_reviewed_glb": true,
+  "current_runtime_pose_screenshots": "not regenerated"
+}

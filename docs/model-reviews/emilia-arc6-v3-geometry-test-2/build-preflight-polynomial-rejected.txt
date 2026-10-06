@@ -1,0 +1,15 @@
+[test2-build 8801.085] reuse existing complete body GLB; zero character or garment rebuilds
+[test2-build 8801.085] solve whole anterior surface and complete side arc together
+Traceback (most recent call last):
+  File "/workspace/scratch/170b29a27787/Re-Zero-game/tools/blender/build_emilia_v3_test2.py", line 115, in <module>
+    main()
+  File "/workspace/scratch/170b29a27787/Re-Zero-game/tools/blender/build_emilia_v3_test2.py", line 70, in main
+    after, free, fit, curve = solve_surface(before, triangles, provenance, height, projection)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/170b29a27787/Re-Zero-game/tools/blender/characters/emilia_v3_test2_surface.py", line 125, in solve_surface
+    qside, curve_report = side_curve(co, provenance, free, projection)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/170b29a27787/Re-Zero-game/tools/blender/characters/emilia_v3_test2_surface.py", line 91, in side_curve
+    assert k_low < k_high, (k_low, k_high)
+           ^^^^^^^^^^^^^^
+AssertionError: (np.float64(94.66862226258449), 0.0)

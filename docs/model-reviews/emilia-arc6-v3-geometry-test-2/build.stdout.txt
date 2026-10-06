@@ -1,0 +1,5 @@
+[test2-build 8997.533] reuse existing complete body GLB; zero character or garment rebuilds
+[test2-build 8997.533] solve whole anterior surface and complete side arc together
+[test2-build 9005.971] surface solved: 4579 changed y coordinates; all x/z and protected vertices exact
+[test2-build 9006.000] write isolated body-test2.glb, existing topology and head preserved
+[test2-build 9006.173] DONE, GLB 1046668 bytes, 22393 body vertices locked

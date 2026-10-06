@@ -1,0 +1,20 @@
+{
+  "source_sha256": "33a008fda9a7e9ec6529edc87735c0f8d07d9ce6fff9c4ec70ae99687299900c",
+  "body": {
+    "vertices": 26972,
+    "faces": 53940,
+    "boundary_edges": 0,
+    "nonmanifold_edges": 0,
+    "degenerate_faces": 0,
+    "nonfinite_vertices": 0
+  },
+  "surface_crossings": {
+    "scope": "complete body, transverse nonadjacent triangles; coplanar/shared-vertex contacts excluded",
+    "candidates_checked": 0,
+    "crossing_pairs": 0,
+    "examples": []
+  },
+  "character_rebuilds": 0,
+  "garment_rebuilds": 0,
+  "elapsed_seconds": 1.9014175880001858
+}

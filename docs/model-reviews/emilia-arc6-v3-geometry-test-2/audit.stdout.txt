@@ -1,0 +1,9 @@
+[worker] start tools/blender/audit_emilia_v3_test2.py
+LOAD finished GLB for audit only
+01:32:26 | INFO: Data are loaded, start creating Blender stuff
+01:32:26 | INFO: Blender create Mesh node emilia_v3_test_body
+01:32:26 | INFO: Blender create Mesh node emilia_head.001
+01:32:26 | INFO: Blender create Mesh node emilia_head_ears1.001
+01:32:26 | INFO: glTF import finished in 0.49s
+{"source_sha256": "33a008fda9a7e9ec6529edc87735c0f8d07d9ce6fff9c4ec70ae99687299900c", "body": {"vertices": 26972, "faces": 53940, "boundary_edges": 0, "nonmanifold_edges": 0, "degenerate_faces": 0, "nonfinite_vertices": 0}, "surface_crossings": {"scope": "complete body, transverse nonadjacent triangles; coplanar/shared-vertex contacts excluded", "candidates_checked": 0, "crossing_pairs": 0, "examples": []}, "character_rebuilds": 0, "garment_rebuilds": 0, "elapsed_seconds": 1.9014175880001858}
+[worker] script complete

@@ -1,0 +1,948 @@
+{
+  "status": "analysis_only_awaiting_explicit_guide_approval",
+  "hierarchy": "S4 authoritative; S1 secondary structural evidence; S4 wins visible disagreements",
+  "prior_guide_paths_changed": false,
+  "side_display_orientation": "mirrored diagram to face left like unmodified S1 art",
+  "physical_scale": null,
+  "fan_measurements_used": false,
+  "no_anatomical_measurement_claim": true,
+  "manual_landmark_reading_ambiguity_pixels": 2,
+  "source_images": [
+    {
+      "file": "emilia_neutral_front.jpeg",
+      "repository_path": "docs/model-reviews/emilia-arc6-reference-analysis-v2/references/emilia_neutral_front.jpeg",
+      "sha256": "918fd95bce21edb987df448224651e1a039628bc4eafe867831560940abdd969",
+      "priority": "authoritative_S4"
+    },
+    {
+      "file": "emilia_tilted_three_quarter.webp",
+      "repository_path": "docs/model-reviews/emilia-arc6-reference-analysis-v2/references/emilia_tilted_three_quarter.webp",
+      "sha256": "becb78cf6f7d37f2bf5bbfebdb721aa4755d47f1e122073a8e4e79242548456d",
+      "priority": "authoritative_S4"
+    },
+    {
+      "file": "emilia_leaning_three_quarter.jpeg",
+      "repository_path": "docs/model-reviews/emilia-arc6-reference-analysis-v2/references/emilia_leaning_three_quarter.jpeg",
+      "sha256": "b90dcf7d46364e3812ffa6435cb8f2b6d888015cf5052e2f845afa6c55ef82a7",
+      "priority": "authoritative_S4"
+    },
+    {
+      "file": "emilia_front_reference.jpeg",
+      "repository_path": "docs/model-reviews/emilia-arc6-body-contour-review/references/emilia_front_reference.jpeg",
+      "sha256": "4e734c9b7aa338f6e7939a5459a0e078d2662aaf88a01164f2ef0d38385f0c72",
+      "priority": "authoritative_S4"
+    },
+    {
+      "file": "emilia_running_side_reference.jpg",
+      "repository_path": "docs/model-reviews/emilia-arc6-body-contour-review/references/emilia_running_side_reference.jpg",
+      "sha256": "1a9de6419f64219c3648b83f2be2d78769a881f0bcc0bcad6c150709f31b554c",
+      "priority": "authoritative_S4"
+    },
+    {
+      "file": "emilia_opening_reference.jpeg",
+      "repository_path": "docs/model-reviews/emilia-arc6-body-contour-review/references/emilia_opening_reference.jpeg",
+      "sha256": "621a13bf26e32f0a694eeb3aa9b9039eaab193833ba833c5e84204cd84a7d5a4",
+      "priority": "authoritative_S4"
+    },
+    {
+      "file": "emilia_s1_neutral_turnaround.jpeg",
+      "repository_path": "docs/model-reviews/emilia-arc6-reference-analysis-v3/references/emilia_s1_neutral_turnaround.jpeg",
+      "sha256": "c70a2b46acb07de67c06493f46f69e38c4ce07721352cc336c62a2f62ed21989",
+      "priority": "secondary_S1"
+    },
+    {
+      "file": "emilia_s1_production_sheet.jpeg",
+      "repository_path": "docs/model-reviews/emilia-arc6-reference-analysis-v3/references/emilia_s1_production_sheet.jpeg",
+      "sha256": "eeb4d515b560b1459f3ca6e291332faf0771e0f44714381e8991dc58f1e21c0d",
+      "priority": "secondary_S1"
+    }
+  ],
+  "dimensionless_image_checks": [
+    {
+      "source": "emilia_s1_neutral_turnaround.jpeg",
+      "view": "front",
+      "denominator": "visible upper lateral bodice rim to waist trim",
+      "span_pixels": 60,
+      "covered_width_over_span": 0.8333333333333334,
+      "fitted_width_over_span": 0.5833333333333334,
+      "covered_over_fitted_width": 1.4285714285714286,
+      "landmarks": {
+        "upper_lateral_bodice_rim_y": 124,
+        "waist_trim_y": 184,
+        "covered_chest_width": {
+          "y": 136,
+          "x": [
+            295,
+            345
+          ]
+        },
+        "fitted_bodice_width": {
+          "y": 171,
+          "x": [
+            303,
+            338
+          ]
+        },
+        "visible_cup_lower_edge_y": 147
+      },
+      "classification": "costume; not anatomical body width",
+      "cup_edge_height_u": 0.38333333333333336,
+      "covered_crest_height_u": 0.2
+    },
+    {
+      "source": "emilia_s1_production_sheet.jpeg",
+      "view": "front",
+      "denominator": "visible upper lateral bodice rim to waist trim",
+      "span_pixels": 68,
+      "covered_width_over_span": 0.8676470588235294,
+      "fitted_width_over_span": 0.6176470588235294,
+      "covered_over_fitted_width": 1.4047619047619047,
+      "landmarks": {
+        "upper_lateral_bodice_rim_y": 119,
+        "waist_trim_y": 187,
+        "covered_chest_width": {
+          "y": 134,
+          "x": [
+            65,
+            124
+          ]
+        },
+        "fitted_bodice_width": {
+          "y": 168,
+          "x": [
+            74,
+            116
+          ]
+        }
+      },
+      "classification": "costume; not anatomical body width"
+    },
+    {
+      "source": "emilia_s1_neutral_turnaround.jpeg",
+      "view": "neutral_side",
+      "span_pixels": 68,
+      "denominator": "visible upper lateral bodice rim to waist trim",
+      "covered_crest_height_u": 0.22058823529411764,
+      "cup_edge_height_u": 0.4117647058823529,
+      "forward_costume_excursion_over_span": 0.1323529411764706,
+      "landmarks": {
+        "upper_lateral_bodice_rim_y": 120,
+        "waist_trim_y": 188,
+        "covered_crest": [
+          111,
+          135
+        ],
+        "visible_cup_lower_edge_y": 148,
+        "lower_bodice_front_x": 120
+      },
+      "true_torso_depth": null,
+      "classification": "costume front excursion, not body depth; rear occluded"
+    },
+    {
+      "source": "emilia_neutral_front.jpeg",
+      "view": "standing_front",
+      "covered_over_exposed_lower_width": 1.2072072072072073,
+      "landmarks": {
+        "covered_chest_width": {
+          "y": 276,
+          "x": [
+            444,
+            578
+          ]
+        },
+        "exposed_lower_purple_width": {
+          "y": 357,
+          "x": [
+            457,
+            568
+          ]
+        }
+      },
+      "classification": "cloth envelope / exposed purple at different levels; not chest / waist anatomy"
+    }
+  ],
+  "support_matrix": [
+    {
+      "region": "Upper onset",
+      "S4": [
+        "S4: covered upper chest; neck /",
+        "cloth placement limits interpretation."
+      ],
+      "S1": [
+        "S1: upright trunk removes lean;",
+        "upper costume rim is a height cue."
+      ],
+      "interpolation": [
+        "Gentle body onset is hypothetical.",
+        "No rim copied into the body."
+      ]
+    },
+    {
+      "region": "Projection region",
+      "S4": [
+        "S4: oblique frames check how",
+        "covered volume turns with the torso."
+      ],
+      "S1": [
+        "S1: covered crest lies near the",
+        "upper part of its bodice span."
+      ],
+      "interpolation": [
+        "Exact body depth and medial /",
+        "outer distribution remain unknown."
+      ]
+    },
+    {
+      "region": "Lower return",
+      "S4": [
+        "S4: exposed purple continues",
+        "smoothly below a variable cloth hem."
+      ],
+      "S1": [
+        "S1: torso below cups is upright.",
+        "Its sharp cup edge is excluded."
+      ],
+      "interpolation": [
+        "Long smooth return joins the",
+        "existing ribcage; no notch or shelf."
+      ]
+    },
+    {
+      "region": "Full torso depth",
+      "S4": [
+        "S4: pose and cloth obscure",
+        "neutral anterior / posterior limits."
+      ],
+      "S1": [
+        "S1: rear hair / cape still hide",
+        "the posterior torso boundary."
+      ],
+      "interpolation": [
+        "Unmeasured. Costume excursion",
+        "is not total anatomical depth."
+      ]
+    }
+  ],
+  "S1_manual_traces": [
+    {
+      "name": "emilia_s1_neutral_turnaround.jpeg",
+      "box": [
+        282,
+        96,
+        360,
+        194
+      ],
+      "B": [
+        [
+          [
+            "M",
+            299,
+            124
+          ],
+          [
+            "C",
+            294,
+            128,
+            294,
+            138,
+            299,
+            144
+          ],
+          [
+            "C",
+            305,
+            148,
+            311,
+            148,
+            318,
+            143
+          ]
+        ],
+        [
+          [
+            "M",
+            337,
+            124
+          ],
+          [
+            "C",
+            345,
+            127,
+            347,
+            138,
+            341,
+            145
+          ],
+          [
+            "C",
+            333,
+            148,
+            324,
+            146,
+            318,
+            143
+          ]
+        ],
+        [
+          [
+            "M",
+            303,
+            152
+          ],
+          [
+            "C",
+            303,
+            163,
+            303,
+            177,
+            302,
+            184
+          ]
+        ],
+        [
+          [
+            "M",
+            339,
+            151
+          ],
+          [
+            "C",
+            338,
+            163,
+            338,
+            177,
+            338,
+            184
+          ]
+        ]
+      ],
+      "A": [],
+      "P": [],
+      "C": [
+        [
+          [
+            300,
+            129
+          ],
+          [
+            336,
+            129
+          ],
+          [
+            339,
+            142
+          ],
+          [
+            305,
+            142
+          ]
+        ]
+      ],
+      "landmarks": {
+        "upper_lateral_bodice_rim_y": 124,
+        "waist_trim_y": 184,
+        "covered_chest_width": {
+          "y": 136,
+          "x": [
+            295,
+            345
+          ]
+        },
+        "fitted_bodice_width": {
+          "y": 171,
+          "x": [
+            303,
+            338
+          ]
+        },
+        "visible_cup_lower_edge_y": 147
+      }
+    },
+    {
+      "name": "emilia_s1_neutral_turnaround.jpeg",
+      "box": [
+        96,
+        87,
+        176,
+        200
+      ],
+      "B": [
+        [
+          [
+            "M",
+            125,
+            119
+          ],
+          [
+            "C",
+            115,
+            120,
+            110,
+            128,
+            111,
+            135
+          ],
+          [
+            "C",
+            111,
+            143,
+            116,
+            146,
+            120,
+            148
+          ]
+        ],
+        [
+          [
+            "M",
+            120,
+            150
+          ],
+          [
+            "C",
+            120,
+            160,
+            120,
+            176,
+            120,
+            188
+          ]
+        ]
+      ],
+      "A": [],
+      "P": [],
+      "C": [
+        [
+          [
+            116,
+            124
+          ],
+          [
+            136,
+            123
+          ],
+          [
+            143,
+            138
+          ],
+          [
+            134,
+            148
+          ],
+          [
+            119,
+            144
+          ]
+        ],
+        [
+          [
+            146,
+            132
+          ],
+          [
+            158,
+            138
+          ],
+          [
+            158,
+            185
+          ],
+          [
+            146,
+            184
+          ]
+        ]
+      ],
+      "landmarks": {
+        "upper_lateral_bodice_rim_y": 120,
+        "waist_trim_y": 188,
+        "covered_crest": [
+          111,
+          135
+        ],
+        "visible_cup_lower_edge_y": 148,
+        "lower_bodice_front_x": 120
+      }
+    }
+  ],
+  "guide_proposals": [
+    {
+      "title": "FRONT",
+      "subtitle": "Continuous upper-to-lower transition",
+      "name": "emilia_neutral_front.jpeg",
+      "box": [
+        432,
+        196,
+        613,
+        397
+      ],
+      "evidence": [
+        "Standing front supports",
+        "cloth placement, not hidden",
+        "body width or medial depth."
+      ],
+      "paths": [
+        [
+          [
+            "M",
+            140,
+            76
+          ],
+          [
+            "C",
+            131,
+            98,
+            124,
+            121,
+            123,
+            149
+          ],
+          [
+            "C",
+            122,
+            177,
+            127,
+            213,
+            137,
+            248
+          ],
+          [
+            "C",
+            141,
+            265,
+            145,
+            292,
+            146,
+            311
+          ]
+        ],
+        [
+          [
+            "M",
+            292,
+            76
+          ],
+          [
+            "C",
+            301,
+            98,
+            308,
+            121,
+            309,
+            149
+          ],
+          [
+            "C",
+            310,
+            177,
+            305,
+            213,
+            295,
+            248
+          ],
+          [
+            "C",
+            291,
+            265,
+            287,
+            292,
+            286,
+            311
+          ]
+        ]
+      ],
+      "flows": [
+        [
+          [
+            "M",
+            216,
+            62
+          ],
+          [
+            "C",
+            213,
+            136,
+            219,
+            214,
+            216,
+            310
+          ]
+        ]
+      ],
+      "context": [
+        [
+          [
+            "M",
+            183,
+            16
+          ],
+          [
+            "C",
+            181,
+            35,
+            149,
+            54,
+            140,
+            76
+          ]
+        ],
+        [
+          [
+            "M",
+            249,
+            16
+          ],
+          [
+            "C",
+            251,
+            35,
+            283,
+            54,
+            292,
+            76
+          ]
+        ],
+        [
+          [
+            "M",
+            146,
+            311
+          ],
+          [
+            "L",
+            146,
+            334
+          ]
+        ],
+        [
+          [
+            "M",
+            286,
+            311
+          ],
+          [
+            "L",
+            286,
+            334
+          ]
+        ]
+      ],
+      "labels": [
+        [
+          23,
+          102,
+          "upper transition"
+        ],
+        [
+          4,
+          199,
+          "broad turn"
+        ],
+        [
+          277,
+          282,
+          "gradual return"
+        ]
+      ],
+      "notes": [
+        "Replaced the near-vertical box sides with",
+        "a gradual outward transition and long taper.",
+        "No shelf, band, medial flattening or front island.",
+        "Fullness is unresolved by the front view alone."
+      ]
+    },
+    {
+      "title": "3/4",
+      "subtitle": "One surface wrapping around the ribcage",
+      "name": "emilia_tilted_three_quarter.webp",
+      "box": [
+        220,
+        407,
+        718,
+        911
+      ],
+      "evidence": [
+        "Oblique views test wrapping.",
+        "Hands / tilt block the join;",
+        "do not transfer the outline."
+      ],
+      "paths": [
+        [
+          [
+            "M",
+            160,
+            73
+          ],
+          [
+            "C",
+            145,
+            103,
+            136,
+            124,
+            135,
+            150
+          ],
+          [
+            "C",
+            134,
+            188,
+            143,
+            249,
+            160,
+            310
+          ]
+        ],
+        [
+          [
+            "M",
+            280,
+            71
+          ],
+          [
+            "C",
+            288,
+            98,
+            309,
+            124,
+            321,
+            154
+          ],
+          [
+            "C",
+            333,
+            184,
+            299,
+            248,
+            278,
+            310
+          ]
+        ]
+      ],
+      "flows": [
+        [
+          [
+            "M",
+            235,
+            73
+          ],
+          [
+            "C",
+            256,
+            115,
+            285,
+            148,
+            293,
+            175
+          ],
+          [
+            "C",
+            300,
+            202,
+            268,
+            261,
+            255,
+            310
+          ]
+        ]
+      ],
+      "context": [
+        [
+          [
+            "M",
+            182,
+            22
+          ],
+          [
+            "C",
+            174,
+            36,
+            175,
+            43,
+            160,
+            73
+          ]
+        ],
+        [
+          [
+            "M",
+            257,
+            22
+          ],
+          [
+            "C",
+            267,
+            40,
+            272,
+            44,
+            280,
+            71
+          ]
+        ],
+        [
+          [
+            "M",
+            160,
+            310
+          ],
+          [
+            "L",
+            166,
+            334
+          ]
+        ],
+        [
+          [
+            "M",
+            278,
+            310
+          ],
+          [
+            "L",
+            270,
+            334
+          ]
+        ]
+      ],
+      "labels": [
+        [
+          290,
+          134,
+          "near turn"
+        ],
+        [
+          11,
+          238,
+          "far return"
+        ]
+      ],
+      "notes": [
+        "Preserved the continuous ribcage-wrap idea.",
+        "The lower near-side arc returns gradually.",
+        "Thin interior lines indicate flow, not a groove.",
+        "No separate anterior objects or cups are implied."
+      ]
+    },
+    {
+      "title": "SIDE",
+      "subtitle": "Projection dissolves into a long return",
+      "name": "emilia_leaning_three_quarter.jpeg",
+      "box": [
+        115,
+        266,
+        280,
+        395
+      ],
+      "evidence": [
+        "No true side in this frame.",
+        "Lean + arms hide the join;",
+        "depth remains hypothetical."
+      ],
+      "paths": [
+        [
+          [
+            "M",
+            242,
+            55
+          ],
+          [
+            "C",
+            242,
+            84,
+            246,
+            101,
+            259,
+            117
+          ],
+          [
+            "C",
+            272,
+            133,
+            294,
+            138,
+            298,
+            157
+          ],
+          [
+            "C",
+            302,
+            176,
+            288,
+            209,
+            244,
+            306
+          ]
+        ]
+      ],
+      "flows": [],
+      "context": [
+        [
+          [
+            "M",
+            130,
+            55
+          ],
+          [
+            "C",
+            131,
+            126,
+            130,
+            232,
+            132,
+            306
+          ]
+        ],
+        [
+          [
+            "M",
+            244,
+            306
+          ],
+          [
+            "C",
+            240,
+            315,
+            237,
+            322,
+            234,
+            334
+          ]
+        ],
+        [
+          [
+            "M",
+            132,
+            306
+          ],
+          [
+            "L",
+            131,
+            334
+          ]
+        ]
+      ],
+      "labels": [
+        [
+          94,
+          70,
+          "soft onset"
+        ],
+        [
+          76,
+          133,
+          "fullest region"
+        ],
+        [
+          5,
+          264,
+          "long gradual return"
+        ]
+      ],
+      "notes": [
+        "The return is one extended arc, not a short",
+        "inward bend followed by an upright reset.",
+        "No ribcage notch or new abdomen target.",
+        "Neither running nor leaning sets literal depth."
+      ]
+    }
+  ]
+}

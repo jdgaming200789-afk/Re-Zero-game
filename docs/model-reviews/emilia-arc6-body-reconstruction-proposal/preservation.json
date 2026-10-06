@@ -1,0 +1,17 @@
+{
+  "production_and_pre_test_body_unchanged": true,
+  "original_failed_outputs_unchanged": true,
+  "meshes_edited": 0,
+  "glbs_built": 0,
+  "garments_edited": 0,
+  "new_geometry_tests": 0,
+  "review_status": "DRAWING_UNAPPROVED",
+  "drawing_sha256": "ce1c3aae5cfc0c5472b2095a735aea1c1e5b693ef78d9c8b0bcb68a530a53db2",
+  "svg_sha256": "270c3968f2adb0928fdbc6c62c4afc7a0817a3cbb01aa27aafae34b2e8a93735",
+  "official_references_unchanged": {
+    "docs/model-reviews/emilia-arc6-reference-analysis-v2/references/emilia_neutral_front.jpeg": "918fd95bce21edb987df448224651e1a039628bc4eafe867831560940abdd969",
+    "docs/model-reviews/emilia-arc6-v3-s4-cross-validation/references/emilia_s4_seated_near_side.jpeg": "75773149c0023a145a8165286546f65d4529734557cfc1e047032ef10fd9dab0",
+    "docs/model-reviews/emilia-arc6-v3-s4-cross-validation/references/emilia_s4_standing_side_oblique.webp": "cbca5a8507ddd623f9f2775ac0b2788432579dbbfdc4ecc8172d98f82fa63cb8",
+    "docs/model-reviews/emilia-arc6-reference-analysis-v3/references/emilia_s1_neutral_turnaround.jpeg": "c70a2b46acb07de67c06493f46f69e38c4ce07721352cc336c62a2f62ed21989"
+  }
+}

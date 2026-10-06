@@ -1,0 +1,1 @@
+{"sheet": "emilia-body-reconstruction.png", "drawing_views": 3, "whole_torso_sections": 5, "mesh_edits": 0, "glb_builds": 0}

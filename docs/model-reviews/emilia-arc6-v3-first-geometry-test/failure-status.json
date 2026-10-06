@@ -1,0 +1,7 @@
+{
+  "status": "REJECTED_FAILURE_DOCUMENTATION_ONLY",
+  "use_as_anatomy_or_shape_reference": false,
+  "use_as_modeling_target": false,
+  "review_precedence": "latest user rejection overrides historical review verdicts",
+  "original_outputs_preserved": true
+}
